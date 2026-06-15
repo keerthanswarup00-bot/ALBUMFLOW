@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/services/supabase/client';
-import { WelcomeScreen } from '@/components/viewer/WelcomeScreen';
-import { AlbumViewer } from '@/components/viewer/AlbumViewer';
+import { WelcomeScreen } from '@/components/review/WelcomeScreen';
+import { AlbumViewer } from '@/components/review/AlbumViewer';
 import { Spinner } from '@/components/ui/Spinner';
 import type { ReviewData } from '@/types/viewer';
 import { AlertCircle, ImageIcon } from 'lucide-react';
@@ -23,16 +23,16 @@ export function ViewAlbumPage() {
   const [approved, setApproved] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setError('No album link provided');
-      setIsLoading(false);
-      return;
-    }
+    if (!token) return;
+
+    let cancelled = false;
 
     (async () => {
       try {
         const { data: result, error: rpcError } = await supabase
           .rpc('get_album_by_token', { token_text: token });
+
+        if (cancelled) return;
 
         if (rpcError) {
           setError(rpcError.message);
@@ -64,9 +64,11 @@ export function ViewAlbumPage() {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load album');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     })();
+
+    return () => { cancelled = true; };
   }, [token]);
 
   if (!token) {
@@ -145,7 +147,6 @@ export function ViewAlbumPage() {
       <AlbumViewer
         key={token}
         album={data.album}
-        version={data.version}
         pages={data.pages}
       />
     </>
