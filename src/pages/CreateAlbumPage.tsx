@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAlbumStore } from '@/store/albumStore';
 import { useUIStore } from '@/store/uiStore';
-import { AlbumForm } from '@/components/albums/AlbumForm';
+import { AlbumForm } from '@/components/album/AlbumForm';
 import { ROUTES } from '@/constants/routes';
 import type { AlbumFormData } from '@/types';
 import { ArrowLeft } from 'lucide-react';

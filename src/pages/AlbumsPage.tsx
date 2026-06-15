@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAlbumStore } from '@/store/albumStore';
-import { AlbumCard } from '@/components/albums/AlbumCard';
-import { DeleteAlbumModal } from '@/components/albums/DeleteAlbumModal';
+import { AlbumCard } from '@/components/album/AlbumCard';
+import { DeleteAlbumModal } from '@/components/album/DeleteAlbumModal';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { ROUTES } from '@/constants/routes';

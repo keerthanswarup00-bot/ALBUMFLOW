@@ -6,7 +6,7 @@ import { useReviewStore } from '@/store/reviewStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
-import { ImageUploadSection } from '@/components/albums/ImageUploadSection';
+import { ImageUploadSection } from '@/components/album/ImageUploadSection';
 import { ROUTES, albumViewRoute } from '@/constants/routes';
 import { formatDate, formatDateTime } from '@/utils/formatters';
 import * as shareLinkService from '@/services/supabase/shareLinks';
