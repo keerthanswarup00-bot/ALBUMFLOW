@@ -1,0 +1,137 @@
+import { create } from 'zustand';
+import type { ReviewCycleStatus, TimelineEntry, ApprovalRecord, ApprovalChecklistItem } from '@/types/viewer';
+
+const CYCLE_PREFIX = 'albumflow_cycle_';
+const TIMELINE_PREFIX = 'albumflow_timeline_';
+const APPROVAL_PREFIX = 'albumflow_approval_';
+
+function loadJSON<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as T;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function saveJSON(key: string, data: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch { /* ignore */ }
+}
+
+interface ReviewCycleState {
+  statuses: Record<string, ReviewCycleStatus>;
+  timelines: Record<string, TimelineEntry[]>;
+  approvals: Record<string, ApprovalRecord>;
+
+  getStatus: (albumId: string) => ReviewCycleStatus;
+  setStatus: (albumId: string, status: ReviewCycleStatus) => void;
+
+  getTimeline: (albumId: string) => TimelineEntry[];
+  addTimelineEntry: (albumId: string, entry: Omit<TimelineEntry, 'id' | 'album_id'>) => void;
+
+  isApproved: (albumId: string) => boolean;
+  getApproval: (albumId: string) => ApprovalRecord | null;
+  submitApproval: (albumId: string, checklist: ApprovalChecklistItem[]) => void;
+
+  submitReview: (albumId: string) => void;
+  markDesignerReviewing: (albumId: string) => void;
+  markAlbumUpdated: (albumId: string) => void;
+}
+
+export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
+  statuses: {},
+  timelines: {},
+  approvals: {},
+
+  getStatus: (albumId: string) => {
+    const cached = get().statuses[albumId];
+    if (cached) return cached;
+    const stored = loadJSON<ReviewCycleStatus>(`${CYCLE_PREFIX}${albumId}`);
+    if (stored) {
+      set((s) => ({ statuses: { ...s.statuses, [albumId]: stored } }));
+      return stored;
+    }
+    return 'draft_review';
+  },
+
+  setStatus: (albumId: string, status: ReviewCycleStatus) => {
+    set((s) => ({ statuses: { ...s.statuses, [albumId]: status } }));
+    saveJSON(`${CYCLE_PREFIX}${albumId}`, status);
+  },
+
+  getTimeline: (albumId: string) => {
+    const cached = get().timelines[albumId];
+    if (cached) return cached;
+    const stored = loadJSON<TimelineEntry[]>(`${TIMELINE_PREFIX}${albumId}`);
+    const entries = stored ?? [];
+    set((s) => ({ timelines: { ...s.timelines, [albumId]: entries } }));
+    return entries;
+  },
+
+  addTimelineEntry: (albumId: string, entry) => {
+    const timeline = get().getTimeline(albumId);
+    const newEntry: TimelineEntry = {
+      ...entry,
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      album_id: albumId,
+    };
+    const updated = [...timeline, newEntry];
+    set((s) => ({ timelines: { ...s.timelines, [albumId]: updated } }));
+    saveJSON(`${TIMELINE_PREFIX}${albumId}`, updated);
+  },
+
+  isApproved: (albumId: string) => {
+    const approval = get().getApproval(albumId);
+    return approval !== null;
+  },
+
+  getApproval: (albumId: string) => {
+    const cached = get().approvals[albumId];
+    if (cached) return cached;
+    const stored = loadJSON<ApprovalRecord>(`${APPROVAL_PREFIX}${albumId}`);
+    if (stored) {
+      set((s) => ({ approvals: { ...s.approvals, [albumId]: stored } }));
+      return stored;
+    }
+    return null;
+  },
+
+  submitApproval: (albumId: string, checklist: ApprovalChecklistItem[]) => {
+    const record: ApprovalRecord = {
+      album_id: albumId,
+      approved_at: Date.now(),
+      checklist,
+    };
+    set((s) => ({ approvals: { ...s.approvals, [albumId]: record } }));
+    saveJSON(`${APPROVAL_PREFIX}${albumId}`, record);
+    get().setStatus(albumId, 'approved');
+    get().addTimelineEntry(albumId, {
+      type: 'approved',
+      description: 'Album approved',
+      timestamp: Date.now(),
+    });
+  },
+
+  submitReview: (albumId: string) => {
+    get().setStatus(albumId, 'review_submitted');
+    get().addTimelineEntry(albumId, {
+      type: 'review_submitted',
+      description: 'Review submitted to designer',
+      timestamp: Date.now(),
+    });
+  },
+
+  markDesignerReviewing: (albumId: string) => {
+    get().setStatus(albumId, 'designer_reviewing');
+  },
+
+  markAlbumUpdated: (albumId: string) => {
+    get().setStatus(albumId, 'album_updated');
+    get().addTimelineEntry(albumId, {
+      type: 'album_updated',
+      description: 'Album updated by designer',
+      timestamp: Date.now(),
+    });
+  },
+}));
