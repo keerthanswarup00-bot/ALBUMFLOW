@@ -32,48 +32,54 @@ export function ReviewProgressTracker({
 }: ReviewProgressTrackerProps) {
   return (
     <div className={cn('bg-white/95 backdrop-blur-sm border-b border-gray-200 safe-area-top', className)}>
-      {/* Top row: title + actions */}
-      <div className="flex items-center justify-between px-1 py-1.5 landscape:py-1">
+      <div className="flex items-center justify-between px-2 py-1">
         {onBack && (
           <button
             onClick={onBack}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
             aria-label="Back"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
         )}
-        <div className="min-w-0 flex-1 px-2">
-          <h1 className="truncate text-sm font-semibold text-gray-900">{albumTitle}</h1>
+        <div className="min-w-0 flex-1 px-1.5">
+          <h1 className="truncate text-xs font-semibold text-gray-600 leading-tight">{albumTitle}</h1>
         </div>
-        <div className="flex shrink-0 items-center gap-0.5 ml-2">
+        <div className="flex shrink-0 items-center gap-0">
+          <div className="hidden sm:flex items-center gap-1.5 mr-2">
+            <div className="h-1.5 w-16 rounded-full bg-gray-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-green-500 transition-all"
+                style={{ width: `${Math.min(completionPercent, 100)}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-semibold text-gray-500 tabular-nums">
+              {reviewedCount}/{totalPages}
+            </span>
+          </div>
           <button
             onClick={onToggleRequests}
-            className="relative flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
             aria-label="View requests"
-            title="View Requests"
           >
             <MessageSquare className="h-4 w-4" />
             {requestCount !== undefined && requestCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold text-white">
                 {requestCount > 9 ? '9+' : requestCount}
               </span>
             )}
           </button>
           <button
             onClick={onToggleSummary}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
             aria-label="Review summary"
-            title="Review Summary"
           >
             <BarChart3 className="h-4 w-4" />
           </button>
-
           <button
             onClick={onToggleFullscreen}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
             aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >
             {isFullscreen ? (
               <Minimize2 className="h-4 w-4" />
@@ -83,33 +89,11 @@ export function ReviewProgressTracker({
           </button>
           <button
             onClick={onToggleHelp}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
             aria-label="Help"
-            title="Help"
           >
             <HelpCircle className="h-4 w-4" />
           </button>
-        </div>
-      </div>
-
-      {/* Progress info */}
-      <div className="px-4 pb-2 landscape:hidden">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-xs font-medium text-gray-600">Album Review Progress</span>
-          <span className="text-xs text-gray-400">
-            {reviewedCount} / {totalPages} Spreads Reviewed
-          </span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
-            <div
-              className="h-full rounded-full bg-green-500 transition-all duration-500"
-              style={{ width: `${Math.min(completionPercent, 100)}%` }}
-            />
-          </div>
-          <span className="shrink-0 text-xs font-medium text-gray-500">
-            {completionPercent}%
-          </span>
         </div>
       </div>
     </div>

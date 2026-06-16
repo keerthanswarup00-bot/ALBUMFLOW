@@ -24,7 +24,7 @@ const helpItems = [
   {
     icon: MessageSquare,
     title: 'How To Request Changes',
-    description: 'Tap the "Request Changes" button and describe what you would like updated. Your designer will review and make the changes.',
+    description: 'Tap the "Comment" button and describe what you would like updated. Your designer will review and make the changes.',
   },
   {
     icon: CheckSquare,
@@ -40,13 +40,13 @@ export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md rounded-t-2xl bg-white sm:rounded-2xl max-h-[80dvh] overflow-y-auto">
-        <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Help</h2>
+        <div className="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4">
+          <h2 className="text-lg font-bold text-gray-900">Help</h2>
           <button
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="flex h-12 w-12 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
@@ -55,12 +55,12 @@ export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
             const Icon = item.icon;
             return (
               <div key={item.title} className="flex gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50">
-                  <Icon className="h-4 w-4 text-blue-600" />
+                <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50">
+                  <Icon className="h-5 w-5 text-blue-600" />
                 </span>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">{item.title}</h3>
-                  <p className="mt-0.5 text-sm text-gray-500">{item.description}</p>
+                  <h3 className="text-base font-bold text-gray-900">{item.title}</h3>
+                  <p className="mt-0.5 text-base text-gray-600">{item.description}</p>
                 </div>
               </div>
             );

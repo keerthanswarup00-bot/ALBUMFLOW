@@ -42,10 +42,10 @@ export function PinPlacementOverlay({ onPlace }: PinPlacementOverlayProps) {
       onTouchStart={handleTap}
     >
       <div className="pointer-events-none flex flex-col items-center gap-3">
-        <div className="rounded-full bg-amber-400/30 p-5">
-          <Pin className="h-10 w-10 text-amber-500" />
+        <div className="rounded-full bg-amber-400/30 p-6">
+          <Pin className="h-14 w-14 text-amber-500" />
         </div>
-        <span className="rounded-full bg-black/60 px-4 py-2 text-xs text-white backdrop-blur-sm">
+        <span className="rounded-full bg-black/70 px-6 py-3 text-base font-bold text-white backdrop-blur-sm">
           Tap the exact area you want changed
         </span>
       </div>

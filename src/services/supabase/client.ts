@@ -1,19 +1,40 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { ENV, getMissingEnvVars } from '@/env';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const missing = getMissingEnvVars();
+const isReady = missing.length === 0;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. ' +
-    'Create a .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
-  );
+function buildMissingVarProxy(): SupabaseClient {
+  const msg =
+    `Missing Supabase environment variables: ${missing.join(', ')}. ` +
+    `The app will not function correctly until these are set.`;
+  console.error('[albumflow]', msg);
+
+  return new Proxy({} as SupabaseClient, {
+    get(_target, prop) {
+      return () => {
+        throw new Error(
+          `Supabase client method "${String(prop)}" called, but ${msg}`
+        );
+      };
+    },
+  });
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+let client: SupabaseClient;
+
+if (isReady) {
+  client = createClient(ENV.SUPABASE_URL!, ENV.SUPABASE_ANON_KEY!, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+} else {
+  client = buildMissingVarProxy();
+}
+
+export const supabase = client;
+export const supabaseIsReady = isReady;
+export const supabaseMissingVars = missing;

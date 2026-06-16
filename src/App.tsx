@@ -16,12 +16,15 @@ import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { useAuth } from '@/hooks/useAuth';
+import { EnvBanner } from '@/components/EnvBanner';
 
 export default function App() {
   useAuth();
   return (
-    <BrowserRouter>
-      <Routes>
+    <>
+      <EnvBanner />
+      <BrowserRouter>
+        <Routes>
         <Route
           path={ROUTES.LOGIN}
           element={
@@ -57,5 +60,6 @@ export default function App() {
         <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
       </Routes>
     </BrowserRouter>
+    </>
   );
 }
