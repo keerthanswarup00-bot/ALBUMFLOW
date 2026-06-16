@@ -50,30 +50,30 @@ export function PageReviewBar({
         </div>
 
         {/* Row 2: Action buttons — always show Comment/Voice even after approval */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 landscape:gap-1">
           <button
             onClick={onRequestChanges}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white border border-gray-300 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white border border-gray-300 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer landscape:py-1.5 landscape:text-[10px]"
           >
-            <span className="text-sm">✏</span>
+            <span className="text-sm landscape:text-xs">✏</span>
             <span>Comment</span>
           </button>
           <button
             onClick={onVoiceMessage}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white border border-gray-300 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white border border-gray-300 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer landscape:py-1.5 landscape:text-[10px]"
           >
-            <span className="text-sm">🎤</span>
+            <span className="text-sm landscape:text-xs">🎤</span>
             <span>Voice</span>
           </button>
           {isReviewed ? (
             <>
               <button
                 onClick={onUndoReview}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer landscape:px-2 landscape:py-1.5 landscape:text-[10px]"
               >
                 Undo
               </button>
-              <div className="flex items-center justify-center gap-1.5 rounded-lg bg-green-50 px-3 py-2 text-xs font-bold text-green-700 border border-green-200 whitespace-nowrap">
+              <div className="flex items-center justify-center gap-1.5 rounded-lg bg-green-50 px-3 py-2 text-xs font-bold text-green-700 border border-green-200 whitespace-nowrap landscape:px-2 landscape:py-1.5 landscape:text-[10px]">
                 <Check className="h-3.5 w-3.5" />
                 Done
               </div>
@@ -82,7 +82,7 @@ export function PageReviewBar({
             <button
               onClick={handleApprove}
               disabled={saving}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 py-2.5 text-xs font-bold text-white hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-sm"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 py-2.5 text-xs font-bold text-white hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-sm landscape:py-1.5 landscape:text-[10px]"
             >
               {saving ? (
                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

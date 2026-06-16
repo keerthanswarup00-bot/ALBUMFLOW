@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, forwardRef, useRef } from 'react';
+import { useEffect, useState, useCallback, forwardRef, useRef, useMemo } from 'react';
 import HTMLFlipBook from 'react-pageflip';
 import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
@@ -58,10 +58,37 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [submittedThisSession, setSubmittedThisSession] = useState(0);
 
   const flipBookRef = useRef<FlipBookHandle | null>(null);
+  const albumContainerRef = useRef<HTMLDivElement>(null);
   const [showDebug, setShowDebug] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [focusedPinId, setFocusedPinId] = useState<string | null>(null);
   const [showMobileFeedback, setShowMobileFeedback] = useState(false);
+  const [albumContainerSize, setAlbumContainerSize] = useState({ width: 0, height: 0 });
+
+  const isLandscape = albumContainerSize.width > albumContainerSize.height;
+
+  const pageWidth = useMemo(() => {
+    if (albumContainerSize.width === 0) return 400;
+    return Math.round(albumContainerSize.width / 2);
+  }, [albumContainerSize.width]);
+
+  const pageHeight = useMemo(() => {
+    if (albumContainerSize.height === 0) return 600;
+    return albumContainerSize.height;
+  }, [albumContainerSize.height]);
+
+  useEffect(() => {
+    const el = albumContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) {
+        setAlbumContainerSize({ width, height });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const totalSpreads = Math.floor(pages.length / 2);
   const currentPageLeft = currentSpread * 2;
@@ -354,7 +381,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   return (
     <div ref={ref} className="fixed inset-0 flex flex-col bg-[#2c1810] safe-area-inset">
       {!isFullscreen && (
-        <div className="landscape:hidden">
+        <div className="landscape:max-h-[44px] landscape:overflow-hidden">
           <ReviewProgressTracker
             albumTitle={album.title}
             reviewedCount={reviewedSpreads}
@@ -418,18 +445,13 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
       <div className="flex flex-1 overflow-hidden">
         {/* Album area */}
-        <div className="relative flex-1 overflow-hidden bg-[#2c1810]">
+        <div ref={albumContainerRef} className="relative flex-1 overflow-hidden bg-[#2c1810]">
           <PinchZoomWrapper isActive={true} onZoomChange={setIsZoomed}>
-            {pages.length > 0 && (() => {
-              const fp = pages[0];
-              const pw = 400;
-              const ph = fp ? Math.round(400 * (fp.height / fp.width)) : 600;
-
-              return (
-                <HTMLFlipBook
-                  ref={flipBookRef}
-                  width={pw}
-                  height={ph}
+            {pages.length > 0 && (
+              <HTMLFlipBook
+                ref={flipBookRef}
+                width={pageWidth}
+                height={pageHeight}
                   size="stretch"
                   minWidth={100}
                   maxWidth={2000}
@@ -457,21 +479,20 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                   {pages.map((page) => (
                     <div key={page.id} className="page" style={{ width: '100%', height: '100%' }}>
                       <div
-                        className="page-image"
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          backgroundImage: `url(${page.medium_url ?? page.image_url})`,
-                          backgroundSize: '100% 100%',
-                          backgroundPosition: 'center',
-                          backgroundRepeat: 'no-repeat',
-                        }}
+                          className="page-image"
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundImage: `url(${page.medium_url ?? page.image_url})`,
+                            backgroundSize: isLandscape ? 'cover' : '100% 100%',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                          }}
                       />
                     </div>
                   ))}
                 </HTMLFlipBook>
-              );
-            })()}
+              )}
 
             {/* Spine shadow overlay */}
             <div
