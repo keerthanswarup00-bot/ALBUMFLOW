@@ -45,10 +45,10 @@ export default function App() {
           <Route path={ROUTES.ALBUM_NEW} element={<CreateAlbumPage />} />
           <Route path={ROUTES.ALBUM_DETAIL} element={<AlbumDetailPage />} />
           <Route path={ROUTES.ALBUM_EDIT} element={<EditAlbumPage />} />
-          <Route path={ROUTES.ALBUM_VIEWER} element={<AlbumDetailPage />} />
+          <Route path={ROUTES.ALBUM_VIEWER} element={<ViewAlbumPage />} />
           <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
           <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
-          <Route path="/review-management" element={<ReviewManagementPage />} />
+          <Route path={ROUTES.REVIEW_MANAGEMENT} element={<ReviewManagementPage />} />
         </Route>
 
         <Route path={ROUTES.VIEW_ALBUM} element={<ViewAlbumPage />} />

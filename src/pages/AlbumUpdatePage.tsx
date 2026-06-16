@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { ROUTES } from '@/constants/routes';
-import { ArrowLeft, X, ImageIcon, Save, FileText } from 'lucide-react';
+import { ArrowLeft, X, ImageIcon, Save, FileText, Check } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import type { AlbumUpdatePage } from '@/types/viewer';
 
@@ -157,7 +157,7 @@ export function AlbumUpdatePage() {
                       </div>
                       {isSelected && (
                         <div className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500">
-                          <CheckIcon className="h-3 w-3 text-white" />
+                          <Check className="h-3 w-3 text-white" />
                         </div>
                       )}
                       <input
@@ -233,13 +233,5 @@ export function AlbumUpdatePage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className={className}>
-      <path d="M5 13l4 4L19 7" />
-    </svg>
   );
 }
