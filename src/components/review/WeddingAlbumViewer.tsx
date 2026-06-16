@@ -5,19 +5,15 @@ import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useUIStore } from '@/store/uiStore';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
-import { PageReviewBar } from './PageReviewBar';
 import { ReviewSummaryScreen } from './ReviewSummaryScreen';
 import { HelpPanel } from './HelpPanel';
-import { GeneralRequestForm } from './GeneralRequestForm';
-import { PinModeBanner } from './PinModeBanner';
-import { PinPlacementOverlay } from './PinPlacementOverlay';
 import { PinMarker } from './PinMarker';
-import { PinForm } from './PinForm';
+import { PinPopup } from './PinPopup';
+import { NewPinEditor } from './NewPinEditor';
+import { FloatingActionPills } from './FloatingActionPills';
 import { PinchZoomWrapper } from './PinchZoomWrapper';
 import { FloatingFeedbackCard } from './FloatingFeedbackCard';
 import { FeedbackBottomSheet } from './FeedbackBottomSheet';
-import { RequestListScreen } from './RequestListScreen';
-import { RequestDetailScreen } from './RequestDetailScreen';
 import { VoiceMessageRecorder } from './VoiceMessageRecorder';
 import type { ReviewAlbum, ReviewPage, ViewerRequestChange } from '@/types/viewer';
 import { ChevronLeft, ChevronRight, MessageSquareText } from 'lucide-react';
@@ -45,17 +41,14 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [currentSpread, setCurrentSpread] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showGeneralForm, setShowGeneralForm] = useState(false);
   const [isPinMode, setIsPinMode] = useState(false);
   const [pendingPin, setPendingPin] = useState<{ xPercent: number; yPercent: number; label: string } | null>(null);
-  const [commentLocation, setCommentLocation] = useState<{ xPercent: number; yPercent: number } | null>(null);
-  const [showPinForm, setShowPinForm] = useState(false);
-  const [showRequestList, setShowRequestList] = useState(false);
+  const [showNewPinEditor, setShowNewPinEditor] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ViewerRequestChange | null>(null);
+  const [selectedPinPos, setSelectedPinPos] = useState<{ xPercent: number; yPercent: number } | null>(null);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [submittedThisSession, setSubmittedThisSession] = useState(0);
 
   const flipBookRef = useRef<FlipBookHandle | null>(null);
   const albumContainerRef = useRef<HTMLDivElement>(null);
@@ -107,19 +100,15 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   const {
     addRequest,
-    getRequests,
     getRequestsByPage,
     getRequestCount,
     deleteRequest,
     updateRequest,
-    saveDraft,
-    getDraft,
     clearDraft,
   } = useRequestStore();
 
   const {
     addRecording,
-    getRecordings,
     getRecordingCount,
   } = useVoiceStore();
 
@@ -135,13 +124,13 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     ? [...new Set(unreviewedHalves.map((p) => Math.ceil(p / 2)))]
     : [];
 
-  const allRequests = getRequests(album.id);
-  const allVoiceRecordings = getRecordings(album.id);
   const currentPageRequests = getRequestsByPage(album.id, currentSpread + 1);
   const totalRequests = getRequestCount(album.id);
   const totalVoiceRecordings = getRecordingCount(album.id);
 
   const currentPinRequests = currentPageRequests.filter((r) => r.category === 'pin' && r.pin);
+
+  const hasUnsentChanges = totalRequests > 0 || totalVoiceRecordings > 0;
 
   useEffect(() => {
     ensureAlbum(album.id, totalSpreads);
@@ -240,65 +229,35 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   function handlePinPlace(xPercent: number, yPercent: number) {
     setIsPinMode(false);
-    setCommentLocation({ xPercent, yPercent });
-    setShowGeneralForm(true);
+    const nextNum = currentPageRequests.filter((r) => r.category === 'pin').length + 1;
+    setPendingPin({ xPercent, yPercent, label: String(nextNum) });
+    setShowNewPinEditor(true);
   }
 
-  function handleGeneralSubmit(message: string) {
-    if (commentLocation) {
-      const existingPins = currentPageRequests.filter((r) => r.category === 'pin').length;
-      addRequest(album.id, currentSpread + 1, 'pin', message, {
-        xPercent: commentLocation.xPercent,
-        yPercent: commentLocation.yPercent,
-        label: String(existingPins + 1),
-      });
-    } else {
-      addRequest(album.id, currentSpread + 1, 'general', message, null);
-    }
-    clearDraft(album.id);
-    setSubmittedThisSession((c) => c + 1);
-    showToast('Comment submitted', 'success');
-  }
-
-  function handleCancelGeneralForm() {
-    const textarea = document.querySelector<HTMLTextAreaElement>('[data-draft="general"]');
-    if (textarea?.value) {
-      saveDraft(album.id, { category: 'general', message: textarea.value, pin: null, saved_at: Date.now() });
-    }
-    setCommentLocation(null);
-    setShowGeneralForm(false);
-    setSubmittedThisSession(0);
-  }
-
-  function handlePinSubmit(message: string) {
+  function handleNewPinSave(message: string) {
     if (pendingPin) {
       addRequest(album.id, currentSpread + 1, 'pin', message, {
         xPercent: pendingPin.xPercent,
         yPercent: pendingPin.yPercent,
-        label: String(currentPageRequests.filter((r) => r.category === 'pin').length + 1),
+        label: pendingPin.label,
       });
       clearDraft(album.id);
       setPendingPin(null);
-      setShowPinForm(false);
-      showToast('Pin request submitted', 'success');
+      setShowNewPinEditor(false);
+      showToast('Comment added', 'success');
     }
   }
 
-  function handleCancelPinMode() {
-    setIsPinMode(false);
+  function handleNewPinCancel() {
     setPendingPin(null);
-  }
-
-  function handleCancelPinForm() {
-    if (pendingPin) {
-      saveDraft(album.id, { category: 'pin', message: '', pin: { xPercent: pendingPin.xPercent, yPercent: pendingPin.yPercent, label: pendingPin.label }, saved_at: Date.now() });
-    }
-    setPendingPin(null);
-    setShowPinForm(false);
+    setShowNewPinEditor(false);
   }
 
   function handleViewRequest(request: ViewerRequestChange) {
     setSelectedRequest(request);
+    if (request.pin) {
+      setSelectedPinPos({ xPercent: request.pin.xPercent, yPercent: request.pin.yPercent });
+    }
   }
 
   function handleDeleteRequest(id: string) {
@@ -311,20 +270,9 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     showToast('Voice message sent', 'success');
   }
 
-  function handleCloseRequestDetail() {
+  function handleClosePinPopup() {
     setSelectedRequest(null);
-  }
-
-  function handleGoToPage(spreadNumber: number) {
-    const targetPage = Math.max(0, (spreadNumber - 1) * 2);
-    if (flipBookRef.current?.pageFlip()) {
-      flipBookRef.current.pageFlip().flip(targetPage);
-    }
-    setShowGeneralForm(false);
-    setShowPinForm(false);
-    setShowVoiceRecorder(false);
-    setIsPinMode(false);
-    setPendingPin(null);
+    setSelectedPinPos(null);
   }
 
   useEffect(() => {
@@ -333,7 +281,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         if (e.key === 'Escape') setIsHelpOpen(false);
         return;
       }
-      if (showGeneralForm || showPinForm || showVoiceRecorder || showRequestList || selectedRequest || showSummary) return;
+      if (showVoiceRecorder || showNewPinEditor || selectedRequest || showSummary) return;
 
       switch (e.key) {
         case 'ArrowLeft':
@@ -363,7 +311,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isHelpOpen, isFullscreen, showGeneralForm, showPinForm, showVoiceRecorder, showRequestList, selectedRequest, showSummary, handleNext, handlePrev]);
+  }, [isHelpOpen, isFullscreen, showVoiceRecorder, showNewPinEditor, selectedRequest, showSummary, handleNext, handlePrev]);
 
   useEffect(() => {
     function handleChange() {
@@ -393,14 +341,14 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
             onToggleHelp={toggleHelp}
             onToggleSummary={() => setShowSummary(true)}
             requestCount={totalRequests + totalVoiceRecordings}
-            onToggleRequests={() => setShowRequestList(true)}
+            onToggleRequests={() => setShowMobileFeedback(true)}
           />
         </div>
       )}
 
       {/* Top-right toolbar */}
       {!isFullscreen && (
-        <div className="hidden sm:flex absolute right-3 top-14 z-20 items-center gap-2">
+        <div className="hidden sm:flex absolute right-3 top-14 z-20 items-center gap-1.5">
           {totalRequests > 0 && (
             <span className="flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-gray-700 shadow-sm border border-gray-200/80">
               <MessageSquareText className="h-3.5 w-3.5 text-blue-500" />
@@ -415,32 +363,12 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           )}
           <button
             onClick={() => setShowSummary(true)}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm"
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={!hasUnsentChanges}
           >
             Submit Changes
           </button>
         </div>
-      )}
-
-      {submittedThisSession > 0 && !showGeneralForm && !isFullscreen && (
-        <div className="flex items-center justify-center gap-2 bg-green-600 px-4 py-1.5">
-          <span className="text-xs font-bold text-white">
-            {submittedThisSession} comment{submittedThisSession !== 1 ? 's' : ''} submitted
-          </span>
-          <button
-            onClick={() => {
-              setCommentLocation(null);
-              setShowGeneralForm(true);
-            }}
-            className="rounded-md bg-white/20 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-white/30 transition-colors cursor-pointer"
-          >
-            + Add More
-          </button>
-        </div>
-      )}
-
-      {isPinMode && !isFullscreen && (
-        <PinModeBanner onCancel={handleCancelPinMode} />
       )}
 
       <div className="flex flex-1 overflow-hidden">
@@ -585,35 +513,75 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         />
       ))}
 
-      {pendingPin && !showPinForm && (
+      {/* New pin marker (before save) */}
+      {pendingPin && showNewPinEditor && (
         <PinMarker
-          number={currentPageRequests.filter((r) => r.category === 'pin').length + 1}
+          number={parseInt(pendingPin.label, 10)}
           xPercent={pendingPin.xPercent}
           yPercent={pendingPin.yPercent}
           isActive={true}
-          onClick={() => setShowPinForm(true)}
         />
+      )}
+
+      {/* New pin inline editor */}
+      {pendingPin && showNewPinEditor && (
+        <div
+          className="absolute z-30"
+          style={{
+            left: `calc(${pendingPin.xPercent}% + 28px)`,
+            top: `${pendingPin.yPercent}%`,
+            transform: 'translateY(-50%)',
+          }}
+        >
+          <NewPinEditor
+            onSave={handleNewPinSave}
+            onCancel={handleNewPinCancel}
+          />
+        </div>
+      )}
+
+      {/* Pin popup anchored beside pin */}
+      {selectedRequest && selectedPinPos && (
+        <div
+          className="absolute z-30"
+          style={{
+            left: `calc(${selectedPinPos.xPercent}% + 28px)`,
+            top: `${selectedPinPos.yPercent}%`,
+            transform: 'translateY(-50%)',
+          }}
+        >
+          <PinPopup
+            request={selectedRequest}
+            onUpdate={(id, message) => updateRequest(album.id, id, { message })}
+            onDelete={handleDeleteRequest}
+            onClose={handleClosePinPopup}
+          />
+        </div>
       )}
 
       {isPinMode && (
-        <PinPlacementOverlay
-          onPlace={handlePinPlace}
-          onCancel={handleCancelPinMode}
-        />
+        <div className="fixed inset-0 z-20">
+          <div
+            className="absolute inset-0 cursor-crosshair"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+              const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+              handlePinPlace(xPercent, yPercent);
+            }}
+          />
+        </div>
       )}
 
-      {!isFullscreen && (
-        <PageReviewBar
-          currentPage={currentSpread}
-          totalPages={totalSpreads}
-          isReviewed={isCurrentReviewed}
-          onMarkReviewed={handleMarkReviewed}
-          onUndoReview={handleUndoReview}
-          saving={isSaving}
-          onRequestChanges={handleAddComment}
-          onVoiceMessage={() => setShowVoiceRecorder(true)}
-        />
-      )}
+      {/* Floating action pills */}
+      <FloatingActionPills
+        isReviewed={isCurrentReviewed}
+        saving={isSaving}
+        onComment={handleAddComment}
+        onVoice={() => setShowVoiceRecorder(true)}
+        onApprove={handleMarkReviewed}
+        onUndo={handleUndoReview}
+      />
 
       <HelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
@@ -628,48 +596,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           unreviewedPages={unreviewedSpreads}
           onNavigateToPage={handleNavigateToPage}
           onClose={() => setShowSummary(false)}
-        />
-      )}
-
-      {showGeneralForm && (
-        <GeneralRequestForm
-          pageNumber={currentSpread + 1}
-          initialMessage={getDraft(album.id)?.message ?? ''}
-          submittedCount={submittedThisSession}
-          onSubmit={handleGeneralSubmit}
-          onClose={handleCancelGeneralForm}
-        />
-      )}
-
-      {showPinForm && pendingPin && (
-        <PinForm
-          pageNumber={currentSpread + 1}
-          pinNumber={currentPageRequests.filter((r) => r.category === 'pin').length + 1}
-          initialMessage={getDraft(album.id)?.message ?? ''}
-          onSubmit={handlePinSubmit}
-          onClose={handleCancelPinForm}
-        />
-      )}
-
-      {showRequestList && (
-        <RequestListScreen
-          requests={allRequests}
-          voiceRequests={allVoiceRecordings}
-          onNavigateToPage={handleGoToPage}
-          onViewRequest={handleViewRequest}
-          onClose={() => setShowRequestList(false)}
-        />
-      )}
-
-      {selectedRequest && (
-        <RequestDetailScreen
-          request={selectedRequest}
-          onDelete={handleDeleteRequest}
-          onUpdate={(id, message) => {
-            updateRequest(album.id, id, { message });
-          }}
-          onNavigateToPage={handleGoToPage}
-          onClose={handleCloseRequestDetail}
         />
       )}
 
