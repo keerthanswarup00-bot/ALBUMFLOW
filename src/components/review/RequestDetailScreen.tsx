@@ -79,7 +79,7 @@ export function RequestDetailScreen({ request, onDelete, onUpdate, onNavigateToP
         {/* Details */}
         <div className="space-y-3 rounded-xl bg-gray-50 p-4">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Page</span>
+            <span className="text-gray-500">Spread</span>
             <span className="font-medium text-gray-900">{request.page_number}</span>
           </div>
           <div className="flex justify-between text-sm">

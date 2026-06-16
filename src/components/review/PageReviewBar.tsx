@@ -71,7 +71,7 @@ export function PageReviewBar({
               onClick={() => { setShowPageInput(true); setPageInput(String(currentPage + 1)); }}
               className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
             >
-              Page {currentPage + 1} of {totalPages}
+              Spread {currentPage + 1} of {totalPages}
             </button>
           )}
         </div>
@@ -81,7 +81,7 @@ export function PageReviewBar({
             <div className="flex gap-3">
               <div className="flex flex-1 items-center justify-center gap-2.5 rounded-xl bg-green-100 py-3.5 text-base font-semibold text-green-700 cursor-default">
                 <Check className="h-6 w-6" />
-                Page Reviewed
+                Spread Reviewed
               </div>
               <button
                 onClick={onUndoReview}
@@ -103,7 +103,7 @@ export function PageReviewBar({
               ) : (
                 <Check className="h-6 w-6" />
               )}
-              This Page Looks Good
+              This Spread Looks Good
             </button>
           )}
 

@@ -1,15 +1,13 @@
 import { cn } from '@/utils/cn';
-import { BarChart3, LayoutGrid, BookOpen, Maximize2, Minimize2, HelpCircle, MessageSquare, ArrowLeft } from 'lucide-react';
+import { BarChart3, Maximize2, Minimize2, HelpCircle, MessageSquare, ArrowLeft } from 'lucide-react';
 
 interface ReviewProgressTrackerProps {
   reviewedCount: number;
   totalPages: number;
   completionPercent: number;
   albumTitle: string;
-  mode: 'single' | 'spread';
   isFullscreen: boolean;
   onBack?: () => void;
-  onToggleMode: () => void;
   onToggleFullscreen: () => void;
   onToggleHelp: () => void;
   onToggleSummary: () => void;
@@ -23,10 +21,8 @@ export function ReviewProgressTracker({
   totalPages,
   completionPercent,
   albumTitle,
-  mode,
   isFullscreen,
   onBack,
-  onToggleMode,
   onToggleFullscreen,
   onToggleHelp,
   onToggleSummary,
@@ -72,18 +68,7 @@ export function ReviewProgressTracker({
           >
             <BarChart3 className="h-4 w-4" />
           </button>
-          <button
-            onClick={onToggleMode}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
-            aria-label={mode === 'single' ? 'Two page view' : 'Single page view'}
-            title={mode === 'single' ? 'Two page view' : 'Single page view'}
-          >
-            {mode === 'single' ? (
-              <BookOpen className="h-4 w-4" />
-            ) : (
-              <LayoutGrid className="h-4 w-4" />
-            )}
-          </button>
+
           <button
             onClick={onToggleFullscreen}
             className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
@@ -112,7 +97,7 @@ export function ReviewProgressTracker({
         <div className="mb-1 flex items-center justify-between">
           <span className="text-xs font-medium text-gray-600">Album Review Progress</span>
           <span className="text-xs text-gray-400">
-            {reviewedCount} / {totalPages} Pages Reviewed
+            {reviewedCount} / {totalPages} Spreads Reviewed
           </span>
         </div>
         <div className="flex items-center gap-2.5">

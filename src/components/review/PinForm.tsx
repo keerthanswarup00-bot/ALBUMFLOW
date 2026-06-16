@@ -48,7 +48,7 @@ export function PinForm({ pageNumber, pinNumber, initialMessage = '', onSubmit, 
 
         <div className="mb-3 flex items-center gap-2 text-sm text-gray-500">
           <MapPin className="h-4 w-4 text-amber-500" />
-          <span>Page {pageNumber} &middot; Pin {pinNumber}</span>
+          <span>Spread {pageNumber} &middot; Pin {pinNumber}</span>
         </div>
 
         <textarea

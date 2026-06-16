@@ -122,7 +122,7 @@ export function ReviewSummaryScreen({
               <span>Reviewed</span>
             </div>
             <p className="mt-1 text-2xl font-bold text-green-700">{reviewedCount}</p>
-            <p className="text-xs text-green-500">Pages</p>
+            <p className="text-xs text-green-500">Spreads</p>
           </div>
           <div className="rounded-xl bg-amber-50 p-4">
             <div className="flex items-center gap-2 text-sm text-amber-600">
@@ -130,7 +130,7 @@ export function ReviewSummaryScreen({
               <span>Remaining</span>
             </div>
             <p className="mt-1 text-2xl font-bold text-amber-700">{remaining}</p>
-            <p className="text-xs text-amber-500">Pages</p>
+            <p className="text-xs text-amber-500">Spreads</p>
           </div>
           <div className="rounded-xl bg-blue-50 p-4">
             <div className="flex items-center gap-2 text-sm text-blue-600">

@@ -9,7 +9,7 @@ const helpItems = [
   {
     icon: MoveHorizontal,
     title: 'How To View Album',
-    description: 'Swipe left or right to move between pages. You can also use the arrow buttons at the bottom of the screen.',
+    description: 'Swipe left or right to move between spreads. You can also use the arrow buttons at the bottom of the screen.',
   },
   {
     icon: ZoomIn,
@@ -19,7 +19,7 @@ const helpItems = [
   {
     icon: RotateCw,
     title: 'How To Rotate Your Phone',
-    description: 'Rotate your phone sideways to see two pages side by side, just like a real album. You can also tap the layout button to switch manually.',
+    description: 'This spread view shows both pages of the album side by side. The center line is the album spine.',
   },
   {
     icon: MessageSquare,

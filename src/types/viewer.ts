@@ -32,6 +32,20 @@ export interface ReviewPage {
   width: number;
   height: number;
   file_size: number;
+  full_image_url?: string;
+  left_half_url?: string;
+  right_half_url?: string;
+}
+
+export interface AlbumSpread {
+  spreadId: string;
+  fullImage: string;
+  leftHalf: string;
+  rightHalf: string;
+  leftHalfWidth: number;
+  leftHalfHeight: number;
+  rightHalfWidth: number;
+  rightHalfHeight: number;
 }
 
 export interface ReviewData {

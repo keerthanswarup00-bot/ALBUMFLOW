@@ -46,7 +46,7 @@ export function GeneralRequestForm({ pageNumber, initialMessage = '', onSubmit, 
         </div>
 
         <div className="mb-1 text-sm text-gray-500">
-          Page {pageNumber}
+          Spread {pageNumber}
         </div>
 
         <textarea

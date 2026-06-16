@@ -125,13 +125,13 @@ export function RequestListScreen({
               <div key={pageNumber} className="mb-4">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Page {pageNumber}
+                    Spread {pageNumber}
                   </span>
                   <button
                     onClick={() => onNavigateToPage(pageNumber)}
                     className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
                   >
-                    Jump to page
+                    Go to spread
                     <ArrowRight className="h-3 w-3" />
                   </button>
                 </div>

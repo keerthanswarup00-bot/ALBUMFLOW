@@ -14,8 +14,8 @@ interface WelcomeScreenProps {
 }
 
 const features = [
-  { icon: MoveHorizontal, text: 'Swipe through pages' },
-  { icon: RotateCw, text: 'Rotate your phone for album view' },
+  { icon: MoveHorizontal, text: 'Swipe through album spreads' },
+  { icon: RotateCw, text: 'View in full-screen landscape' },
   { icon: ZoomIn, text: 'Zoom into photos' },
   { icon: MessageSquare, text: 'Request changes' },
   { icon: CheckSquare, text: 'Approve your final album' },
