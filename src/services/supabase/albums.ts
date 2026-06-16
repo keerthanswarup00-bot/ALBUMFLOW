@@ -87,6 +87,10 @@ export async function createAlbum(
     .single();
 
   if (error) {
+    console.error('[albums] createAlbum error:', error);
+    console.error('[albums] SQL code:', error.code);
+    console.error('[albums] SQL details:', error.details);
+    console.error('[albums] SQL hint:', error.hint);
     throw new ApiError(`Failed to create album: ${error.message}`, 500, error);
   }
 
