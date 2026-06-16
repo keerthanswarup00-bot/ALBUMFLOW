@@ -7,6 +7,7 @@ export function AlbumUnavailablePage() {
   const ownerName = searchParams.get('owner_name') || '';
   const phoneNumber = searchParams.get('phone') || '';
   const albumTitle = searchParams.get('album') || 'Album';
+  const studioLogoUrl = searchParams.get('logo_url') || '';
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
@@ -23,9 +24,13 @@ export function AlbumUnavailablePage() {
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-              <Building2 className="h-5 w-5 text-blue-600" />
-            </div>
+            {studioLogoUrl ? (
+              <img src={studioLogoUrl} alt={studioName} className="h-10 w-10 rounded-lg object-cover" />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                <Building2 className="h-5 w-5 text-blue-600" />
+              </div>
+            )}
             <div>
               <p className="text-sm font-semibold text-gray-900">{studioName}</p>
               {ownerName && (

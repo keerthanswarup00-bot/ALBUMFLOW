@@ -25,12 +25,13 @@ export function ViewAlbumPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [approved, setApproved] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [studioInfo, setStudioInfo] = useState<{ name: string; owner: string; phone: string }>({ name: 'Studio', owner: '', phone: '' });
+  const [studioInfo, setStudioInfo] = useState<{ name: string; owner: string; phone: string; logoUrl: string }>({ name: 'Studio', owner: '', phone: '', logoUrl: '' });
   const [deletedInfo, setDeletedInfo] = useState<{
     studio_name: string;
     owner_name: string;
     phone_number: string;
     album_title: string;
+    studio_logo_url: string;
   } | null>(null);
 
   useMetaTags(data?.album ? {
@@ -63,12 +64,13 @@ export function ViewAlbumPage() {
             .rpc('get_studio_by_album_token', { p_token: token });
 
           if (studioData && typeof studioData === 'object' && 'studio' in (studioData as Record<string, unknown>)) {
-            const sd = studioData as { studio: { studio_name: string; owner_name: string; phone_number: string } | null; album_title: string };
+            const sd = studioData as { studio: { studio_name: string; owner_name: string; phone_number: string; studio_logo_url: string } | null; album_title: string };
             setDeletedInfo({
               studio_name: sd.studio?.studio_name || 'the studio',
               owner_name: sd.studio?.owner_name || '',
               phone_number: sd.studio?.phone_number || '',
               album_title: sd.album_title || 'Album',
+              studio_logo_url: sd.studio?.studio_logo_url || '',
             });
           } else {
             setDeletedInfo({
@@ -76,6 +78,7 @@ export function ViewAlbumPage() {
               owner_name: '',
               phone_number: '',
               album_title: typedResult.album?.title || 'Album',
+              studio_logo_url: '',
             });
           }
           return;
@@ -106,7 +109,7 @@ export function ViewAlbumPage() {
         if (designerId) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('studio_name, owner_name, phone_number')
+            .select('studio_name, owner_name, phone_number, studio_logo_url')
             .eq('user_id', designerId)
             .single();
           if (profile) {
@@ -114,6 +117,7 @@ export function ViewAlbumPage() {
               name: profile.studio_name || 'Studio',
               owner: profile.owner_name || '',
               phone: profile.phone_number || '',
+              logoUrl: profile.studio_logo_url || '',
             });
           }
         }
@@ -133,6 +137,7 @@ export function ViewAlbumPage() {
       owner_name: deletedInfo.owner_name,
       phone: deletedInfo.phone_number,
       album: deletedInfo.album_title,
+      logo_url: deletedInfo.studio_logo_url,
     });
     navigate(`/album-unavailable?${params.toString()}`, { replace: true });
     return null;
@@ -188,6 +193,7 @@ export function ViewAlbumPage() {
         studioName={studioInfo.name}
         ownerName={studioInfo.owner}
         phoneNumber={studioInfo.phone}
+        studioLogoUrl={studioInfo.logoUrl}
         onBack={() => setCompleted(false)}
       />
     );
@@ -233,6 +239,7 @@ export function ViewAlbumPage() {
         studioName={studioInfo.name}
         ownerName={studioInfo.owner}
         phoneNumber={studioInfo.phone}
+        studioLogoUrl={studioInfo.logoUrl}
       />
     </>
   );

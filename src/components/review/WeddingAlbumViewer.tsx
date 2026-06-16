@@ -36,12 +36,13 @@ interface WeddingAlbumViewerProps {
   studioName?: string;
   ownerName?: string;
   phoneNumber?: string;
+  studioLogoUrl?: string;
 }
 
 const AUTO_HIDE_DELAY = 3000;
 
 const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((props, ref) => {
-  const { album, pages, studioName = 'Studio', ownerName = '', phoneNumber = '' } = props;
+  const { album, pages, studioName = 'Studio', ownerName = '', phoneNumber = '', studioLogoUrl = '' } = props;
   const [currentSpread, setCurrentSpread] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -446,6 +447,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         completionPercent={completionPercent}
         isFullscreen={isFullscreen}
         isPreviewMode={isPreviewMode}
+        studioLogoUrl={studioLogoUrl}
+        studioName={studioName}
         onBack={() => window.history.back()}
         onToggleFullscreen={toggleFullscreen}
         onToggleHelp={toggleHelp}
@@ -657,6 +660,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           studioName={studioName}
           ownerName={ownerName}
           phoneNumber={phoneNumber}
+          studioLogoUrl={studioLogoUrl}
           onNavigateToPage={handleNavigateToPage}
           onClose={() => setShowSummary(false)}
         />

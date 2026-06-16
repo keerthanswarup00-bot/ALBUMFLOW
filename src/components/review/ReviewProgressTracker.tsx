@@ -16,6 +16,8 @@ interface ReviewProgressTrackerProps {
   requestCount?: number;
   onToggleRequests?: () => void;
   className?: string;
+  studioLogoUrl?: string;
+  studioName?: string;
 }
 
 export function ReviewProgressTracker({
@@ -26,6 +28,8 @@ export function ReviewProgressTracker({
   albumTitle,
   onBack,
   isPreviewMode,
+  studioLogoUrl,
+  studioName,
   onBack: _onBack,
   ..._rest
 }: ReviewProgressTrackerProps) {
@@ -44,6 +48,9 @@ export function ReviewProgressTracker({
           </button>
         )}
         <div className="flex items-center gap-2 min-w-0 flex-1 px-2">
+          {studioLogoUrl && (
+            <img src={studioLogoUrl} alt={studioName || 'Studio'} className="h-7 w-7 rounded-full object-cover" />
+          )}
           <span className="text-sm font-bold text-gray-800 tabular-nums shrink-0">
             Spread {currentSpread + 1} of {totalPages}
           </span>

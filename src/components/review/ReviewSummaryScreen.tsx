@@ -20,6 +20,7 @@ interface ReviewSummaryScreenProps {
   studioName: string;
   ownerName: string;
   phoneNumber: string;
+  studioLogoUrl?: string;
   onNavigateToPage: (pageNumber: number) => void;
   onClose: () => void;
   onShowTimeline?: () => void;
@@ -45,6 +46,7 @@ export function ReviewSummaryScreen({
   studioName,
   ownerName,
   phoneNumber,
+  studioLogoUrl,
   onNavigateToPage,
   onClose,
   onShowTimeline,
@@ -319,9 +321,13 @@ export function ReviewSummaryScreen({
 
             <div className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                  <Building2 className="h-5 w-5 text-blue-600" />
-                </div>
+                {studioLogoUrl ? (
+                  <img src={studioLogoUrl} alt={studioName} className="h-10 w-10 rounded-lg object-cover" />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{studioName}</p>
                   {ownerName && <p className="text-xs text-gray-500">{ownerName}</p>}

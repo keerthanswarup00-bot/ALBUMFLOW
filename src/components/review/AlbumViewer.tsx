@@ -7,9 +7,10 @@ interface AlbumViewerProps {
   studioName?: string;
   ownerName?: string;
   phoneNumber?: string;
+  studioLogoUrl?: string;
 }
 
-export function AlbumViewer({ album, pages, studioName, ownerName, phoneNumber }: AlbumViewerProps) {
+export function AlbumViewer({ album, pages, studioName, ownerName, phoneNumber, studioLogoUrl }: AlbumViewerProps) {
   return (
     <WeddingAlbumViewer
       ref={null}
@@ -18,6 +19,7 @@ export function AlbumViewer({ album, pages, studioName, ownerName, phoneNumber }
       studioName={studioName ?? 'Studio'}
       ownerName={ownerName ?? ''}
       phoneNumber={phoneNumber ?? ''}
+      studioLogoUrl={studioLogoUrl ?? ''}
     />
   );
 }
