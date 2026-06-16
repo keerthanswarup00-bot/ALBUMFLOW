@@ -7,7 +7,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useReviewCycleStore } from '@/store/reviewCycleStore';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
 import { ReviewSummaryScreen } from './ReviewSummaryScreen';
-import { HelpPanel } from './HelpPanel';
+import { HelpBottomSheet } from './HelpBottomSheet';
 import { PinMarker } from './PinMarker';
 import { PinPopup } from './PinPopup';
 import { NewPinEditor } from './NewPinEditor';
@@ -16,6 +16,7 @@ import { PinchZoomWrapper } from './PinchZoomWrapper';
 import { FloatingFeedbackCard } from './FloatingFeedbackCard';
 import { FeedbackBottomSheet } from './FeedbackBottomSheet';
 import { VoiceMessageRecorder } from './VoiceMessageRecorder';
+import { MessageSquare, Mic } from 'lucide-react';
 import type { ReviewAlbum, ReviewPage, ViewerRequestChange } from '@/types/viewer';
 import { ChevronLeft, ChevronRight, MessageSquareText } from 'lucide-react';
 
@@ -37,6 +38,8 @@ interface WeddingAlbumViewerProps {
   pages: ReviewPage[];
 }
 
+const AUTO_HIDE_DELAY = 3000;
+
 const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((props, ref) => {
   const { album, pages } = props;
   const [currentSpread, setCurrentSpread] = useState(0);
@@ -55,9 +58,15 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const albumContainerRef = useRef<HTMLDivElement>(null);
   const [showDebug, setShowDebug] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
   const [focusedPinId, setFocusedPinId] = useState<string | null>(null);
   const [showMobileFeedback, setShowMobileFeedback] = useState(false);
   const [albumContainerSize, setAlbumContainerSize] = useState({ width: 0, height: 0 });
+
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const pageAspectRatio = useMemo(() => {
     if (pages.length === 0) return 0.75;
@@ -217,6 +226,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     setShowSummary(false);
   }
 
+  function togglePreviewMode() {
+    setIsPreviewMode((p) => !p);
+    setControlsVisible(true);
+  }
+
   async function toggleFullscreen() {
     if (!document.fullscreenElement) {
       try {
@@ -230,6 +244,14 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       } catch { /* empty */ }
     }
   }
+
+  const enterPreview = useCallback(() => {
+    setIsPreviewMode(true);
+    setControlsVisible(true);
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, []);
 
   function toggleHelp() {
     setIsHelpOpen((prev) => !prev);
@@ -295,6 +317,61 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     showToast('Changes submitted to designer', 'success');
   }
 
+  // --- Image quality: swap to full-res when zoomed ---
+  useEffect(() => {
+    pages.forEach((page, i) => {
+      const el = imageRefs.current[i];
+      if (el) {
+        el.style.backgroundImage = `url(${zoomScale > 1 ? page.image_url : (page.medium_url ?? page.image_url)})`;
+      }
+    });
+  }, [zoomScale > 1, pages]);
+
+  // --- Auto-hide controls in preview mode ---
+  function startHideTimer() {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (!isPreviewMode) return;
+    hideTimerRef.current = setTimeout(() => {
+      setControlsVisible(false);
+    }, AUTO_HIDE_DELAY);
+  }
+
+  function cancelHideTimer() {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }
+
+  function handleUserInteraction() {
+    if (isPreviewMode) {
+      setControlsVisible(true);
+      startHideTimer();
+    }
+  }
+
+  function handleTapControls() {
+    if (isPreviewMode) {
+      setControlsVisible((p) => !p);
+      if (controlsVisible) {
+        cancelHideTimer();
+      } else {
+        startHideTimer();
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (isPreviewMode) {
+      startHideTimer();
+    } else {
+      cancelHideTimer();
+      setControlsVisible(true);
+    }
+    return () => cancelHideTimer();
+  }, [isPreviewMode]);
+
+  // --- Keyboard shortcuts ---
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (isHelpOpen) {
@@ -313,6 +390,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           handleNext();
           break;
         case 'Escape':
+          if (isPreviewMode) {
+            setIsPreviewMode(false);
+            setControlsVisible(true);
+          }
           if (isFullscreen) document.exitFullscreen().catch(() => {});
           break;
         case 'd':
@@ -321,7 +402,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           break;
         case 'f':
         case 'F':
-          toggleFullscreen();
+          enterPreview();
           break;
         case '?':
           toggleHelp();
@@ -331,7 +412,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isHelpOpen, isFullscreen, showVoiceRecorder, showNewPinEditor, selectedRequest, showSummary, handleNext, handlePrev]);
+  }, [isHelpOpen, isFullscreen, isPreviewMode, showVoiceRecorder, showNewPinEditor, selectedRequest, showSummary, handleNext, handlePrev, enterPreview]);
 
   useEffect(() => {
     function handleChange() {
@@ -346,21 +427,71 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  const previewFloatingButtons = isPreviewMode && controlsVisible && (
+    <div className="fixed bottom-5 right-4 z-30 flex flex-col gap-2">
+      <button
+        onClick={(e) => { e.stopPropagation(); handleAddComment(); }}
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 active:bg-blue-800 transition-all cursor-pointer"
+        aria-label="Add comment"
+      >
+        <MessageSquare className="h-6 w-6" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowVoiceRecorder(true); }}
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-white shadow-xl hover:bg-purple-700 active:bg-purple-800 transition-all cursor-pointer"
+        aria-label="Record voice"
+      >
+        <Mic className="h-6 w-6" />
+      </button>
+    </div>
+  );
+
   return (
-    <div ref={ref} className="fixed inset-0 flex flex-col bg-[#2c1810] safe-area-inset">
-      {!isFullscreen && (
-        <div className="landscape:max-h-[44px] landscape:overflow-hidden">
+    <div
+      ref={ref}
+      className="fixed inset-0 flex flex-col bg-[#2c1810] safe-area-inset"
+      onTouchStart={handleUserInteraction}
+      onMouseMove={handleUserInteraction}
+      onClick={handleUserInteraction}
+    >
+      {/* Header: overlay in preview, normal in regular mode */}
+      {(isPreviewMode && controlsVisible) && (
+        <div className="absolute top-0 left-0 right-0 z-30 transition-opacity duration-300 opacity-100">
+          <div className="landscape:max-h-[52px] landscape:overflow-hidden">
+            <ReviewProgressTracker
+              currentSpread={currentSpread}
+              albumTitle={album.title}
+              reviewedCount={reviewedSpreads}
+              totalPages={totalSpreads}
+              completionPercent={completionPercent}
+              isFullscreen={false}
+              isPreviewMode={true}
+              onBack={() => window.history.back()}
+              onToggleFullscreen={toggleFullscreen}
+              onToggleHelp={toggleHelp}
+              onToggleSummary={() => setShowSummary(true)}
+              onTogglePreview={togglePreviewMode}
+              requestCount={totalRequests + totalVoiceRecordings}
+              onToggleRequests={() => setShowMobileFeedback(true)}
+            />
+          </div>
+        </div>
+      )}
+
+      {!isPreviewMode && !isFullscreen && (
+        <div className="landscape:max-h-[52px] landscape:overflow-hidden">
           <ReviewProgressTracker
             currentSpread={currentSpread}
             albumTitle={album.title}
             reviewedCount={reviewedSpreads}
             totalPages={totalSpreads}
             completionPercent={completionPercent}
-            isFullscreen={isFullscreen}
+            isFullscreen={false}
             onBack={() => window.history.back()}
             onToggleFullscreen={toggleFullscreen}
             onToggleHelp={toggleHelp}
             onToggleSummary={() => setShowSummary(true)}
+            onTogglePreview={enterPreview}
             requestCount={totalRequests + totalVoiceRecordings}
             onToggleRequests={() => setShowMobileFeedback(true)}
           />
@@ -368,23 +499,23 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       )}
 
       {/* Top-right toolbar */}
-      {!isFullscreen && (
-        <div className="hidden sm:flex absolute right-3 top-14 z-20 items-center gap-1.5">
+      {!isPreviewMode && !isFullscreen && (
+        <div className="hidden sm:flex absolute right-3 top-16 z-20 items-center gap-1.5">
           {totalRequests > 0 && (
-            <span className="flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-gray-700 shadow-sm border border-gray-200/80">
-              <MessageSquareText className="h-3.5 w-3.5 text-blue-500" />
+            <span className="flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm border border-gray-200/80">
+              <MessageSquareText className="h-4 w-4 text-blue-500" />
               {totalRequests}
             </span>
           )}
           {totalVoiceRecordings > 0 && (
-            <span className="flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-gray-700 shadow-sm border border-gray-200/80">
+            <span className="flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm border border-gray-200/80">
               🎤
               {totalVoiceRecordings}
             </span>
           )}
           <button
             onClick={handleSubmitChanges}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed min-h-[36px]"
             disabled={!hasUnsentChanges}
           >
             Submit Changes
@@ -392,10 +523,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden" onClick={(e) => { if (isPreviewMode) { e.stopPropagation(); handleTapControls(); } }}>
         {/* Album area */}
         <div ref={albumContainerRef} className="relative flex-1 overflow-hidden bg-[#2c1810]">
-          <PinchZoomWrapper isActive={true} onZoomChange={setIsZoomed}>
+          <PinchZoomWrapper isActive={true} onZoomChange={setIsZoomed} onScaleChange={setZoomScale}>
             {pages.length > 0 && (
               <HTMLFlipBook
                 ref={flipBookRef}
@@ -425,25 +556,26 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                   onFlip={handleFlipEvent}
                   onInit={handleInitEvent}
                 >
-                  {pages.map((page) => (
+                  {pages.map((page, i) => (
                     <div key={page.id} className="page" style={{ width: '100%', height: '100%' }}>
                       <div
-                          className="page-image"
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            backgroundImage: `url(${page.medium_url ?? page.image_url})`,
-                            backgroundSize: 'contain',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                          }}
+                        ref={(el) => { imageRefs.current[i] = el; }}
+                        className="page-image"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backgroundImage: `url(${page.medium_url ?? page.image_url})`,
+                          backgroundSize: 'contain',
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat',
+                        }}
                       />
                     </div>
                   ))}
                 </HTMLFlipBook>
               )}
 
-            {/* Spine shadow overlay */}
+            {/* Spine shadow */}
             <div
               className="absolute top-0 bottom-0 left-1/2 w-[2px] pointer-events-none z-[5]"
               style={{
@@ -453,23 +585,25 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
             />
           </PinchZoomWrapper>
 
-          {/* Floating nav arrows — outside zoom wrapper so they stay clickable */}
-          <button
-            onClick={handlePrev}
-            disabled={!canGoPrev}
-            className="absolute left-1 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-black/40 text-white shadow-lg backdrop-blur-sm hover:bg-black/60 active:bg-black/70 disabled:opacity-0 disabled:cursor-default transition-all cursor-pointer"
-            aria-label="Previous spread"
-          >
-            <ChevronLeft className="h-7 w-7" />
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={!canGoNext}
-            className="absolute right-1 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-black/40 text-white shadow-lg backdrop-blur-sm hover:bg-black/60 active:bg-black/70 disabled:opacity-0 disabled:cursor-default transition-all cursor-pointer"
-            aria-label="Next spread"
-          >
-            <ChevronRight className="h-7 w-7" />
-          </button>
+          {/* Nav arrows: always visible, but auto-hide in preview */}
+          <div className={`transition-opacity duration-300 ${isPreviewMode && !controlsVisible ? 'opacity-0 pointer-events-none' : ''}`}>
+            <button
+              onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+              disabled={!canGoPrev}
+              className="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-black/40 text-white shadow-lg backdrop-blur-sm hover:bg-black/60 active:bg-black/70 disabled:opacity-0 disabled:cursor-default transition-all cursor-pointer"
+              aria-label="Previous spread"
+            >
+              <ChevronLeft className="h-7 w-7" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleNext(); }}
+              disabled={!canGoNext}
+              className="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-black/40 text-white shadow-lg backdrop-blur-sm hover:bg-black/60 active:bg-black/70 disabled:opacity-0 disabled:cursor-default transition-all cursor-pointer"
+              aria-label="Next spread"
+            >
+              <ChevronRight className="h-7 w-7" />
+            </button>
+          </div>
 
           {showDebug && (
             <>
@@ -492,8 +626,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           )}
         </div>
 
-        {/* Floating feedback card (desktop) */}
-        {!isFullscreen && (
+        {/* Desktop feedback card: hidden in preview */}
+        {!isFullscreen && !isPreviewMode && (
           <FloatingFeedbackCard
             comments={currentPageRequests}
             voiceCount={totalVoiceRecordings}
@@ -507,19 +641,19 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           />
         )}
 
-        {/* Mobile feedback bubble */}
-        {!isFullscreen && (currentPageRequests.length > 0 || totalVoiceRecordings > 0) && (
+        {/* Mobile feedback bubble: hidden in preview */}
+        {!isFullscreen && !isPreviewMode && (currentPageRequests.length > 0 || totalVoiceRecordings > 0) && (
           <button
             onClick={() => setShowMobileFeedback(true)}
-            className="lg:hidden absolute right-3 top-3 z-20 flex h-11 items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-md px-3.5 shadow-lg border border-gray-200/80 hover:bg-white transition-all cursor-pointer"
+            className="lg:hidden absolute right-3 top-3 z-20 flex h-12 items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-md px-4 shadow-lg border border-gray-200/80 hover:bg-white transition-all cursor-pointer"
           >
-            <MessageSquareText className="h-4 w-4 text-blue-600" />
-            <span className="text-xs font-bold text-gray-900">{currentPageRequests.length + totalVoiceRecordings}</span>
+            <MessageSquareText className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-bold text-gray-900">{currentPageRequests.length + totalVoiceRecordings}</span>
           </button>
         )}
       </div>
 
-      {/* Pin markers for placed comments */}
+      {/* Pin markers */}
       {!isPinMode && currentPinRequests.map((pin) => (
         <PinMarker
           key={pin.id}
@@ -534,7 +668,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         />
       ))}
 
-      {/* New pin marker (before save) */}
       {pendingPin && showNewPinEditor && (
         <PinMarker
           number={parseInt(pendingPin.label, 10)}
@@ -544,7 +677,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         />
       )}
 
-      {/* New pin inline editor */}
       {pendingPin && showNewPinEditor && (
         <div
           className="absolute z-30"
@@ -561,7 +693,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         </div>
       )}
 
-      {/* Pin popup anchored beside pin */}
       {selectedRequest && selectedPinPos && (
         <div
           className="absolute z-30"
@@ -581,7 +712,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       )}
 
       {isPinMode && (
-        <div className="fixed inset-0 z-20">
+        <div className="fixed inset-0 z-20" onClick={(e) => e.stopPropagation()}>
           <div
             className="absolute inset-0 cursor-crosshair"
             onClick={(e) => {
@@ -594,17 +725,22 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         </div>
       )}
 
-      {/* Floating action pills */}
-      <FloatingActionPills
-        isReviewed={isCurrentReviewed}
-        saving={isSaving}
-        onComment={handleAddComment}
-        onVoice={() => setShowVoiceRecorder(true)}
-        onApprove={handleMarkReviewed}
-        onUndo={handleUndoReview}
-      />
+      {/* Floating action pills: hidden in preview (replaced by minified buttons) */}
+      {!isPreviewMode && (
+        <FloatingActionPills
+          isReviewed={isCurrentReviewed}
+          saving={isSaving}
+          onComment={handleAddComment}
+          onVoice={() => setShowVoiceRecorder(true)}
+          onApprove={handleMarkReviewed}
+          onUndo={handleUndoReview}
+        />
+      )}
 
-      <HelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+      {/* Preview mode floating comment/voice buttons */}
+      {previewFloatingButtons}
+
+      <HelpBottomSheet isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       {showSummary && (
         <ReviewSummaryScreen

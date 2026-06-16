@@ -4,6 +4,7 @@ interface PinchZoomWrapperProps {
   children: React.ReactNode;
   isActive: boolean;
   onZoomChange?: (zoomed: boolean) => void;
+  onScaleChange?: (scale: number) => void;
 }
 
 const MIN_SCALE = 1;
@@ -16,7 +17,7 @@ function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val));
 }
 
-export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoomWrapperProps) {
+export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChange }: PinchZoomWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -46,6 +47,10 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
   useEffect(() => {
     onZoomChange?.(isZoomed);
   }, [isZoomed, onZoomChange]);
+
+  useEffect(() => {
+    onScaleChange?.(scale);
+  }, [scale, onScaleChange]);
 
   function constrainPosition(pos: { x: number; y: number }, s: number) {
     const { width, height } = containerSize.current;
@@ -243,11 +248,10 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
 
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
-      {/* Transformed content */}
       <div
         className="w-full h-full"
         style={{
-          transform: `scale(${scale}) translate(${position.x / (scale || 1)}px, ${position.y / (scale || 1)}px)`,
+          transform: `translate3d(${position.x}px, ${position.y}px, 0) scale3d(${scale}, ${scale}, 1)`,
           transformOrigin: '0 0',
           willChange: 'transform',
         }}
@@ -259,7 +263,6 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
         {children}
       </div>
 
-      {/* When zoomed: overlay blocks flip events, handles mouse pan + double-tap */}
       {isZoomed && (
         <div
           className="absolute inset-0 z-10"
@@ -322,11 +325,10 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
         />
       )}
 
-      {/* Reset zoom button */}
       {isZoomed && (
         <button
           onClick={(e) => { e.stopPropagation(); resetZoom(); }}
-          className="absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white text-sm shadow-lg backdrop-blur-sm hover:bg-black/70 transition-colors cursor-pointer"
+          className="absolute top-3 right-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white text-base shadow-lg backdrop-blur-sm hover:bg-black/70 transition-colors cursor-pointer"
           aria-label="Reset zoom"
         >
           ✕
