@@ -167,6 +167,31 @@ export function getImageUrl(path: string): string {
   return data.publicUrl;
 }
 
+export async function uploadStudioLogo(
+  file: File
+): Promise<UploadResult> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) throw new StorageError('Not authenticated');
+
+  const filePath = `logos/${userData.user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: file.type,
+    });
+
+  if (error) throw new StorageError(`Logo upload failed: ${error.message}`, error);
+
+  const { data: urlData } = supabase.storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(data.path);
+
+  return { url: urlData.publicUrl, path: data.path };
+}
+
 export async function uploadVoiceNote(
   albumId: string,
   blob: Blob,

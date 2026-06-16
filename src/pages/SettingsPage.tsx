@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import * as profileService from '@/services/supabase/profiles';
-import { Building2, Trash2 } from 'lucide-react';
+import { uploadStudioLogo } from '@/services/supabase/storage';
+import { Building2, Trash2, Upload, X, Loader2 } from 'lucide-react';
 
 function isValidPhone(phone: string): boolean {
   const digits = phone.replace(/\D/g, '');
@@ -19,14 +20,18 @@ export function SettingsPage() {
   const [studioName, setStudioName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [studioLogoUrl, setStudioLogoUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
       setStudioName(profile.studio_name || '');
       setOwnerName(profile.owner_name || '');
       setPhoneNumber(profile.phone_number || '');
+      setStudioLogoUrl(profile.studio_logo_url || '');
     }
   }, [profile]);
 
@@ -58,6 +63,38 @@ export function SettingsPage() {
     }
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    try {
+      const result = await uploadStudioLogo(file);
+      await profileService.updateProfile({ studio_logo_url: result.url });
+      setStudioLogoUrl(result.url);
+      await loadProfile();
+      showToast('Logo uploaded', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to upload logo';
+      showToast(message, 'error');
+    } finally {
+      setIsUploadingLogo(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  async function handleRemoveLogo() {
+    try {
+      await profileService.updateProfile({ studio_logo_url: '' });
+      setStudioLogoUrl('');
+      await loadProfile();
+      showToast('Logo removed', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to remove logo';
+      showToast(message, 'error');
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8">
@@ -82,6 +119,45 @@ export function SettingsPage() {
           </div>
 
           <div className="flex flex-col gap-5">
+            <div>
+              <p className="mb-2 text-sm font-medium text-gray-700">Studio Logo</p>
+              <div className="flex items-center gap-3">
+                {studioLogoUrl ? (
+                  <div className="relative">
+                    <img src={studioLogoUrl} alt="Logo" className="h-16 w-16 rounded-lg object-cover" />
+                    <button
+                      onClick={handleRemoveLogo}
+                      className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : null}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingLogo}
+                  className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  {isUploadingLogo ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {studioLogoUrl ? 'Change Logo' : 'Upload Logo'}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                PNG, JPEG or WebP. Shown on share pages, previews, and reports.
+              </p>
+            </div>
+
             <Input
               label="Studio Name"
               value={studioName}
