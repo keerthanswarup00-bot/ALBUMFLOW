@@ -58,17 +58,25 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [showMobileFeedback, setShowMobileFeedback] = useState(false);
   const [albumContainerSize, setAlbumContainerSize] = useState({ width: 0, height: 0 });
 
-  const isLandscape = albumContainerSize.width > albumContainerSize.height;
+  const pageAspectRatio = useMemo(() => {
+    if (pages.length === 0) return 0.75;
+    return pages[0].width / pages[0].height;
+  }, [pages]);
 
   const pageWidth = useMemo(() => {
-    if (albumContainerSize.width === 0) return 400;
+    if (albumContainerSize.width === 0 || albumContainerSize.height === 0) return 400;
+    const spreadAspect = 2 * pageAspectRatio;
+    const containerAspect = albumContainerSize.width / albumContainerSize.height;
+    if (containerAspect > spreadAspect) {
+      return Math.round(albumContainerSize.height * pageAspectRatio);
+    }
     return Math.round(albumContainerSize.width / 2);
-  }, [albumContainerSize.width]);
+  }, [albumContainerSize, pageAspectRatio]);
 
   const pageHeight = useMemo(() => {
-    if (albumContainerSize.height === 0) return 600;
-    return albumContainerSize.height;
-  }, [albumContainerSize.height]);
+    if (pageWidth === 0) return 600;
+    return Math.round(pageWidth / pageAspectRatio);
+  }, [pageWidth, pageAspectRatio]);
 
   useEffect(() => {
     const el = albumContainerRef.current;
@@ -412,7 +420,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                             position: 'absolute',
                             inset: 0,
                             backgroundImage: `url(${page.medium_url ?? page.image_url})`,
-                            backgroundSize: isLandscape ? 'cover' : '100% 100%',
+                            backgroundSize: 'contain',
                             backgroundPosition: 'center',
                             backgroundRepeat: 'no-repeat',
                           }}
