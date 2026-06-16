@@ -17,6 +17,7 @@ export interface Profile {
   studio_name: string;
   owner_name: string;
   phone_number: string;
+  studio_logo_url: string;
   created_at: string;
   updated_at: string;
 }

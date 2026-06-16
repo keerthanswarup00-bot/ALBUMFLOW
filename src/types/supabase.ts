@@ -1,5 +1,4 @@
 import type {
-  User,
   Profile,
   Album,
   AlbumVersion,
@@ -13,7 +12,6 @@ import type {
 } from './viewer';
 
 export type Tables = {
-  users: User;
   profiles: Profile;
   albums: Album;
   album_versions: AlbumVersion;
