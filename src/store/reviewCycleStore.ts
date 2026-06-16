@@ -98,6 +98,7 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
   },
 
   submitApproval: (albumId: string, checklist: ApprovalChecklistItem[]) => {
+    if (get().isApproved(albumId)) return;
     const record: ApprovalRecord = {
       album_id: albumId,
       approved_at: Date.now(),
@@ -114,10 +115,12 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
   },
 
   submitReview: (albumId: string) => {
+    const status = get().getStatus(albumId);
+    if (status === 'review_submitted') return;
     get().setStatus(albumId, 'review_submitted');
     get().addTimelineEntry(albumId, {
       type: 'review_submitted',
-      description: 'Review submitted to designer',
+      description: 'Feedback sent to designer',
       timestamp: Date.now(),
     });
   },

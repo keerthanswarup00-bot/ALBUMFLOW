@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Pencil, Trash2, Check, X } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import type { ViewerRequestChange } from '@/types/viewer';
 
 interface PinPopupProps {
@@ -10,7 +10,6 @@ interface PinPopupProps {
 }
 
 export function PinPopup({ request, onUpdate, onDelete, onClose }: PinPopupProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [editMessage, setEditMessage] = useState(request.message);
   const [showConfirm, setShowConfirm] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -34,70 +33,49 @@ export function PinPopup({ request, onUpdate, onDelete, onClose }: PinPopupProps
 
   function handleSaveEdit() {
     const trimmed = editMessage.trim();
-    if (!trimmed || trimmed === request.message) {
-      setIsEditing(false);
-      return;
-    }
+    if (!trimmed) return;
     onUpdate(request.id, trimmed);
-    setIsEditing(false);
   }
 
   return (
     <>
-      <div ref={popupRef} className="absolute z-30 w-80 rounded-xl bg-white shadow-xl border border-gray-200/80 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-          <span className="text-sm font-bold text-gray-500">Comment #{request.pin?.label}</span>
-          {!isEditing && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => { setIsEditing(true); setEditMessage(request.message); }}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
-                aria-label="Edit comment"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setShowConfirm(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
-                aria-label="Delete comment"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+      <div ref={popupRef} className="w-72 rounded-xl bg-white shadow-xl border border-gray-200/80 overflow-hidden">
+        <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-black text-white">
+            {request.pin?.label || '?'}
+          </span>
+          <span className="text-xs font-bold text-gray-500">Pin #{request.pin?.label}</span>
+          <div className="ml-auto">
+            <button
+              onClick={() => setShowConfirm(true)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+              aria-label="Delete comment"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-
-        <div className="px-4 py-3">
-          {isEditing ? (
-            <div className="flex flex-col gap-2">
-              <textarea
-                value={editMessage}
-                onChange={(e) => setEditMessage(e.target.value)}
-                rows={3}
-                className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="flex items-center justify-center gap-1 rounded-lg border border-gray-300 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer min-h-[36px]"
-                >
-                  <X className="h-3.5 w-3.5" />
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  disabled={!editMessage.trim()}
-                  className="flex items-center justify-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer min-h-[36px]"
-                >
-                  <Check className="h-3.5 w-3.5" />
-                  Save
-                </button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-700 leading-relaxed">{request.message}</p>
-          )}
+        <textarea
+          value={editMessage}
+          onChange={(e) => setEditMessage(e.target.value)}
+          rows={2}
+          className="w-full resize-none border-0 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+          autoFocus
+        />
+        <div className="flex items-center justify-end gap-2 border-t border-gray-100 px-3 py-2.5">
+          <button
+            onClick={onClose}
+            className="rounded-lg px-3 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer min-h-[36px]"
+          >
+            Close
+          </button>
+          <button
+            onClick={handleSaveEdit}
+            disabled={!editMessage.trim() || editMessage.trim() === request.message}
+            className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer min-h-[36px]"
+          >
+            Save
+          </button>
         </div>
       </div>
 

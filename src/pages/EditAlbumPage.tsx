@@ -18,10 +18,10 @@ export function EditAlbumPage() {
     if (albumId) fetchAlbumById(albumId);
   }, [albumId, fetchAlbumById]);
 
-  async function handleSubmit(data: AlbumFormData) {
+  async function handleSubmit(data: AlbumFormData, slug?: string) {
     if (!albumId) return;
     try {
-      await updateAlbum(albumId, data);
+      await updateAlbum(albumId, { ...data, slug });
       showToast('Album updated successfully', 'success');
       navigate(ROUTES.ALBUM_DETAIL.replace(':albumId', albumId));
     } catch {

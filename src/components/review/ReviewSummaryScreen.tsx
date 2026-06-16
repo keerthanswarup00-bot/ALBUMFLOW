@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Check, Eye, ArrowRight, ListChecks, CheckSquare, FileText, MapPin, Mic, Send, Clock } from 'lucide-react';
+import { X, Check, Eye, ArrowRight, ListChecks, CheckSquare, FileText, MapPin, Mic, Send, Clock, Phone, Building2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useReviewStore } from '@/store/reviewStore';
 import { useReviewCycleStore } from '@/store/reviewCycleStore';
@@ -17,6 +17,9 @@ interface ReviewSummaryScreenProps {
   viewedCount: number;
   completionPercent: number;
   unreviewedPages: number[];
+  studioName: string;
+  ownerName: string;
+  phoneNumber: string;
   onNavigateToPage: (pageNumber: number) => void;
   onClose: () => void;
   onShowTimeline?: () => void;
@@ -39,6 +42,9 @@ export function ReviewSummaryScreen({
   viewedCount,
   completionPercent,
   unreviewedPages,
+  studioName,
+  ownerName,
+  phoneNumber,
   onNavigateToPage,
   onClose,
   onShowTimeline,
@@ -73,7 +79,7 @@ export function ReviewSummaryScreen({
     submitReview(albumId);
     setShowSubmitConfirm(false);
     onClose();
-    showToast('Review submitted to designer', 'success');
+    showToast('Feedback sent to designer', 'success');
   }
 
   function handleToggleChecklist(index: number) {
@@ -298,33 +304,38 @@ export function ReviewSummaryScreen({
           </div>
         )}
 
-        {/* Approved state */}
-        {showApproved && (
+        {/* Approved state — show studio contact info */}
+        {(showApproved || approved) && (
           <div className="border-t border-gray-100 px-4 py-6">
-            <div className="flex flex-col items-center gap-2 rounded-xl bg-green-50 py-6">
-              <Check className="h-12 w-12 text-green-600" />
-              <p className="text-xl font-bold text-green-800">Album Approved Successfully</p>
-              <p className="text-base text-green-600">
-                {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
-              </p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+                <Check className="h-8 w-8 text-green-500" />
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-gray-900">Review Complete</p>
+                <p className="text-sm text-gray-500">Feedback Sent Successfully</p>
+              </div>
             </div>
-          </div>
-        )}
 
-        {approved && !showApproved && (
-          <div className="border-t border-gray-100 px-4 py-4">
-            <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 py-4 text-base font-bold text-green-800 border-2 border-green-200">
-              <Check className="h-6 w-6" />
-              Album Approved
-            </div>
-          </div>
-        )}
-
-        {/* Approved: lock message */}
-        {approved && (
-          <div className="border-t border-gray-100 px-4 py-3">
-            <div className="rounded-xl bg-gray-50 px-4 py-3 text-center text-base text-gray-500">
-              This album has been approved. Contact your designer if further changes are required.
+            <div className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{studioName}</p>
+                  {ownerName && <p className="text-xs text-gray-500">{ownerName}</p>}
+                </div>
+              </div>
+              {phoneNumber && (
+                <a
+                  href={`tel:${phoneNumber.replace(/\D/g, '')}`}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                >
+                  <Phone className="h-4 w-4" />
+                  Contact Studio
+                </a>
+              )}
             </div>
           </div>
         )}

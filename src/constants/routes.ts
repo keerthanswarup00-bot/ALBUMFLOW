@@ -1,5 +1,6 @@
 export const ROUTES = {
   LOGIN: '/login',
+  SIGNUP: '/signup',
   DASHBOARD: '/dashboard',
   ALBUMS: '/albums',
   ALBUM_DETAIL: '/albums/:albumId',
@@ -11,6 +12,7 @@ export const ROUTES = {
   SETTINGS: '/settings',
   PROFILE: '/profile',
   RESET_PASSWORD: '/reset-password',
+  ALBUM_UNAVAILABLE: '/album-unavailable',
 } as const;
 
 export function albumViewRoute(token: string) {

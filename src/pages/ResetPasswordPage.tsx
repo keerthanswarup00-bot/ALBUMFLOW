@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as authService from '@/services/supabase/auth';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +12,13 @@ export function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const redirectTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -31,7 +38,7 @@ export function ResetPasswordPage() {
     try {
       await authService.updatePassword(password);
       setSuccess(true);
-      setTimeout(() => navigate(ROUTES.LOGIN), 3000);
+      redirectTimerRef.current = window.setTimeout(() => navigate(ROUTES.LOGIN), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update password');
     } finally {

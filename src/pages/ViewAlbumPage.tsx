@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabase/client';
 import { WelcomeScreen } from '@/components/review/WelcomeScreen';
 import { AlbumViewer } from '@/components/review/AlbumViewer';
+import { ReviewCompletedPage } from './ReviewCompletedPage';
 import { Spinner } from '@/components/ui/Spinner';
+import { useMetaTags } from '@/hooks/useMetaTags';
 import type { ReviewData } from '@/types/viewer';
 import { AlertCircle, ImageIcon } from 'lucide-react';
 
@@ -16,11 +18,26 @@ interface TokenResult {
 
 export function ViewAlbumPage() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [data, setData] = useState<ReviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [approved, setApproved] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [studioInfo, setStudioInfo] = useState<{ name: string; owner: string; phone: string }>({ name: 'Studio', owner: '', phone: '' });
+  const [deletedInfo, setDeletedInfo] = useState<{
+    studio_name: string;
+    owner_name: string;
+    phone_number: string;
+    album_title: string;
+  } | null>(null);
+
+  useMetaTags(data?.album ? {
+    title: `${data.album.title} - Album Preview`,
+    description: `Preview and review ${data.album.title}`,
+    image: data.album.cover_image_url || undefined,
+  } : null);
 
   useEffect(() => {
     if (!token) return;
@@ -39,7 +56,30 @@ export function ViewAlbumPage() {
           return;
         }
 
-        const typedResult = result as unknown as TokenResult;
+        const typedResult = result as unknown as TokenResult & { designer_id?: string };
+
+        if (typedResult?.error === 'album_deleted') {
+          const { data: studioData } = await supabase
+            .rpc('get_studio_by_album_token', { p_token: token });
+
+          if (studioData && typeof studioData === 'object' && 'studio' in (studioData as Record<string, unknown>)) {
+            const sd = studioData as { studio: { studio_name: string; owner_name: string; phone_number: string } | null; album_title: string };
+            setDeletedInfo({
+              studio_name: sd.studio?.studio_name || 'the studio',
+              owner_name: sd.studio?.owner_name || '',
+              phone_number: sd.studio?.phone_number || '',
+              album_title: sd.album_title || 'Album',
+            });
+          } else {
+            setDeletedInfo({
+              studio_name: 'the studio',
+              owner_name: '',
+              phone_number: '',
+              album_title: typedResult.album?.title || 'Album',
+            });
+          }
+          return;
+        }
 
         if (typedResult?.error === 'invalid_or_expired_token') {
           setError('This link is invalid or has expired.');
@@ -61,6 +101,22 @@ export function ViewAlbumPage() {
           version: typedResult.version ?? null,
           pages: typedResult.pages ?? [],
         });
+
+        const designerId = typedResult.designer_id;
+        if (designerId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('studio_name, owner_name, phone_number')
+            .eq('user_id', designerId)
+            .single();
+          if (profile) {
+            setStudioInfo({
+              name: profile.studio_name || 'Studio',
+              owner: profile.owner_name || '',
+              phone: profile.phone_number || '',
+            });
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load album');
       } finally {
@@ -70,6 +126,17 @@ export function ViewAlbumPage() {
 
     return () => { cancelled = true; };
   }, [token]);
+
+  if (deletedInfo) {
+    const params = new URLSearchParams({
+      studio_name: deletedInfo.studio_name,
+      owner_name: deletedInfo.owner_name,
+      phone: deletedInfo.phone_number,
+      album: deletedInfo.album_title,
+    });
+    navigate(`/album-unavailable?${params.toString()}`, { replace: true });
+    return null;
+  }
 
   if (!token) {
     return (
@@ -114,6 +181,18 @@ export function ViewAlbumPage() {
     );
   }
 
+  if (completed) {
+    return (
+      <ReviewCompletedPage
+        albumTitle={data.album.title}
+        studioName={studioInfo.name}
+        ownerName={studioInfo.owner}
+        phoneNumber={studioInfo.phone}
+        onBack={() => setCompleted(false)}
+      />
+    );
+  }
+
   if (data.pages.length === 0) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
@@ -140,7 +219,10 @@ export function ViewAlbumPage() {
           phase={data.album.phase}
           token={token!}
           onStart={() => setShowWelcome(false)}
-          onApproved={() => setApproved(true)}
+          onApproved={() => {
+            setApproved(true);
+            setCompleted(true);
+          }}
         />
       )}
 
@@ -148,6 +230,9 @@ export function ViewAlbumPage() {
         key={token}
         album={data.album}
         pages={data.pages}
+        studioName={studioInfo.name}
+        ownerName={studioInfo.owner}
+        phoneNumber={studioInfo.phone}
       />
     </>
   );

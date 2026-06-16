@@ -119,7 +119,7 @@ export interface VoiceRequest {
   album_id: string;
   page_number: number;
   duration: number;
-  audioData: string;
+  audio_url: string;
   created_at: number;
   status: RequestChangeStatus;
 }

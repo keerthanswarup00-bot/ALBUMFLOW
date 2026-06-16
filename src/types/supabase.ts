@@ -1,5 +1,6 @@
 import type {
   User,
+  Profile,
   Album,
   AlbumVersion,
   AlbumPage,
@@ -13,6 +14,7 @@ import type {
 
 export type Tables = {
   users: User;
+  profiles: Profile;
   albums: Album;
   album_versions: AlbumVersion;
   album_pages: AlbumPage;

@@ -7,7 +7,7 @@ interface VoiceState {
   drafts: Record<string, VoiceDraft | null>;
 
   getRecordings: (albumId: string) => VoiceRequest[];
-  addRecording: (albumId: string, pageNumber: number, duration: number, audioData: string) => void;
+  addRecording: (albumId: string, pageNumber: number, duration: number, audio_url: string) => void;
   deleteRecording: (albumId: string, recordingId: string) => void;
   getRecordingsByPage: (albumId: string, pageNumber: number) => VoiceRequest[];
   getRecordingCount: (albumId: string) => number;
@@ -51,14 +51,14 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     return loaded;
   },
 
-  addRecording: (albumId: string, pageNumber: number, duration: number, audioData: string) => {
+  addRecording: (albumId: string, pageNumber: number, duration: number, audio_url: string) => {
     const recordings = get().getRecordings(albumId);
     const newRecording: VoiceRequest = {
       id: generateId(),
       album_id: albumId,
       page_number: pageNumber,
       duration,
-      audioData,
+      audio_url,
       created_at: Date.now(),
       status: 'open',
     };
@@ -85,7 +85,8 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
   saveDraft: (albumId: string, draft: VoiceDraft) => {
     set((state) => ({ drafts: { ...state.drafts, [albumId]: draft } }));
     try {
-      localStorage.setItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`, JSON.stringify(draft));
+      const meta = { duration: draft.duration, saved_at: draft.saved_at };
+      localStorage.setItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`, JSON.stringify(meta));
     } catch {
       // localStorage write failed
     }
@@ -97,7 +98,12 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     try {
       const raw = localStorage.getItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`);
       if (raw) {
-        const draft = JSON.parse(raw) as VoiceDraft;
+        const meta = JSON.parse(raw) as { duration: number; saved_at: number };
+        const draft: VoiceDraft = {
+          duration: meta.duration,
+          audioData: '',
+          saved_at: meta.saved_at,
+        };
         set((state) => ({ drafts: { ...state.drafts, [albumId]: draft } }));
         return draft;
       }

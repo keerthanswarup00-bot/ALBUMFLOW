@@ -6,9 +6,18 @@ import { EVENT_TYPES } from '@/types';
 
 interface AlbumFormProps {
   initialData?: Partial<Album>;
-  onSubmit: (data: AlbumFormData) => Promise<void>;
+  onSubmit: (data: AlbumFormData, slug?: string) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100) || 'untitled';
 }
 
 function validate(data: AlbumFormData): Record<string, string> {
@@ -27,10 +36,15 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
     deadline: initialData?.deadline ?? '',
   });
 
+  const [slug, setSlug] = useState(initialData?.slug ?? '');
+  const [slugEdited, setSlugEdited] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function handleField<K extends keyof AlbumFormData>(field: K, value: AlbumFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (!slugEdited && field === 'title' && typeof value === 'string') {
+      setSlug(slugify(value));
+    }
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -48,7 +62,8 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
       return;
     }
     setErrors({});
-    await onSubmit(formData);
+    const finalSlug = slug || slugify(formData.title);
+    await onSubmit(formData, finalSlug);
   }
 
   return (
@@ -60,6 +75,14 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
         error={errors.title}
         placeholder="e.g. Smith & Johnson Wedding"
         required
+      />
+
+      <Input
+        label="Share Link Slug"
+        value={slug}
+        onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }}
+        placeholder="smith-johnson-wedding"
+        hint="Customize the share link URL (letters, numbers, hyphens)"
       />
 
       <Input

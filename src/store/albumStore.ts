@@ -16,8 +16,8 @@ interface AlbumState {
 
   fetchAlbums: () => Promise<void>;
   fetchAlbumById: (id: string) => Promise<void>;
-  createAlbum: (data: AlbumFormData) => Promise<Album>;
-  updateAlbum: (id: string, data: Partial<AlbumFormData> & { status?: AlbumStatus }) => Promise<void>;
+  createAlbum: (data: AlbumFormData, slug?: string) => Promise<Album>;
+  updateAlbum: (id: string, data: Partial<AlbumFormData> & { status?: AlbumStatus; slug?: string }) => Promise<void>;
   deleteAlbum: (id: string) => Promise<void>;
   fetchAlbumPages: (albumId: string) => Promise<void>;
   clearCurrentAlbum: () => void;
@@ -70,10 +70,10 @@ export const useAlbumStore = create<AlbumState>((set) => ({
     }
   },
 
-  createAlbum: async (data: AlbumFormData) => {
+  createAlbum: async (data: AlbumFormData, slug?: string) => {
     set({ isSaving: true, error: null });
     try {
-      const album = await albumService.createAlbum(data);
+      const album = await albumService.createAlbum(data, slug);
       set((state) => ({
         albums: [album, ...state.albums],
         isSaving: false,
@@ -86,7 +86,7 @@ export const useAlbumStore = create<AlbumState>((set) => ({
     }
   },
 
-  updateAlbum: async (id: string, data: Partial<AlbumFormData> & { status?: AlbumStatus }) => {
+  updateAlbum: async (id: string, data: Partial<AlbumFormData> & { status?: AlbumStatus; slug?: string }) => {
     set({ isSaving: true, error: null });
     try {
       const updated = await albumService.updateAlbum(id, data);

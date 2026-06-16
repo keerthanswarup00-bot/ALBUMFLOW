@@ -11,6 +11,16 @@ export interface User {
   updated_at: string;
 }
 
+export interface Profile {
+  id: string;
+  user_id: string;
+  studio_name: string;
+  owner_name: string;
+  phone_number: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -52,6 +62,7 @@ export interface Album {
   title: string;
   description: string | null;
   event_type: EventType;
+  slug: string | null;
   cover_image_url: string | null;
   status: AlbumStatus;
   phase: AlbumPhase;

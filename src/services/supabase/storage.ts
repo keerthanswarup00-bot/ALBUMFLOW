@@ -166,3 +166,42 @@ export function getImageUrl(path: string): string {
 
   return data.publicUrl;
 }
+
+export async function uploadVoiceNote(
+  albumId: string,
+  blob: Blob,
+  fileName: string = `voice_${Date.now()}.webm`
+): Promise<UploadResult> {
+  const filePath = `voice-notes/${albumId}/${fileName}`;
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(filePath, blob, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: blob.type || 'audio/webm',
+    });
+
+  if (error) {
+    throw new StorageError(`Voice upload failed: ${error.message}`, error);
+  }
+
+  const { data: urlData } = supabase.storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(data.path);
+
+  return {
+    url: urlData.publicUrl,
+    path: data.path,
+  };
+}
+
+export async function deleteVoiceNote(path: string): Promise<void> {
+  const { error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .remove([path]);
+
+  if (error) {
+    throw new StorageError(`Voice delete failed: ${error.message}`, error);
+  }
+}

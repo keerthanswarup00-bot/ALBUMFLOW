@@ -12,9 +12,9 @@ export function CreateAlbumPage() {
   const { createAlbum, isSaving } = useAlbumStore();
   const { showToast } = useUIStore();
 
-  async function handleSubmit(data: AlbumFormData) {
+  async function handleSubmit(data: AlbumFormData, slug?: string) {
     try {
-      const album = await createAlbum(data);
+      const album = await createAlbum(data, slug);
       showToast('Album created successfully', 'success');
       navigate(ROUTES.ALBUM_DETAIL.replace(':albumId', album.id));
     } catch {

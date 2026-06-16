@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ROUTES } from '@/constants/routes';
 import * as authService from '@/services/supabase/auth';
 
 export function LoginPage() {
@@ -12,10 +14,14 @@ export function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [showReset, setShowReset] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     clearError();
-    login(email, password);
+    try {
+      await login(email, password);
+    } catch {
+      // Error is handled in the store's state
+    }
   }
 
   async function handleResetPassword() {
@@ -127,6 +133,22 @@ export function LoginPage() {
           Forgot password?
         </button>
       </div>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-white px-2 text-gray-400">New here?</span>
+        </div>
+      </div>
+
+      <Link
+        to={ROUTES.SIGNUP}
+        className="block w-full rounded-xl border border-gray-300 bg-white px-6 py-3.5 text-center text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        Create Studio Account
+      </Link>
     </form>
   );
 }

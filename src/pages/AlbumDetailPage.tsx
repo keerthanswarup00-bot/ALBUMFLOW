@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/services/supabase/client';
 import { useAlbumStore } from '@/store/albumStore';
@@ -13,6 +13,7 @@ import * as shareLinkService from '@/services/supabase/shareLinks';
 import * as pageService from '@/services/supabase/pages';
 import { useUIStore } from '@/store/uiStore';
 import type { ShareLink } from '@/types/viewer';
+import { useAuthStore } from '@/store/authStore';
 import {
   ArrowLeft,
   Pencil,
@@ -28,6 +29,7 @@ import {
   Trash2,
   ExternalLink,
   SendHorizonal,
+  Building2,
 } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -48,9 +50,13 @@ export function AlbumDetailPage() {
     fetchAlbumPages,
   } = useAlbumStore();
 
+  const { profile } = useAuthStore();
   const getReviewedCount = useReviewStore((s) => s.getReviewedCount);
   const getCompletionPercent = useReviewStore((s) => s.getCompletionPercent);
   const showToast = useUIStore((s) => s.showToast);
+
+  const copiedTimerRef = useRef<number | null>(null);
+  useEffect(() => () => { if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current); }, []);
 
   const [shareLinks, setShareLinks] = useState<ShareLink[]>([]);
   const [linksLoading, setLinksLoading] = useState(true);
@@ -112,8 +118,9 @@ export function AlbumDetailPage() {
   function handleCopyLink(token: string, id: string) {
     const url = `${window.location.origin}${albumViewRoute(token)}`;
     navigator.clipboard.writeText(url).then(() => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
+      copiedTimerRef.current = window.setTimeout(() => setCopiedId(null), 2000);
       showToast('Link copied to clipboard', 'success');
     });
   }
@@ -268,6 +275,30 @@ export function AlbumDetailPage() {
           </div>
         </Card>
 
+        {profile && (
+          <Card>
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <Building2 className="h-4 w-4 text-gray-400" />
+              Studio
+            </h2>
+            <div className="flex flex-col gap-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Studio Name</span>
+                <span className="font-medium text-gray-900">{profile.studio_name || '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Owner</span>
+                <span className="font-medium text-gray-900">{profile.owner_name || '—'}</span>
+              </div>
+              {profile.phone_number && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Phone</span>
+                  <span className="font-medium text-gray-900">{profile.phone_number}</span>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
         <Card>
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
             <User className="h-4 w-4 text-gray-400" />

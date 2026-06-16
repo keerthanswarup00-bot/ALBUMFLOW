@@ -2,6 +2,15 @@ import { supabase } from './client';
 import { ApiError } from '@/utils/errors';
 import type { Album, AlbumFormData } from '@/types';
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100) || 'untitled';
+}
+
 function mapRowToAlbum(row: Record<string, unknown>): Album {
   return {
     id: row.id as string,
@@ -12,6 +21,7 @@ function mapRowToAlbum(row: Record<string, unknown>): Album {
     title: row.title as string,
     description: (row.description as string) ?? null,
     event_type: (row.event_type as Album['event_type']) ?? 'wedding',
+    slug: (row.slug as string) ?? null,
     cover_image_url: (row.cover_image_url as string) ?? null,
     status: (row.status as Album['status']) ?? 'draft',
     phase: (row.phase as Album['phase']) ?? 'proofing',
@@ -50,18 +60,22 @@ export async function getAlbumById(id: string): Promise<Album | null> {
 }
 
 export async function createAlbum(
-  formData: AlbumFormData
+  formData: AlbumFormData,
+  slug?: string
 ): Promise<Album> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) {
     throw new ApiError('Not authenticated', 401);
   }
 
+  const albumSlug = slug || slugify(formData.title);
+
   const { data, error } = await supabase
     .from('albums')
     .insert({
       designer_id: userData.user.id,
       title: formData.title,
+      slug: albumSlug,
       client_name: formData.client_name || 'Untitled',
       client_email: formData.client_email || '',
       event_type: formData.event_type,
@@ -81,11 +95,17 @@ export async function createAlbum(
 
 export async function updateAlbum(
   id: string,
-  updates: Partial<AlbumFormData> & { status?: Album['status'] }
+  updates: Partial<AlbumFormData & { status?: Album['status']; slug?: string }>
 ): Promise<Album> {
   const payload: Record<string, unknown> = {};
 
-  if (updates.title !== undefined) payload.title = updates.title;
+  if (updates.title !== undefined) {
+    payload.title = updates.title;
+    if (!updates.slug) {
+      payload.slug = slugify(updates.title);
+    }
+  }
+  if (updates.slug !== undefined) payload.slug = updates.slug;
   if (updates.client_name !== undefined) payload.client_name = updates.client_name;
   if (updates.client_email !== undefined) payload.client_email = updates.client_email;
   if (updates.event_type !== undefined) payload.event_type = updates.event_type;

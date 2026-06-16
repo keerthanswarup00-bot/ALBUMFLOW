@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Mic, Square, Play, Trash2, Send, Pause, AlertCircle } from 'lucide-react';
 
 interface VoiceMessageRecorderProps {
-  onSend: (duration: number, audioData: string) => void;
+  onSend: (duration: number, blob: Blob) => void;
   onClose: () => void;
 }
 
@@ -11,8 +11,8 @@ type RecorderState = 'idle' | 'recording' | 'finished' | 'error';
 export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderProps) {
   const [state, setState] = useState<RecorderState>('idle');
   const [duration, setDuration] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioData, setAudioData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackTime, setPlaybackTime] = useState(0);
@@ -22,20 +22,40 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const mimeTypeRef = useRef<string>('audio/webm');
+  const mountedRef = useRef(true);
+  const pendingUrlRef = useRef<string | null>(null);
 
   const cleanup = useCallback(function cleanup() {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-  }, [audioUrl]);
+  }, []);
 
   useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      cleanup();
+      if (pendingUrlRef.current) {
+        URL.revokeObjectURL(pendingUrlRef.current);
+        pendingUrlRef.current = null;
+      }
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [cleanup, audioUrl]);
 
   async function startRecording() {
     try {
@@ -49,6 +69,7 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
         : 'audio/webm';
+      mimeTypeRef.current = mimeType;
 
       const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
@@ -58,20 +79,16 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
       };
 
       recorder.onstop = () => {
+        if (!mountedRef.current) return;
         const blob = new Blob(chunksRef.current, { type: mimeType });
+        setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAudioData(reader.result as string);
-        };
-        reader.readAsDataURL(blob);
-
         setState('finished');
       };
 
       recorder.onerror = () => {
+        if (!mountedRef.current) return;
         setState('error');
         setError('Recording failed. Please try again.');
         cleanup();
@@ -80,11 +97,13 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
       recorder.start(100);
 
       timerRef.current = window.setInterval(() => {
+        if (!mountedRef.current) return;
         setDuration((prev) => prev + 1);
       }, 1000);
 
       setState('recording');
     } catch (err) {
+      if (!mountedRef.current) return;
       setState('error');
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
         setError('Microphone access needed. Allow microphone access to record a voice message.');
@@ -104,8 +123,9 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
 
   function deleteRecording() {
     cleanup();
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioUrl(null);
-    setAudioData(null);
+    setAudioBlob(null);
     setDuration(0);
     setState('idle');
   }
@@ -136,8 +156,8 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
   }
 
   function handleSend() {
-    if (audioData) {
-      onSend(duration, audioData);
+    if (audioBlob) {
+      onSend(duration, audioBlob);
     }
   }
 

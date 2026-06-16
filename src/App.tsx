@@ -5,6 +5,7 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { PublicRoute } from '@/components/auth/PublicRoute';
 import { LoginPage } from '@/pages/LoginPage';
+import { CreateStudioPage } from '@/pages/CreateStudioPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AlbumsPage } from '@/pages/AlbumsPage';
 import { CreateAlbumPage } from '@/pages/CreateAlbumPage';
@@ -15,6 +16,7 @@ import { ReviewManagementPage } from '@/pages/ReviewManagementPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { AlbumUnavailablePage } from '@/pages/AlbumUnavailablePage';
 import { useAuth } from '@/hooks/useAuth';
 import { EnvBanner } from '@/components/EnvBanner';
 
@@ -31,6 +33,17 @@ export default function App() {
             <PublicRoute>
               <AuthLayout>
                 <LoginPage />
+              </AuthLayout>
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.SIGNUP}
+          element={
+            <PublicRoute>
+              <AuthLayout>
+                <CreateStudioPage />
               </AuthLayout>
             </PublicRoute>
           }
@@ -56,6 +69,7 @@ export default function App() {
 
         <Route path={ROUTES.VIEW_ALBUM} element={<ViewAlbumPage />} />
         <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+        <Route path={ROUTES.ALBUM_UNAVAILABLE} element={<AlbumUnavailablePage />} />
 
         <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
       </Routes>

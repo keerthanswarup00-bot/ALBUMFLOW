@@ -12,12 +12,49 @@ function mapSupabaseUserToAppUser(sbUser: {
     email: sbUser.email ?? '',
     full_name: (sbUser.user_metadata?.full_name as string) ?? '',
     avatar_url: (sbUser.user_metadata?.avatar_url as string) ?? null,
-    studio_name: null,
+    studio_name: (sbUser.user_metadata?.studio_name as string) ?? null,
     studio_logo_url: null,
     phone: null,
     website: null,
     created_at: '',
     updated_at: '',
+  };
+}
+
+export async function signUp(email: string, password: string, metadata: {
+  studio_name?: string;
+  owner_name?: string;
+  phone_number?: string;
+  full_name?: string;
+}) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: metadata.full_name || metadata.owner_name || email.split('@')[0],
+        studio_name: metadata.studio_name || '',
+        owner_name: metadata.owner_name || '',
+        phone_number: metadata.phone_number || '',
+      },
+    },
+  });
+
+  if (error) {
+    throw new AuthError(error.message, error.code ?? 'SIGN_UP_ERROR');
+  }
+
+  if (!data.user) {
+    throw new AuthError('No user returned from sign up');
+  }
+
+  return {
+    user: mapSupabaseUserToAppUser(data.user),
+    session: data.session ? {
+      user: mapSupabaseUserToAppUser(data.user),
+      access_token: data.session.access_token,
+      expires_at: data.session.expires_at ?? 0,
+    } : null,
   };
 }
 
