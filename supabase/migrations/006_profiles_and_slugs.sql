@@ -60,21 +60,27 @@ $$;
 -- =====================================================
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can read own profile" on public.profiles;
 create policy "Users can read own profile"
   on public.profiles for select
   using (user_id = auth.uid());
 
+drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
   on public.profiles for insert
   with check (user_id = auth.uid());
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
   on public.profiles for update
   using (user_id = auth.uid());
 
 -- =====================================================
 -- 5. UPDATE GET_ALBUM_BY_TOKEN FOR DELETED ALBUMS
+-- Drop first because prior migrations may have used a
+-- different parameter name (token_text vs p_token)
 -- =====================================================
+drop function if exists public.get_album_by_token(text);
 create or replace function public.get_album_by_token(p_token text)
 returns json
 language plpgsql
@@ -220,6 +226,7 @@ grant execute on function public.get_studio_by_album_token to authenticated;
 -- =====================================================
 -- 7. UPDATED_AT TRIGGER FOR PROFILES
 -- =====================================================
+drop trigger if exists trg_profiles_updated_at on public.profiles;
 create trigger trg_profiles_updated_at
   before update on public.profiles
   for each row execute function public.handle_updated_at();

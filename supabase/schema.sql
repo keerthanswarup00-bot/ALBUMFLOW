@@ -48,7 +48,7 @@ create or replace trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- Indexes
-create index idx_users_email on public.users (email);
+create index if not exists idx_users_email on public.users (email);
 
 -- =====================================================
 -- 2. CLIENTS
@@ -65,8 +65,8 @@ create table if not exists public.clients (
   unique(designer_id, email)
 );
 
-create index idx_clients_designer on public.clients (designer_id);
-create index idx_clients_email on public.clients (email);
+create index if not exists idx_clients_designer on public.clients (designer_id);
+create index if not exists idx_clients_email on public.clients (email);
 
 -- =====================================================
 -- 3. ALBUMS
@@ -100,10 +100,10 @@ create table if not exists public.albums (
   updated_at timestamptz not null default now()
 );
 
-create index idx_albums_designer on public.albums (designer_id);
-create index idx_albums_status on public.albums (status);
-create index idx_albums_phase on public.albums (phase);
-create index idx_albums_created on public.albums (created_at desc);
+create index if not exists idx_albums_designer on public.albums (designer_id);
+create index if not exists idx_albums_status on public.albums (status);
+create index if not exists idx_albums_phase on public.albums (phase);
+create index if not exists idx_albums_created on public.albums (created_at desc);
 
 -- =====================================================
 -- 4. ALBUM VERSIONS
@@ -128,8 +128,8 @@ create table if not exists public.album_versions (
   unique(album_id, version_number)
 );
 
-create index idx_versions_album on public.album_versions (album_id);
-create index idx_versions_status on public.album_versions (status);
+create index if not exists idx_versions_album on public.album_versions (album_id);
+create index if not exists idx_versions_status on public.album_versions (status);
 
 -- =====================================================
 -- 5. ALBUM PAGES
@@ -156,8 +156,8 @@ create table if not exists public.album_pages (
   unique(album_version_id, page_number)
 );
 
-create index idx_pages_version on public.album_pages (album_version_id);
-create index idx_pages_spread on public.album_pages (album_version_id, spread_number);
+create index if not exists idx_pages_version on public.album_pages (album_version_id);
+create index if not exists idx_pages_spread on public.album_pages (album_version_id, spread_number);
 
 -- =====================================================
 -- 6. REQUESTS (Change Requests)
@@ -188,9 +188,9 @@ create table if not exists public.requests (
   updated_at timestamptz not null default now()
 );
 
-create index idx_requests_album on public.requests (album_id);
-create index idx_requests_page on public.requests (page_id);
-create index idx_requests_status on public.requests (status);
+create index if not exists idx_requests_album on public.requests (album_id);
+create index if not exists idx_requests_page on public.requests (page_id);
+create index if not exists idx_requests_status on public.requests (status);
 
 -- =====================================================
 -- 7. PAGE REVIEWS
@@ -206,8 +206,8 @@ create table if not exists public.page_reviews (
   created_at timestamptz not null default now()
 );
 
-create index idx_reviews_page on public.page_reviews (page_id);
-create index idx_reviews_album on public.page_reviews (album_id);
+create index if not exists idx_reviews_page on public.page_reviews (page_id);
+create index if not exists idx_reviews_album on public.page_reviews (album_id);
 
 -- =====================================================
 -- 8. APPROVALS
@@ -232,8 +232,8 @@ create table if not exists public.approvals (
   unique(album_id, album_version_id)
 );
 
-create index idx_approvals_album on public.approvals (album_id);
-create index idx_approvals_status on public.approvals (status);
+create index if not exists idx_approvals_album on public.approvals (album_id);
+create index if not exists idx_approvals_status on public.approvals (status);
 
 -- =====================================================
 -- 9. ROW LEVEL SECURITY
@@ -252,6 +252,7 @@ $$;
 -- Albums: designers own their albums
 alter table public.albums enable row level security;
 
+drop policy if exists "Designers can manage their own albums" on public.albums;
 create policy "Designers can manage their own albums"
   on public.albums
   using (designer_id = auth.uid());
@@ -259,6 +260,7 @@ create policy "Designers can manage their own albums"
 -- Album versions inherit from album
 alter table public.album_versions enable row level security;
 
+drop policy if exists "Designers can manage versions of their albums" on public.album_versions;
 create policy "Designers can manage versions of their albums"
   on public.album_versions
   using (
@@ -272,6 +274,7 @@ create policy "Designers can manage versions of their albums"
 -- Album pages inherit through version -> album
 alter table public.album_pages enable row level security;
 
+drop policy if exists "Designers can manage pages of their albums" on public.album_pages;
 create policy "Designers can manage pages of their albums"
   on public.album_pages
   using (
@@ -286,6 +289,7 @@ create policy "Designers can manage pages of their albums"
 -- Requests: designers can manage requests on their albums
 alter table public.requests enable row level security;
 
+drop policy if exists "Designers can manage requests on their albums" on public.requests;
 create policy "Designers can manage requests on their albums"
   on public.requests
   using (
@@ -299,6 +303,7 @@ create policy "Designers can manage requests on their albums"
 -- Page reviews: designers can view reviews on their albums
 alter table public.page_reviews enable row level security;
 
+drop policy if exists "Designers can manage reviews on their albums" on public.page_reviews;
 create policy "Designers can manage reviews on their albums"
   on public.page_reviews
   using (
@@ -312,6 +317,7 @@ create policy "Designers can manage reviews on their albums"
 -- Approvals: designers can manage approvals on their albums
 alter table public.approvals enable row level security;
 
+drop policy if exists "Designers can manage approvals on their albums" on public.approvals;
 create policy "Designers can manage approvals on their albums"
   on public.approvals
   using (
@@ -325,6 +331,7 @@ create policy "Designers can manage approvals on their albums"
 -- Users: designers can only see their own profile
 alter table public.users enable row level security;
 
+drop policy if exists "Users can manage their own profile" on public.users;
 create policy "Users can manage their own profile"
   on public.users
   using (id = auth.uid());
@@ -332,6 +339,7 @@ create policy "Users can manage their own profile"
 -- Clients: designers can manage their own clients
 alter table public.clients enable row level security;
 
+drop policy if exists "Designers can manage their own clients" on public.clients;
 create policy "Designers can manage their own clients"
   on public.clients
   using (designer_id = auth.uid());
@@ -350,26 +358,32 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_users_updated_at on public.users;
 create trigger trg_users_updated_at
   before update on public.users
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_clients_updated_at on public.clients;
 create trigger trg_clients_updated_at
   before update on public.clients
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_albums_updated_at on public.albums;
 create trigger trg_albums_updated_at
   before update on public.albums
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_album_versions_updated_at on public.album_versions;
 create trigger trg_album_versions_updated_at
   before update on public.album_versions
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_requests_updated_at on public.requests;
 create trigger trg_requests_updated_at
   before update on public.requests
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_approvals_updated_at on public.approvals;
 create trigger trg_approvals_updated_at
   before update on public.approvals
   for each row execute function public.handle_updated_at();

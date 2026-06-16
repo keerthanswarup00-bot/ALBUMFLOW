@@ -10,7 +10,8 @@
 -- Makes it security definer so anon can validate tokens
 -- Uses v_ prefix for local variable to avoid ambiguity
 -- =====================================================
-create or replace function public.validate_share_token(token_text text)
+drop function if exists public.validate_share_token(text) cascade;
+create or replace function public.validate_share_token(p_token text)
 returns uuid
 language plpgsql
 security definer
@@ -22,7 +23,7 @@ declare
 begin
   select sl.album_id into v_result_id
   from public.share_links sl
-  where sl.token = token_text
+  where sl.token = p_token
     and sl.revoked_at is null
     and (sl.expires_at is null or sl.expires_at > now())
     and (sl.max_access_count is null or sl.access_count < sl.max_access_count);
@@ -38,7 +39,8 @@ grant execute on function public.validate_share_token to authenticated;
 -- Uses v_ prefix for local variables to avoid
 -- ambiguity with av.album_id column reference
 -- =====================================================
-create or replace function public.get_album_by_token(token_text text)
+drop function if exists public.get_album_by_token(text) cascade;
+create or replace function public.get_album_by_token(p_token text)
 returns json
 language plpgsql
 security definer
@@ -51,14 +53,14 @@ declare
   v_version_json json;
   v_pages_json json;
 begin
-  v_album_id := public.validate_share_token(token_text);
+  v_album_id := public.validate_share_token(p_token);
   if v_album_id is null then
     return json_build_object('error', 'invalid_or_expired_token');
   end if;
 
   update public.share_links
   set access_count = access_count + 1, last_accessed_at = now()
-  where token = token_text;
+  where token = p_token;
 
   select row_to_json(t.*) into v_album_json
   from (
@@ -111,14 +113,15 @@ grant execute on function public.get_album_by_token to authenticated;
 -- 3. Fix get_album_review_data (backward compat)
 -- Same variable prefix fix for consistency
 -- =====================================================
-create or replace function public.get_album_review_data(album_id uuid)
+drop function if exists public.get_album_review_data(uuid) cascade;
+create or replace function public.get_album_review_data(p_album_id uuid)
 returns json
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  v_album_id uuid := album_id;
+  v_album_id uuid := p_album_id;
   v_version_id uuid;
   v_album_json json;
   v_version_json json;

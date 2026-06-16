@@ -7,6 +7,11 @@
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
+-- Clear any functions from prior competing 003 schema versions
+drop function if exists public.validate_share_token(text) cascade;
+drop function if exists public.get_album_by_token(text) cascade;
+drop function if exists public.get_album_review_data(uuid) cascade;
+
 -- =====================================================
 -- 1. ENUMS
 -- =====================================================
@@ -455,34 +460,42 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_users_updated_at on public.users;
 create trigger trg_users_updated_at
   before update on public.users
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_clients_updated_at on public.clients;
 create trigger trg_clients_updated_at
   before update on public.clients
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_albums_updated_at on public.albums;
 create trigger trg_albums_updated_at
   before update on public.albums
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_album_versions_updated_at on public.album_versions;
 create trigger trg_album_versions_updated_at
   before update on public.album_versions
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_requests_updated_at on public.requests;
 create trigger trg_requests_updated_at
   before update on public.requests
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_approvals_updated_at on public.approvals;
 create trigger trg_approvals_updated_at
   before update on public.approvals
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_comments_updated_at on public.comments;
 create trigger trg_comments_updated_at
   before update on public.comments
   for each row execute function public.handle_updated_at();
 
+drop trigger if exists trg_album_settings_updated_at on public.album_settings;
 create trigger trg_album_settings_updated_at
   before update on public.album_settings
   for each row execute function public.handle_updated_at();
