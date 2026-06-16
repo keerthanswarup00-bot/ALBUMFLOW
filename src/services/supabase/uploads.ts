@@ -85,7 +85,7 @@ export async function uploadImagesToAlbum(
       if (isSpread) {
         emit({ stage: 'processing', variantProgress: { thumbnail: 0, medium: 0, original: 0 }, overallPercent: 5 });
 
-        const halves = splitImageIntoHalves(img);
+        const halves = await splitImageIntoHalves(img, file.type);
 
         for (const half of ['left', 'right'] as const) {
           const side = half === 'left' ? 'Left' : 'Right';

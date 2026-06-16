@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback, forwardRef } from 'react';
+import { useEffect, useState, useCallback, forwardRef, useRef } from 'react';
+import HTMLFlipBook from 'react-pageflip';
 import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
@@ -19,20 +20,22 @@ import { VoiceMessageRecorder } from './VoiceMessageRecorder';
 import type { ReviewAlbum, ReviewPage, ViewerRequestChange } from '@/types/viewer';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+interface FlipBookHandle {
+  pageFlip: () => {
+    flipNext: () => void;
+    flipPrev: () => void;
+    flip: (page: number) => void;
+  };
+}
+
+interface FlipEvent {
+  data: unknown;
+  object: unknown;
+}
+
 interface WeddingAlbumViewerProps {
   album: ReviewAlbum;
   pages: ReviewPage[];
-}
-
-interface SpreadData {
-  spreadId: string;
-  fullImage: string;
-  leftHalf: string;
-  rightHalf: string;
-  leftHalfWidth: number;
-  leftHalfHeight: number;
-  rightHalfWidth: number;
-  rightHalfHeight: number;
 }
 
 const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((props, ref) => {
@@ -51,8 +54,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  const spreadContainerRef = useRef<HTMLDivElement>(null);
-  const spineRef = useRef<HTMLDivElement>(null);
+  const flipBookRef = useRef<FlipBookHandle | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   const totalSpreads = Math.floor(pages.length / 2);
   const currentPageLeft = currentSpread * 2;
@@ -118,43 +121,35 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     }
   }, [currentSpread, album.id, pages.length, markPageViewed, currentPageLeft, currentPageRight]);
 
-  const getSpreadData = useCallback((spreadIndex: number): SpreadData | null => {
-    if (spreadIndex < 0 || spreadIndex >= totalSpreads) return null;
+  const handleFlipEvent = useCallback((e: FlipEvent) => {
+    setCurrentSpread(Math.floor((e.data as number) / 2));
+  }, []);
 
-    const leftPage = pages[currentPageLeft];
-    const rightPage = pages[currentPageRight];
-
-    if (!leftPage || !rightPage) return null;
-
-    return {
-      spreadId: `spread_${spreadIndex + 1}`,
-      fullImage: leftPage.medium_url ?? leftPage.image_url,
-      leftHalf: leftPage.medium_url ?? leftPage.image_url,
-      rightHalf: rightPage.medium_url ?? rightPage.image_url,
-      leftHalfWidth: leftPage.width,
-      leftHalfHeight: leftPage.height,
-      rightHalfWidth: rightPage.width,
-      rightHalfHeight: rightPage.height,
-    };
-  }, [pages, currentPageLeft, currentPageRight, totalSpreads]);
-
-  const currentSpreadData = getSpreadData(currentSpread);
+  const handleInitEvent = useCallback((e: FlipEvent) => {
+    const initData = e.data as { page: number; mode: string };
+    setCurrentSpread(Math.floor(initData.page / 2));
+  }, []);
 
   const handleNext = useCallback(() => {
-    setCurrentSpread((prev) => Math.min(prev + 1, totalSpreads - 1));
-  }, [totalSpreads]);
+    if (flipBookRef.current?.pageFlip()) {
+      flipBookRef.current.pageFlip().flipNext();
+    }
+  }, []);
 
   const handlePrev = useCallback(() => {
-    setCurrentSpread((prev) => Math.max(prev - 1, 0));
+    if (flipBookRef.current?.pageFlip()) {
+      flipBookRef.current.pageFlip().flipPrev();
+    }
   }, []);
 
   const canGoPrev = currentSpread > 0;
   const canGoNext = currentSpread < totalSpreads - 1;
 
   const isCurrentReviewed = (() => {
-    if (!currentSpreadData) return false;
-    const leftPageStatus = getPageStatus(album.id, currentPageLeft + 1);
-    const rightPageStatus = currentPageRight < pages.length ? getPageStatus(album.id, currentPageRight + 1) : 'reviewed';
+    const leftIdx = currentSpread * 2;
+    const rightIdx = leftIdx + 1;
+    const leftPageStatus = getPageStatus(album.id, leftIdx + 1);
+    const rightPageStatus = rightIdx < pages.length ? getPageStatus(album.id, rightIdx + 1) : 'reviewed';
     return leftPageStatus === 'reviewed' && rightPageStatus === 'reviewed';
   })();
 
@@ -179,7 +174,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }
 
   function handleNavigateToPage(spreadNumber: number) {
-    setCurrentSpread(Math.max(0, spreadNumber - 1));
+    const targetPage = Math.max(0, (spreadNumber - 1) * 2);
+    if (flipBookRef.current?.pageFlip()) {
+      flipBookRef.current.pageFlip().flip(targetPage);
+    }
     setShowSummary(false);
   }
 
@@ -281,7 +279,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }
 
   function handleGoToPage(spreadNumber: number) {
-    setCurrentSpread(Math.max(0, spreadNumber - 1));
+    const targetPage = Math.max(0, (spreadNumber - 1) * 2);
+    if (flipBookRef.current?.pageFlip()) {
+      flipBookRef.current.pageFlip().flip(targetPage);
+    }
     setShowRequestType(false);
     setShowGeneralForm(false);
     setShowPinForm(false);
@@ -309,6 +310,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           break;
         case 'Escape':
           if (isFullscreen) document.exitFullscreen().catch(() => {});
+          break;
+        case 'd':
+        case 'D':
+          setShowDebug((p) => !p);
           break;
         case 'f':
         case 'F':
@@ -359,82 +364,79 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         <PinModeBanner onCancel={handleCancelPinMode} />
       )}
 
-      <div className="relative flex-1 overflow-hidden flex items-center justify-center p-8">
-        <div
-          ref={spreadContainerRef}
-          className="relative w-full max-w-6xl aspect-[3/2] perspective-1000"
-        >
-          <div className="absolute inset-0 flex items-center justify-center">
-            {currentSpreadData && (
-              <div className="relative w-full h-full">
-                <div
-                  className="absolute inset-0 flex items-center justify-center"
-                  style={{
-                    transformStyle: 'preserve-3d',
-                    transform: `rotateY(0deg) translateZ(0) scale(1)`,
-                    transition: 'transform 0.3s ease-out',
-                  }}
-                >
-                  <div className="relative w-full h-full">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="relative bg-white rounded-lg shadow-2xl overflow-hidden"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1)',
-                        }}
-                      >
-                        <div className="absolute inset-0 flex">
-                          <div
-                            className="relative flex-1 h-full overflow-hidden"
-                            style={{
-                              backgroundImage: `url(${currentSpreadData.leftHalf})`,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                            }}
-                          >
-                            <div
-                              className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"
-                            />
-                          </div>
+      <div className="relative flex-1 overflow-hidden bg-[#2c1810]">
+        {pages.length > 0 && (() => {
+          const fp = pages[0];
+          const pw = 400;
+          const ph = fp ? Math.round(400 * (fp.height / fp.width)) : 600;
 
-                          <div
-                            ref={spineRef}
-                            className="w-0.5 bg-gradient-to-b from-[#8b5e3c] via-[#a67c52] to-[#8b5e3c] shadow-inner"
-                            style={{
-                              boxShadow: 'inset 0 0 10px rgba(0, 0, 0, 0.5)',
-                            }}
-                          />
-
-                          <div
-                            className="relative flex-1 h-full overflow-hidden"
-                            style={{
-                              backgroundImage: `url(${currentSpreadData.rightHalf})`,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                            }}
-                          >
-                            <div
-                              className="absolute inset-0 bg-gradient-to-l from-black/20 to-transparent"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="absolute inset-0 pointer-events-none">
-                          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/30 to-transparent" />
-                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/30 to-transparent" />
-                          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/30 to-transparent" />
-                          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/30 to-transparent" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+          return (
+            <HTMLFlipBook
+              ref={flipBookRef}
+              width={pw}
+              height={ph}
+              size="stretch"
+              minWidth={100}
+              maxWidth={2000}
+              minHeight={150}
+              maxHeight={3000}
+              startPage={0}
+              flippingTime={800}
+              usePortrait={false}
+              showCover={false}
+              drawShadow={true}
+              maxShadowOpacity={0.7}
+              showPageCorners={true}
+              useMouseEvents={true}
+              swipeDistance={50}
+              mobileScrollSupport={true}
+              clickEventForward={false}
+              disableFlipByClick={false}
+              autoSize={false}
+              startZIndex={0}
+              className="w-full h-full"
+              style={{ backgroundColor: 'transparent' }}
+              onFlip={handleFlipEvent}
+              onInit={handleInitEvent}
+            >
+              {pages.map((page) => (
+                <div key={page.id} className="page" style={{ width: '100%', height: '100%' }}>
+                  <div
+                    className="page-image"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundImage: `url(${page.medium_url ?? page.image_url})`,
+                      backgroundSize: '100% 100%',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  />
                 </div>
+              ))}
+            </HTMLFlipBook>
+          );
+        })()}
+
+        {showDebug && (
+          <>
+            <style>{`
+              .page { border: 2px solid red !important; box-sizing: border-box; }
+              .page-image { border: 2px solid blue !important; box-sizing: border-box; }
+            `}</style>
+            <div className="absolute top-2 left-2 bg-black/85 text-white text-xs font-mono p-3 rounded z-50 leading-tight">
+              <div>Pages: {pages.length} | Spreads: {totalSpreads}</div>
+              <div>Current: spread {currentSpread + 1} / {totalSpreads}</div>
+              <div>Indices: [{currentSpread * 2}, {currentSpread * 2 + 1}]</div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-3 h-3 inline-block bg-red-500 rounded-sm" /> Page div (StPageFlip manages)
               </div>
-            )}
-          </div>
-        </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 inline-block bg-blue-500 rounded-sm" /> Image layer (ours, survives flip)
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {!isFullscreen && (

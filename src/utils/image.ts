@@ -199,14 +199,16 @@ export function isSpreadImage(width: number, height: number, ratioThreshold = 1.
   return width > height * ratioThreshold;
 }
 
-function makeHalfVariant(
+async function makeHalfVariant(
   image: HTMLImageElement,
   cropX: number,
   cropW: number,
   srcH: number,
   targetW: number,
   targetH: number,
-): { width: number; height: number; blob: Blob } {
+  type: string = 'image/jpeg',
+  quality: number = 0.92,
+): Promise<{ width: number; height: number; blob: Blob }> {
   const canvas = document.createElement('canvas');
   canvas.width = targetW;
   canvas.height = targetH;
@@ -215,12 +217,14 @@ function makeHalfVariant(
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(image, cropX, 0, cropW, srcH, 0, 0, targetW, targetH);
-  return { width: targetW, height: targetH, blob: canvas as unknown as Blob };
+  const blob = await canvasToBlob(canvas, type, quality);
+  return { width: targetW, height: targetH, blob };
 }
 
-export function splitImageIntoHalves(
+export async function splitImageIntoHalves(
   image: HTMLImageElement,
-): { left: ImageSizes; right: ImageSizes } {
+  type: string = 'image/jpeg',
+): Promise<{ left: ImageSizes; right: ImageSizes }> {
   const srcW = image.naturalWidth;
   const srcH = image.naturalHeight;
   const halfW = Math.floor(srcW / 2);
@@ -228,7 +232,7 @@ export function splitImageIntoHalves(
   const THUMBNAIL_MAX = 300;
   const MEDIUM_MAX = 1200;
 
-  function halfSizes(cropX: number): ImageSizes {
+  async function halfSizes(cropX: number): Promise<ImageSizes> {
     const origW = halfW;
     const origH = srcH;
 
@@ -240,15 +244,19 @@ export function splitImageIntoHalves(
     const mW = Math.round(origW * mRatio);
     const mH = Math.round(origH * mRatio);
 
-    return {
-      original: makeHalfVariant(image, cropX, halfW, srcH, origW, origH),
-      thumbnail: makeHalfVariant(image, cropX, halfW, srcH, tW, tH),
-      medium: makeHalfVariant(image, cropX, halfW, srcH, mW, mH),
-    };
+    const [original, thumbnail, medium] = await Promise.all([
+      makeHalfVariant(image, cropX, halfW, srcH, origW, origH, type, 0.92),
+      makeHalfVariant(image, cropX, halfW, srcH, tW, tH, type, 0.7),
+      makeHalfVariant(image, cropX, halfW, srcH, mW, mH, type, 0.85),
+    ]);
+
+    return { original, thumbnail, medium };
   }
 
-  return {
-    left: halfSizes(0),
-    right: halfSizes(halfW),
-  };
+  const [left, right] = await Promise.all([
+    halfSizes(0),
+    halfSizes(halfW),
+  ]);
+
+  return { left, right };
 }

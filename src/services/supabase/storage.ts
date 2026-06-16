@@ -91,7 +91,7 @@ export async function uploadImageVariant(
     .upload(filePath, blob, {
       cacheControl: '3600',
       upsert: false,
-      contentType: blob.type,
+      contentType: blob.type || 'image/jpeg',
     });
 
   if (error) {
