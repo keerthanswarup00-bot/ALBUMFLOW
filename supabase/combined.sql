@@ -11,11 +11,11 @@ drop schema if exists public cascade; create schema public;
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
--- Restore schema grants lost when public schema was recreated
+-- Restore schema + default privileges lost when public schema was recreated
 grant usage on schema public to anon, authenticated, service_role;
-grant all privileges on all tables in schema public to anon, authenticated, service_role;
-grant all privileges on all sequences in schema public to anon, authenticated, service_role;
-grant all privileges on all functions in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 
 -- =====================================================
 -- 1. USERS
@@ -2076,3 +2076,11 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- =====================================================
+-- 9. Grant table permissions for all existing objects
+--    (ALTER DEFAULT PRIVILEGES in schema.sql handles future objects)
+-- =====================================================
+grant all privileges on all tables in schema public to anon, authenticated, service_role;
+grant all privileges on all sequences in schema public to anon, authenticated, service_role;
+grant all privileges on all functions in schema public to anon, authenticated, service_role;

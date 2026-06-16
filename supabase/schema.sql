@@ -8,11 +8,11 @@
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
--- Restore schema grants lost when public schema was recreated
+-- Restore schema + default privileges lost when public schema was recreated
 grant usage on schema public to anon, authenticated, service_role;
-grant all privileges on all tables in schema public to anon, authenticated, service_role;
-grant all privileges on all sequences in schema public to anon, authenticated, service_role;
-grant all privileges on all functions in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 
 -- =====================================================
 -- 1. USERS

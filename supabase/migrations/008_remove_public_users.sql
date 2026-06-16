@@ -115,3 +115,11 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- =====================================================
+-- 9. Grant table permissions for all existing objects
+--    (ALTER DEFAULT PRIVILEGES in schema.sql handles future objects)
+-- =====================================================
+grant all privileges on all tables in schema public to anon, authenticated, service_role;
+grant all privileges on all sequences in schema public to anon, authenticated, service_role;
+grant all privileges on all functions in schema public to anon, authenticated, service_role;
