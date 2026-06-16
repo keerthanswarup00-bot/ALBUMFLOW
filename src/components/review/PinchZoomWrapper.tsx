@@ -8,8 +8,13 @@ interface PinchZoomWrapperProps {
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 5;
-const ZOOM_STEP = 2;
 const DOUBLE_TAP_DELAY = 300;
+const MOMENTUM_FRICTION = 0.92;
+const MOMENTUM_MIN_VELOCITY = 0.5;
+
+function clamp(val: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, val));
+}
 
 export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoomWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,12 +27,60 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
   const pinchStart = useRef<{ x: number; y: number } | null>(null);
   const isPinching = useRef(false);
   const isPanning = useRef(false);
+  const momentumRef = useRef<{ vx: number; vy: number } | null>(null);
+  const rafRef = useRef<number>(0);
+  const lastMoveTime = useRef(0);
+  const lastMovePos = useRef({ x: 0, y: 0 });
 
   const isZoomed = scale > 1;
+
+  const containerSize = useRef({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      containerSize.current = { width: rect.width, height: rect.height };
+    }
+  }, []);
 
   useEffect(() => {
     onZoomChange?.(isZoomed);
   }, [isZoomed, onZoomChange]);
+
+  function constrainPosition(pos: { x: number; y: number }, s: number) {
+    const { width, height } = containerSize.current;
+    if (width === 0 || height === 0) return pos;
+    const maxX = 0;
+    const minX = -(width * (s - 1));
+    const maxY = 0;
+    const minY = -(height * (s - 1));
+    return {
+      x: clamp(pos.x, minX, maxX),
+      y: clamp(pos.y, minY, maxY),
+    };
+  }
+
+  function updateScale(newScale: number, centerX?: number, centerY?: number) {
+    const s = clamp(newScale, MIN_SCALE, MAX_SCALE);
+    const cw = containerSize.current.width;
+    const ch = containerSize.current.height;
+    if (s === 1) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      return;
+    }
+    setScale(s);
+    setPosition((prev) => {
+      let x = prev.x;
+      let y = prev.y;
+      if (centerX !== undefined && centerY !== undefined && cw > 0 && ch > 0) {
+        const ratio = s / scale;
+        x = centerX - ratio * (centerX - prev.x);
+        y = centerY - ratio * (centerY - prev.y);
+      }
+      return constrainPosition({ x, y }, s);
+    });
+  }
 
   const resetZoom = useCallback(() => {
     setScale(1);
@@ -41,8 +94,42 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function startMomentum(vx: number, vy: number) {
+    if (momentumRef.current) return;
+    if (Math.abs(vx) < MOMENTUM_MIN_VELOCITY && Math.abs(vy) < MOMENTUM_MIN_VELOCITY) return;
+
+    momentumRef.current = { vx, vy };
+
+    function tick() {
+      const m = momentumRef.current;
+      if (!m) return;
+      m.vx *= MOMENTUM_FRICTION;
+      m.vy *= MOMENTUM_FRICTION;
+      if (Math.abs(m.vx) < MOMENTUM_MIN_VELOCITY && Math.abs(m.vy) < MOMENTUM_MIN_VELOCITY) {
+        momentumRef.current = null;
+        return;
+      }
+      setPosition((prev) => {
+        const s = scale;
+        const next = constrainPosition(
+          { x: prev.x + m.vx, y: prev.y + m.vy },
+          s
+        );
+        return next;
+      });
+      rafRef.current = requestAnimationFrame(tick);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+  }
+
+  function stopMomentum() {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    momentumRef.current = null;
+  }
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!isActive) return;
+    stopMomentum();
 
     if (e.touches.length === 2) {
       isPinching.current = true;
@@ -50,7 +137,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
       initialPinchDist.current = getPinchDistance(e.touches);
       initialScale.current = scale;
       initialPos.current = { ...position };
-      pinchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      pinchStart.current = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
       e.preventDefault();
       return;
     }
@@ -59,6 +146,8 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
       isPanning.current = true;
       initialPos.current = { ...position };
       pinchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      lastMoveTime.current = Date.now();
+      lastMovePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       e.preventDefault();
       return;
     }
@@ -66,7 +155,8 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
     if (e.touches.length === 1 && !isZoomed) {
       const now = Date.now();
       if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-        setScale(ZOOM_STEP);
+        const nextScale = scale === 1 ? 2 : scale === 2 ? 4 : 1;
+        updateScale(nextScale, e.touches[0].clientX, e.touches[0].clientY);
         lastTapRef.current = 0;
         e.preventDefault();
       } else {
@@ -81,8 +171,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
     if (e.touches.length === 2 && isPinching.current) {
       const dist = getPinchDistance(e.touches);
       const ratio = dist / initialPinchDist.current;
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, initialScale.current * ratio));
-      setScale(newScale);
+      updateScale(initialScale.current * ratio, pinchStart.current?.x, pinchStart.current?.y);
       e.preventDefault();
       return;
     }
@@ -90,17 +179,34 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
     if (e.touches.length === 1 && isPanning.current && isZoomed && pinchStart.current) {
       const dx = e.touches[0].clientX - pinchStart.current.x;
       const dy = e.touches[0].clientY - pinchStart.current.y;
-      setPosition({
-        x: initialPos.current.x + dx,
-        y: initialPos.current.y + dy,
-      });
+      const now = Date.now();
+      const dt = now - lastMoveTime.current;
+      if (dt > 0) {
+        lastMovePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        lastMoveTime.current = now;
+      }
+      setPosition(() =>
+        constrainPosition(
+          { x: initialPos.current.x + dx, y: initialPos.current.y + dy },
+          scale
+        )
+      );
       e.preventDefault();
     }
-  }, [isActive, isZoomed]);
+  }, [isActive, isZoomed, scale]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!isActive) return;
+
     if (e.touches.length === 0) {
+      if (isPanning.current && isZoomed) {
+        const dt = Date.now() - lastMoveTime.current;
+        if (dt > 0 && dt < 150) {
+          const vx = (lastMovePos.current.x - pinchStart.current!.x) / dt * 16;
+          const vy = (lastMovePos.current.y - pinchStart.current!.y) / dt * 16;
+          startMomentum(vx, vy);
+        }
+      }
       isPinching.current = false;
       isPanning.current = false;
       pinchStart.current = null;
@@ -111,18 +217,33 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
       pinchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       initialPos.current = { ...position };
     }
-  }, [isActive, position]);
+  }, [isActive, isZoomed, position, scale]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!isActive) return;
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * delta)));
-  }, [isActive, scale]);
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const delta = e.deltaY > 0 ? 0.9 : Math.min(MAX_SCALE, 1.1);
+    const nextScale = clamp(scale * delta, 1, MAX_SCALE);
+    if (nextScale === 1) {
+      resetZoom();
+    } else {
+      updateScale(nextScale, cx, cy);
+    }
+  }, [isActive, scale, resetZoom]);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
-      {/* Transformed content — receives touch/wheel events */}
+      {/* Transformed content */}
       <div
         className="w-full h-full"
         style={{
@@ -138,25 +259,46 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
         {children}
       </div>
 
-      {/* When zoomed: overlay blocks events from reaching flipbook, handles mouse pan */}
+      {/* When zoomed: overlay blocks flip events, handles mouse pan + double-tap */}
       {isZoomed && (
         <div
           className="absolute inset-0 z-10"
           style={{ touchAction: 'none' }}
           onMouseDown={(e) => {
+            stopMomentum();
             initialPos.current = { ...position };
             pinchStart.current = { x: e.clientX, y: e.clientY };
             isPanning.current = true;
+            lastMoveTime.current = Date.now();
+            lastMovePos.current = { x: e.clientX, y: e.clientY };
             e.preventDefault();
           }}
           onMouseMove={(e) => {
             if (!isPanning.current || !pinchStart.current) return;
-            setPosition({
-              x: initialPos.current.x + (e.clientX - pinchStart.current.x),
-              y: initialPos.current.y + (e.clientY - pinchStart.current.y),
-            });
+            const dx = e.clientX - pinchStart.current.x;
+            const dy = e.clientY - pinchStart.current.y;
+            const now = Date.now();
+            const dt = now - lastMoveTime.current;
+            if (dt > 0) {
+              lastMovePos.current = { x: e.clientX, y: e.clientY };
+              lastMoveTime.current = now;
+            }
+            setPosition(() =>
+              constrainPosition(
+                { x: initialPos.current.x + dx, y: initialPos.current.y + dy },
+                scale
+              )
+            );
           }}
           onMouseUp={() => {
+            if (isPanning.current && isZoomed) {
+              const dt = Date.now() - lastMoveTime.current;
+              if (dt > 0 && dt < 150 && pinchStart.current) {
+                const vx = (lastMovePos.current.x - pinchStart.current.x) / dt * 16;
+                const vy = (lastMovePos.current.y - pinchStart.current.y) / dt * 16;
+                startMomentum(vx, vy);
+              }
+            }
             isPanning.current = false;
             pinchStart.current = null;
           }}
@@ -166,7 +308,16 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange }: PinchZoom
           }}
           onDoubleClick={(e) => {
             e.preventDefault();
-            resetZoom();
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            const cx = e.clientX - rect.left;
+            const cy = e.clientY - rect.top;
+            const nextScale = scale === 1 ? 2 : scale === 2 ? 4 : 1;
+            if (nextScale === 1) {
+              resetZoom();
+            } else {
+              updateScale(nextScale, cx, cy);
+            }
           }}
         />
       )}

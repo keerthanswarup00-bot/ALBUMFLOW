@@ -15,7 +15,8 @@ interface RequestState {
   getPinRequests: (albumId: string) => ViewerRequestChange[];
   getGeneralRequests: (albumId: string) => ViewerRequestChange[];
   getOpenRequests: (albumId: string) => ViewerRequestChange[];
-
+  getUnsubmittedCount: (albumId: string) => number;
+  markAllAsSubmitted: (albumId: string) => void;
   saveDraft: (albumId: string, draft: RequestDraft) => void;
   getDraft: (albumId: string) => RequestDraft | null;
   clearDraft: (albumId: string) => void;
@@ -65,6 +66,7 @@ export const useRequestStore = create<RequestState>((set, get) => ({
       message,
       pin,
       status: 'open',
+      submitted: false,
       created_at: Date.now(),
       updated_at: Date.now(),
     };
@@ -107,6 +109,17 @@ export const useRequestStore = create<RequestState>((set, get) => ({
 
   getOpenRequests: (albumId: string) => {
     return get().getRequests(albumId).filter((r) => r.status === 'open');
+  },
+
+  getUnsubmittedCount: (albumId: string) => {
+    return get().getRequests(albumId).filter((r) => !r.submitted).length;
+  },
+
+  markAllAsSubmitted: (albumId: string) => {
+    const requests = get().getRequests(albumId);
+    const updated = requests.map((r) => ({ ...r, submitted: true, updated_at: Date.now() }));
+    set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
+    saveRequests(albumId, updated);
   },
 
   saveDraft: (albumId: string, draft: RequestDraft) => {

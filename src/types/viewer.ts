@@ -109,6 +109,7 @@ export interface ViewerRequestChange {
   message: string;
   pin: PinPlacement | null;
   status: RequestChangeStatus;
+  submitted: boolean;
   created_at: number;
   updated_at: number;
 }

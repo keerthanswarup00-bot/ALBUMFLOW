@@ -4,6 +4,7 @@ import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useUIStore } from '@/store/uiStore';
+import { useReviewCycleStore } from '@/store/reviewCycleStore';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
 import { ReviewSummaryScreen } from './ReviewSummaryScreen';
 import { HelpPanel } from './HelpPanel';
@@ -113,6 +114,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     deleteRequest,
     updateRequest,
     clearDraft,
+    getUnsubmittedCount,
+    markAllAsSubmitted,
   } = useRequestStore();
 
   const {
@@ -138,7 +141,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   const currentPinRequests = currentPageRequests.filter((r) => r.category === 'pin' && r.pin);
 
-  const hasUnsentChanges = totalRequests > 0 || totalVoiceRecordings > 0;
+  const unsubmittedCount = getUnsubmittedCount(album.id);
+  const hasUnsentChanges = unsubmittedCount > 0 || totalVoiceRecordings > 0;
 
   useEffect(() => {
     ensureAlbum(album.id, totalSpreads);
@@ -283,6 +287,14 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     setSelectedPinPos(null);
   }
 
+  const { submitReview } = useReviewCycleStore();
+
+  function handleSubmitChanges() {
+    markAllAsSubmitted(album.id);
+    submitReview(album.id);
+    showToast('Changes submitted to designer', 'success');
+  }
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (isHelpOpen) {
@@ -339,6 +351,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       {!isFullscreen && (
         <div className="landscape:max-h-[44px] landscape:overflow-hidden">
           <ReviewProgressTracker
+            currentSpread={currentSpread}
             albumTitle={album.title}
             reviewedCount={reviewedSpreads}
             totalPages={totalSpreads}
@@ -370,7 +383,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
             </span>
           )}
           <button
-            onClick={() => setShowSummary(true)}
+            onClick={handleSubmitChanges}
             className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
             disabled={!hasUnsentChanges}
           >

@@ -2,6 +2,7 @@ import { cn } from '@/utils/cn';
 import { BarChart3, Maximize2, Minimize2, HelpCircle, MessageSquare, ArrowLeft } from 'lucide-react';
 
 interface ReviewProgressTrackerProps {
+  currentSpread: number;
   reviewedCount: number;
   totalPages: number;
   completionPercent: number;
@@ -17,6 +18,7 @@ interface ReviewProgressTrackerProps {
 }
 
 export function ReviewProgressTracker({
+  currentSpread,
   reviewedCount,
   totalPages,
   completionPercent,
@@ -42,8 +44,11 @@ export function ReviewProgressTracker({
             <ArrowLeft className="h-5 w-5 landscape:h-4 landscape:w-4" />
           </button>
         )}
-        <div className="min-w-0 flex-1 px-1.5 landscape:px-1">
-          <h1 className="truncate text-xs font-semibold text-gray-600 leading-tight landscape:text-[10px]">{albumTitle}</h1>
+        <div className="min-w-0 flex-1 px-1.5 landscape:px-1 flex items-center gap-2">
+          <span className="text-xs font-bold text-gray-800 tabular-nums landscape:text-[10px] shrink-0">
+            {currentSpread + 1}/{totalPages}
+          </span>
+          <h1 className="truncate text-xs font-semibold text-gray-500 leading-tight landscape:text-[10px]">{albumTitle}</h1>
         </div>
         <div className="flex shrink-0 items-center gap-0 landscape:gap-0.5">
           <div className="hidden sm:flex items-center gap-1.5 mr-2 landscape:mr-1 landscape:gap-1">
