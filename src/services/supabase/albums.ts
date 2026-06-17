@@ -31,19 +31,6 @@ function mapRowToAlbum(row: Record<string, unknown>): Album {
   };
 }
 
-export async function getAlbums(): Promise<Album[]> {
-  const { data, error } = await supabase
-    .from('albums')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw new ApiError(`Failed to fetch albums: ${error.message}`, 500, error);
-  }
-
-  return (data ?? []).map(mapRowToAlbum);
-}
-
 export async function getAlbumById(id: string): Promise<Album | null> {
   const { data, error } = await supabase
     .from('albums')
@@ -69,6 +56,19 @@ export async function createAlbum(
   }
 
   const albumSlug = slug || slugify(formData.title);
+
+  const { count, error: countError } = await supabase
+    .from('albums')
+    .select('id', { count: 'exact', head: true })
+    .eq('designer_id', userData.user.id)
+    .eq('slug', albumSlug)
+    .not('status', 'eq', 'archived');
+
+  if (countError) {
+    console.error('[albums] slug check error:', countError);
+  } else if (count && count > 0) {
+    throw new ApiError(`The share link "${albumSlug}" is already in use. Please choose a different slug.`, 409);
+  }
 
   const { data, error } = await supabase
     .from('albums')

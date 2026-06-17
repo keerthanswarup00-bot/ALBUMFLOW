@@ -105,7 +105,7 @@ export function ViewAlbumPage() {
           pages: typedResult.pages ?? [],
         });
 
-        const designerId = typedResult.designer_id;
+        const designerId = typedResult.album?.designer_id as string | undefined ?? typedResult.designer_id;
         if (designerId) {
           const { data: profile } = await supabase
             .from('profiles')

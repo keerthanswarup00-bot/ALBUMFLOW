@@ -6,7 +6,6 @@ export const ROUTES = {
   ALBUM_DETAIL: '/albums/:albumId',
   ALBUM_EDIT: '/albums/:albumId/edit',
   ALBUM_NEW: '/albums/new',
-  ALBUM_VIEWER: '/albums/:albumId/viewer',
   VIEW_ALBUM: '/view/:token',
   REVIEW_MANAGEMENT: '/review-management',
   SETTINGS: '/settings',

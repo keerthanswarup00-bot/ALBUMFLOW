@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.12';
 
 serve(async (req: Request) => {
   try {
-    const { token, comment } = await req.json();
+    const { token, client_name, client_email } = await req.json();
     if (!token || typeof token !== 'string') {
       return new Response(JSON.stringify({ error: 'missing_token' }), {
         status: 400,
@@ -19,8 +19,8 @@ serve(async (req: Request) => {
 
     const { data, error } = await supabase.rpc('approve_album', {
       p_token: token,
-      p_client_name: '',
-      p_client_email: comment ?? '',
+      p_client_name: client_name ?? '',
+      p_client_email: client_email ?? '',
     });
 
     if (error) {

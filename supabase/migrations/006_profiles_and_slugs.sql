@@ -124,7 +124,7 @@ begin
 
   select row_to_json(t.*) into v_album_json
   from (
-    select a.id, a.title, a.client_name, a.event_type, a.status::text, a.phase::text, a.cover_image_url, a.created_at
+    select a.id, a.designer_id, a.title, a.client_name, a.event_type, a.status::text, a.phase::text, a.cover_image_url, a.created_at
     from public.albums a
     where a.id = v_album_id
   ) t;

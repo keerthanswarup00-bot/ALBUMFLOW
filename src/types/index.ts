@@ -50,6 +50,7 @@ export const EVENT_TYPES: EventType[] = [
 
 export const ALBUM_STATUSES: AlbumStatus[] = [
   'draft',
+  'active',
   'awaiting_review',
   'changes_requested',
   'approved',
@@ -66,7 +67,7 @@ export interface Album {
   event_type: EventType;
   slug: string | null;
   cover_image_url: string | null;
-  status: AlbumStatus;
+  status: AlbumStatus | 'archived';
   phase: AlbumPhase;
   deadline: string | null;
   created_at: string;

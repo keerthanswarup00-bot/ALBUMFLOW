@@ -42,13 +42,18 @@ export function CreateStudioPage() {
     if (!validate()) return;
 
     try {
-      await signUp(email, password, {
+      const result = await signUp(email, password, {
         studio_name: studioName.trim(),
         owner_name: ownerName.trim(),
         phone_number: phoneNumber.trim(),
       });
-      showToast('Account created! Welcome to AlbumFlow.', 'success');
-      navigate(ROUTES.DASHBOARD);
+      if (result?.session) {
+        showToast('Account created! Welcome to AlbumFlow.', 'success');
+        navigate(ROUTES.DASHBOARD);
+      } else {
+        showToast('Account created! Check your email to confirm your account before signing in.', 'success');
+        navigate(ROUTES.LOGIN);
+      }
     } catch {
       // error is set in store
     }

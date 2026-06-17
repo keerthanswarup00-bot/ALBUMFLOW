@@ -39,6 +39,13 @@ serve(async (req: Request) => {
       });
     }
 
+    if (result?.error === 'album_deleted') {
+      return new Response(JSON.stringify({ error: 'album_deleted' }), {
+        status: 410,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     if (!result?.album) {
       return new Response(JSON.stringify({ error: 'album_not_found' }), {
         status: 404,

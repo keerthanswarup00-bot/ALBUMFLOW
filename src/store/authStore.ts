@@ -16,7 +16,7 @@ interface AuthState {
     studio_name?: string;
     owner_name?: string;
     phone_number?: string;
-  }) => Promise<void>;
+  }) => Promise<{ user: User | null; session: boolean }>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   setProfile: (profile: Profile | null) => void;
@@ -85,6 +85,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error: null,
         });
       }
+      return { user: result.user, session: !!result.session };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Sign up failed';
       set({ isLoading: false, error: message });

@@ -20,7 +20,6 @@ interface ReviewProgressTrackerProps {
 
 export function ReviewProgressTracker({
   currentSpread,
-  reviewedCount,
   totalPages,
   completionPercent,
   onBack,
