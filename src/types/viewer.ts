@@ -10,6 +10,7 @@ export interface ReviewAlbum {
   phase: string;
   cover_image_url: string | null;
   created_at: string;
+  designer_id?: string;
 }
 
 export interface ReviewVersion {

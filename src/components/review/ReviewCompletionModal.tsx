@@ -9,7 +9,6 @@ interface ReviewCompletionModalProps {
   albumId: string;
   totalPages: number;
   studioName: string;
-  ownerName: string;
   phoneNumber: string;
   studioLogoUrl?: string;
   onClose: () => void;
@@ -21,7 +20,6 @@ export function ReviewCompletionModal({
   albumId,
   totalPages,
   studioName,
-  ownerName,
   phoneNumber,
   studioLogoUrl,
   onClose,

@@ -177,7 +177,6 @@ export function ViewAlbumPage() {
         album={data.album}
         pages={data.pages}
         studioName={studioInfo.name}
-        ownerName={studioInfo.owner}
         phoneNumber={studioInfo.phone}
         studioLogoUrl={studioInfo.logoUrl}
       />
