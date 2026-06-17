@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabase/client';
 import { WelcomeScreen } from '@/components/review/WelcomeScreen';
 import { AlbumViewer } from '@/components/review/AlbumViewer';
-import { ReviewCompletedPage } from './ReviewCompletedPage';
 import { Spinner } from '@/components/ui/Spinner';
 import { useMetaTags } from '@/hooks/useMetaTags';
 import type { ReviewData } from '@/types/viewer';
@@ -23,7 +22,6 @@ export function ViewAlbumPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [completed, setCompleted] = useState(false);
   const [studioInfo, setStudioInfo] = useState<{ name: string; owner: string; phone: string; logoUrl: string }>({ name: 'Studio', owner: '', phone: '', logoUrl: '' });
 
   const identifier = token || slug;
@@ -145,19 +143,6 @@ export function ViewAlbumPage() {
   if (error || !data) {
     navigate('/album-unavailable?no_studio=1', { replace: true });
     return null;
-  }
-
-  if (completed) {
-    return (
-      <ReviewCompletedPage
-        albumTitle={data.album.title}
-        studioName={studioInfo.name}
-        ownerName={studioInfo.owner}
-        phoneNumber={studioInfo.phone}
-        studioLogoUrl={studioInfo.logoUrl}
-        onBack={() => setCompleted(false)}
-      />
-    );
   }
 
   if (data.pages.length === 0) {
