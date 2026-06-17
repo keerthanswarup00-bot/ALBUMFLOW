@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { ImageUploadSection } from '@/components/album/ImageUploadSection';
-import { ROUTES, albumViewRoute } from '@/constants/routes';
+import { ROUTES, albumViewRoute, albumReviewRoute } from '@/constants/routes';
 import { formatDate, formatDateTime } from '@/utils/formatters';
 import * as shareLinkService from '@/services/supabase/shareLinks';
 import * as pageService from '@/services/supabase/pages';
@@ -30,6 +30,7 @@ import {
   ExternalLink,
   SendHorizonal,
   Building2,
+  MessageCircle,
 } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -116,13 +117,32 @@ export function AlbumDetailPage() {
   }
 
   function handleCopyLink(token: string, id: string) {
-    const url = `${window.location.origin}${albumViewRoute(token)}`;
+    const slugUrl = currentAlbum?.slug
+      ? `${window.location.origin}${albumReviewRoute(currentAlbum.slug)}`
+      : null;
+    const url = slugUrl || `${window.location.origin}${albumViewRoute(token)}`;
     navigator.clipboard.writeText(url).then(() => {
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopiedId(id);
       copiedTimerRef.current = window.setTimeout(() => setCopiedId(null), 2000);
       showToast('Link copied to clipboard', 'success');
     });
+  }
+
+  function handleWhatsAppShare(url: string) {
+    const studioName = profile?.studio_name || 'My Studio';
+    const message = [
+      `${studioName}`,
+      '',
+      'Your album is ready for review.',
+      '',
+      'Please review the album and request any changes directly on the photos.',
+      '',
+      url,
+      '',
+      'Reviewed with AlbumFlow',
+    ].join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   }
 
   function handleUploadComplete() {
@@ -506,6 +526,23 @@ export function AlbumDetailPage() {
             </div>
           )}
 
+          {/* Slug-based review URL */}
+          {currentAlbum?.slug && (
+            <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-blue-700">Album Review Link</p>
+                  <p className="mt-0.5 text-xs text-blue-500">
+                    Share this clean URL with clients:
+                  </p>
+                  <code className="mt-1.5 block truncate rounded bg-white px-2 py-1 text-xs text-blue-800 border border-blue-200">
+                    {`${window.location.origin}/review/${currentAlbum.slug}`}
+                  </code>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Links list */}
           {linksLoading ? (
             <div className="flex items-center justify-center py-8">
@@ -523,7 +560,11 @@ export function AlbumDetailPage() {
             <div className="flex flex-col gap-3">
               {shareLinks.map((link) => {
                 const isActive = !link.revoked_at;
-                const url = `${window.location.origin}${albumViewRoute(link.token)}`;
+                const tokenUrl = `${window.location.origin}${albumViewRoute(link.token)}`;
+                const slugUrl = currentAlbum?.slug
+                  ? `${window.location.origin}${albumReviewRoute(currentAlbum.slug)}`
+                  : null;
+                const displayUrl = slugUrl || tokenUrl;
                 return (
                   <div
                     key={link.id}
@@ -554,7 +595,7 @@ export function AlbumDetailPage() {
                         {isActive && (
                           <div className="mt-2 flex items-center gap-1.5">
                             <code className="max-w-[200px] truncate rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                              {url}
+                              {displayUrl}
                             </code>
                             <button
                               onClick={() => handleCopyLink(link.token, link.id)}
@@ -568,7 +609,7 @@ export function AlbumDetailPage() {
                               )}
                             </button>
                             <a
-                              href={url}
+                              href={tokenUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="shrink-0 rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
@@ -576,6 +617,13 @@ export function AlbumDetailPage() {
                             >
                               <ExternalLink className="h-4 w-4" />
                             </a>
+                            <button
+                              onClick={() => handleWhatsAppShare(displayUrl)}
+                              className="shrink-0 rounded p-1 text-green-500 hover:text-green-600 hover:bg-green-50 transition-colors cursor-pointer"
+                              title="Share on WhatsApp"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </div>

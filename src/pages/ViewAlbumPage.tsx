@@ -17,7 +17,7 @@ interface TokenResult {
 }
 
 export function ViewAlbumPage() {
-  const { token } = useParams<{ token: string }>();
+  const { token, slug } = useParams<{ token: string; slug: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<ReviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,34 +25,33 @@ export function ViewAlbumPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [completed, setCompleted] = useState(false);
   const [studioInfo, setStudioInfo] = useState<{ name: string; owner: string; phone: string; logoUrl: string }>({ name: 'Studio', owner: '', phone: '', logoUrl: '' });
-  const [deletedInfo, setDeletedInfo] = useState<{
-    studio_name: string;
-    owner_name: string;
-    phone_number: string;
-    album_title: string;
-    studio_logo_url: string;
-  } | null>(null);
+
+  const identifier = token || slug;
+  const isSlug = !token && !!slug;
 
   useMetaTags(data?.album ? {
-    title: `${data.album.title} - Album Preview`,
-    description: `Preview and review ${data.album.title}`,
+    title: studioInfo.name !== 'Studio' ? `${studioInfo.name} • Album Review` : `${data.album.title} - Album Preview`,
+    description: `Review your ${data.album.title} album and request changes online.`,
     image: data.album.cover_image_url || undefined,
   } : null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!identifier) return;
 
     let cancelled = false;
 
     (async () => {
       try {
+        const rpcName = isSlug ? 'get_album_by_slug' : 'get_album_by_token';
+        const rpcParams = isSlug ? { p_slug: slug } : { p_token: token };
+
         const { data: result, error: rpcError } = await supabase
-          .rpc('get_album_by_token', { p_token: token });
+          .rpc(rpcName, rpcParams);
 
         if (cancelled) return;
 
         if (rpcError) {
-          console.error('RPC Error', 'get_album_by_token', { p_token: token }, rpcError);
+          console.error('RPC Error', rpcName, rpcParams, rpcError);
           setError(rpcError.message);
           return;
         }
@@ -60,27 +59,25 @@ export function ViewAlbumPage() {
         const typedResult = result as unknown as TokenResult & { designer_id?: string };
 
         if (typedResult?.error === 'album_deleted') {
-          const { data: studioData } = await supabase
-            .rpc('get_studio_by_album_token', { p_token: token });
-
-          if (studioData && typeof studioData === 'object' && 'studio' in (studioData as Record<string, unknown>)) {
-            const sd = studioData as { studio: { studio_name: string; owner_name: string; phone_number: string; studio_logo_url: string } | null; album_title: string };
-            setDeletedInfo({
-              studio_name: sd.studio?.studio_name || 'the studio',
-              owner_name: sd.studio?.owner_name || '',
-              phone_number: sd.studio?.phone_number || '',
-              album_title: sd.album_title || 'Album',
-              studio_logo_url: sd.studio?.studio_logo_url || '',
-            });
-          } else {
-            setDeletedInfo({
-              studio_name: 'the studio',
-              owner_name: '',
-              phone_number: '',
-              album_title: typedResult.album?.title || 'Album',
-              studio_logo_url: '',
-            });
+          const designerId = typedResult.album?.designer_id as string | undefined;
+          if (designerId) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('studio_name, owner_name, phone_number, studio_logo_url')
+              .eq('user_id', designerId)
+              .single();
+            if (profile) {
+              const params = new URLSearchParams({
+                studio_name: profile.studio_name || 'the studio',
+                studio_logo_url: profile.studio_logo_url || '',
+                owner_name: profile.owner_name || '',
+                phone: profile.phone_number || '',
+              });
+              navigate(`/album-unavailable?${params.toString()}`, { replace: true });
+              return;
+            }
           }
+          navigate('/album-unavailable?no_studio=1', { replace: true });
           return;
         }
 
@@ -129,18 +126,9 @@ export function ViewAlbumPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [token]);
+  }, [identifier]);
 
-  if (deletedInfo) {
-    const params = new URLSearchParams({
-      studio_name: deletedInfo.studio_name,
-      phone: deletedInfo.phone_number,
-    });
-    navigate(`/album-unavailable?${params.toString()}`, { replace: true });
-    return null;
-  }
-
-  if (!token) {
+  if (!identifier) {
     navigate('/album-unavailable?no_studio=1', { replace: true });
     return null;
   }
@@ -200,7 +188,7 @@ export function ViewAlbumPage() {
       )}
 
       <AlbumViewer
-        key={token}
+        key={identifier}
         album={data.album}
         pages={data.pages}
         studioName={studioInfo.name}

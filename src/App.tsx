@@ -67,6 +67,7 @@ export default function App() {
         </Route>
 
         <Route path={ROUTES.VIEW_ALBUM} element={<ViewAlbumPage />} />
+        <Route path={ROUTES.REVIEW_ALBUM} element={<ViewAlbumPage />} />
         <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
         <Route path={ROUTES.ALBUM_UNAVAILABLE} element={<AlbumUnavailablePage />} />
 

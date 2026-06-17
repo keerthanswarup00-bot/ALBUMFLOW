@@ -7,6 +7,7 @@ export const ROUTES = {
   ALBUM_EDIT: '/albums/:albumId/edit',
   ALBUM_NEW: '/albums/new',
   VIEW_ALBUM: '/view/:token',
+  REVIEW_ALBUM: '/review/:slug',
   REVIEW_MANAGEMENT: '/review-management',
   SETTINGS: '/settings',
   PROFILE: '/profile',
@@ -16,4 +17,8 @@ export const ROUTES = {
 
 export function albumViewRoute(token: string) {
   return ROUTES.VIEW_ALBUM.replace(':token', token);
+}
+
+export function albumReviewRoute(slug: string) {
+  return ROUTES.REVIEW_ALBUM.replace(':slug', slug);
 }
