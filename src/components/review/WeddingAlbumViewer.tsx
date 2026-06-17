@@ -5,7 +5,7 @@ import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useUIStore } from '@/store/uiStore';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
-import { ReviewSummaryScreen } from './ReviewSummaryScreen';
+import { ReviewCompletionModal } from './ReviewCompletionModal';
 import { HelpBottomSheet } from './HelpBottomSheet';
 import { PinMarker } from './PinMarker';
 import { PinPopup } from './PinPopup';
@@ -44,7 +44,7 @@ const AUTO_HIDE_DELAY = 3000;
 const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((props, ref) => {
   const { album, pages, studioName = 'Studio', ownerName = '', phoneNumber = '', studioLogoUrl = '' } = props;
   const [currentSpread, setCurrentSpread] = useState(0);
-  const [showSummary, setShowSummary] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPinMode, setIsPinMode] = useState(false);
   const [pendingPin, setPendingPin] = useState<{ xPercent: number; yPercent: number; label: string } | null>(null);
@@ -113,8 +113,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     markPageReviewed,
     undoReview,
     getReviewedCount,
-    getViewedCount,
-    getUnreviewedPages,
     getPageStatus,
     ensureAlbum,
   } = useReviewStore();
@@ -134,14 +132,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const { showToast } = useUIStore();
 
   const reviewedHalves = getReviewedCount(album.id);
-  const viewedHalves = getViewedCount(album.id);
   const reviewedSpreads = Math.floor(reviewedHalves / 2);
-  const viewedSpreads = Math.floor(viewedHalves / 2);
   const completionPercent = totalSpreads > 0 ? Math.round((reviewedSpreads / totalSpreads) * 100) : 0;
-  const unreviewedHalves = getUnreviewedPages(album.id, pages.length);
-  const unreviewedSpreads = totalSpreads > 0
-    ? [...new Set(unreviewedHalves.map((p) => Math.ceil(p / 2)))]
-    : [];
 
   const currentPageRequests = getRequestsByPage(album.id, currentSpread + 1);
 
@@ -215,14 +207,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     if (leftIdx + 2 <= pages.length) {
       undoReview(album.id, leftIdx + 2, pages.length);
     }
-  }
-
-  function handleNavigateToPage(spreadNumber: number) {
-    const targetPage = Math.max(0, (spreadNumber - 1) * 2);
-    if (flipBookRef.current?.pageFlip()) {
-      flipBookRef.current.pageFlip().flip(targetPage);
-    }
-    setShowSummary(false);
   }
 
   async function toggleFullscreen() {
@@ -382,8 +366,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   showNewPinEditorRef.current = showNewPinEditor;
   const selectedRequestRef = useRef(selectedRequest);
   selectedRequestRef.current = selectedRequest;
-  const showSummaryRef = useRef(showSummary);
-  showSummaryRef.current = showSummary;
+  const showCompletionRef = useRef(showCompletion);
+  showCompletionRef.current = showCompletion;
   const isPreviewModeRef = useRef(isPreviewMode);
   isPreviewModeRef.current = isPreviewMode;
   const isFullscreenRef = useRef(isFullscreen);
@@ -397,7 +381,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         if (e.key === 'Escape') setIsHelpOpen(false);
         return;
       }
-      if (showVoiceRecorderRef.current || showNewPinEditorRef.current || selectedRequestRef.current || showSummaryRef.current) return;
+      if (showVoiceRecorderRef.current || showNewPinEditorRef.current || selectedRequestRef.current || showCompletionRef.current) return;
       if (isPinModeRef.current) return;
 
       switch (e.key) {
@@ -466,7 +450,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         onBack={() => window.history.back()}
         onToggleFullscreen={toggleFullscreen}
         onToggleHelp={toggleHelp}
-        onToggleSummary={() => setShowSummary(true)}
+        onToggleSummary={() => setShowCompletion(true)}
         onTogglePreview={enterPreview}
       />
 
@@ -665,21 +649,15 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
       <HelpBottomSheet isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
-      {showSummary && (
-        <ReviewSummaryScreen
+      {showCompletion && (
+        <ReviewCompletionModal
           albumId={album.id}
-          albumTitle={album.title}
           totalPages={totalSpreads}
-          reviewedCount={reviewedSpreads}
-          viewedCount={viewedSpreads}
-          completionPercent={completionPercent}
-          unreviewedPages={unreviewedSpreads}
           studioName={studioName}
           ownerName={ownerName}
           phoneNumber={phoneNumber}
           studioLogoUrl={studioLogoUrl}
-          onNavigateToPage={handleNavigateToPage}
-          onClose={() => setShowSummary(false)}
+          onClose={() => setShowCompletion(false)}
         />
       )}
 
