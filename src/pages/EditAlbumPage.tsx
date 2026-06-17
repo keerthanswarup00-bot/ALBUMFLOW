@@ -34,12 +34,12 @@ export function EditAlbumPage() {
   if (error || !currentAlbum) {
     return (
       <div className="mx-auto max-w-2xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-6 text-sm text-red-700 dark:text-red-400">
           {error ?? 'Album not found'}
         </div>
         <Link
           to={ROUTES.ALBUMS}
-          className="mt-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+          className="mt-4 inline-flex items-center gap-1 text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to albums
@@ -53,7 +53,7 @@ export function EditAlbumPage() {
       <div className="mb-6">
         <Link
           to={ROUTES.ALBUM_DETAIL.replace(':albumId', albumId!)}
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to album
@@ -61,11 +61,11 @@ export function EditAlbumPage() {
       </div>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Album</h1>
-        <p className="mt-1 text-sm text-gray-500">{currentAlbum.title}</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-text-primary">Edit Album</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary">{currentAlbum.title}</p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-6 shadow-sm">
         <AlbumForm
           initialData={currentAlbum}
           onSubmit={handleSubmit}

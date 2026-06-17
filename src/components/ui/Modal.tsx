@@ -80,7 +80,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 dark:bg-black/65 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -88,20 +88,20 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full rounded-2xl bg-white shadow-xl outline-none',
+          'relative z-10 w-full rounded-2xl bg-white dark:bg-bg-elevated shadow-xl outline-none',
           sizeStyles[size],
         )}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-border-primary px-5 py-4">
+          <h2 id="modal-title" className="text-lg font-semibold text-gray-900 dark:text-text-primary">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 dark:text-text-muted hover:bg-gray-100 dark:hover:bg-bg-secondary hover:text-gray-600 dark:hover:text-text-secondary transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="h-5 w-5" />

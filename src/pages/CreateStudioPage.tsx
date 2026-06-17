@@ -62,8 +62,8 @@ export function CreateStudioPage() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-gray-900">Create Studio Account</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-text-primary">Create Studio Account</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary">
           Set up your studio to get started
         </p>
       </div>
@@ -116,7 +116,7 @@ export function CreateStudioPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -125,9 +125,9 @@ export function CreateStudioPage() {
         <Button type="submit" isLoading={isLoading} size="lg" className="w-full">
           Create Account
         </Button>
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-gray-500 dark:text-text-secondary">
           Already have an account?{' '}
-          <Link to={ROUTES.LOGIN} className="font-medium text-blue-600 hover:text-blue-700">
+          <Link to={ROUTES.LOGIN} className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
             Sign in
           </Link>
         </p>

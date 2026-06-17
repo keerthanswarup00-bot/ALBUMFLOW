@@ -94,11 +94,11 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
       />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Event Type</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-text-secondary">Event Type</label>
         <select
           value={formData.event_type}
           onChange={(e) => handleField('event_type', e.target.value as EventType)}
-          className="rounded-xl border border-gray-300 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          className="rounded-xl border border-gray-300 dark:border-border-primary bg-white dark:bg-bg-primary text-gray-900 dark:text-text-primary px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         >
           {EVENT_TYPES.map((type) => (
             <option key={type} value={type}>
@@ -117,12 +117,12 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
       />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Description (optional)</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-text-secondary">Description (optional)</label>
         <textarea
           value={formData.description}
           onChange={(e) => handleField('description', e.target.value)}
           rows={3}
-          className="rounded-xl border border-gray-300 px-3 py-2.5 text-sm transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          className="rounded-xl border border-gray-300 dark:border-border-primary bg-white dark:bg-bg-primary text-gray-900 dark:text-text-primary px-3 py-2.5 text-sm transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           placeholder="Add any notes about this album..."
         />
       </div>
@@ -135,7 +135,7 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
       />
 
       {errors.form && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {errors.form}
         </div>
       )}

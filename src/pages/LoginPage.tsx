@@ -43,8 +43,8 @@ export function LoginPage() {
     return (
       <div className="flex flex-col gap-5">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900">Reset Password</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-text-primary">Reset Password</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary">
             Enter your email to receive a reset link
           </p>
         </div>
@@ -60,13 +60,13 @@ export function LoginPage() {
         />
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
 
         {resetSent ? (
-          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/30 px-4 py-3 text-sm text-green-700 dark:text-green-400">
             Reset link sent! Check your email.
           </div>
         ) : (
@@ -77,7 +77,7 @@ export function LoginPage() {
 
         <button
           onClick={() => { setShowReset(false); setResetSent(false); clearError(); }}
-          className="text-center text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+          className="text-center text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary transition-colors cursor-pointer"
         >
           Back to sign in
         </button>
@@ -88,8 +88,8 @@ export function LoginPage() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-gray-900">Sign in</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-text-primary">Sign in</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary">
           Sign in to your designer account
         </p>
       </div>
@@ -116,7 +116,7 @@ export function LoginPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -128,7 +128,7 @@ export function LoginPage() {
         <button
           type="button"
           onClick={() => { setShowReset(true); clearError(); }}
-          className="text-center text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+          className="text-center text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary transition-colors cursor-pointer"
         >
           Forgot password?
         </button>
@@ -136,16 +136,16 @@ export function LoginPage() {
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-gray-200 dark:border-border-primary" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-400">New here?</span>
+          <span className="bg-white dark:bg-bg-primary px-2 text-gray-400 dark:text-text-muted">New here?</span>
         </div>
       </div>
 
       <Link
         to={ROUTES.SIGNUP}
-        className="block w-full rounded-xl border border-gray-300 bg-white px-6 py-3.5 text-center text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        className="block w-full rounded-xl border border-gray-300 dark:border-border-primary bg-white dark:bg-bg-elevated px-6 py-3.5 text-center text-base font-medium text-gray-700 dark:text-text-secondary hover:bg-gray-50 dark:hover:bg-bg-secondary transition-colors"
       >
         Create Studio Account
       </Link>

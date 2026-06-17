@@ -85,8 +85,8 @@ export function ImageDropZone({
         className={cn(
           'relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 transition-colors',
           isDragging
-            ? 'border-blue-400 bg-blue-50'
-            : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100',
+            ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+            : 'border-gray-300 dark:border-border-primary bg-gray-50 dark:bg-bg-secondary hover:border-gray-400 dark:hover:border-accent hover:bg-gray-100 dark:hover:bg-bg-elevated',
           isUploading && 'pointer-events-none opacity-50',
         )}
       >
@@ -103,14 +103,14 @@ export function ImageDropZone({
         {previews.length > 0 ? (
           <div className="flex flex-col items-center gap-3">
             <div className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium text-gray-700">
+              <ImageIcon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-text-secondary">
                 {previews.length} file{previews.length !== 1 ? 's' : ''} selected
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {previews.map((url, i) => (
-                <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border border-gray-200">
+                <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border border-gray-200 dark:border-border-primary">
                   <img
                     src={url}
                     alt=""
@@ -125,7 +125,7 @@ export function ImageDropZone({
                 e.stopPropagation();
                 clearPreviews();
               }}
-              className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+              className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
             >
               <X className="h-3 w-3" />
               Clear selection
@@ -133,11 +133,11 @@ export function ImageDropZone({
           </div>
         ) : (
           <>
-            <Upload className="mb-3 h-12 w-12 text-gray-300" />
-            <p className="text-sm font-medium text-gray-700">
+            <Upload className="mb-3 h-12 w-12 text-gray-300 dark:text-text-muted" />
+            <p className="text-sm font-medium text-gray-700 dark:text-text-secondary">
               Drag & drop images here
             </p>
-            <p className="mt-1.5 text-xs text-gray-500">
+            <p className="mt-1.5 text-xs text-gray-500 dark:text-text-muted">
               or click to browse &middot; JPEG, PNG, WebP &middot; Up to {maxSize}MB
             </p>
           </>

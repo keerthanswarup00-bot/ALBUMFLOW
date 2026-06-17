@@ -31,10 +31,10 @@ import {
 } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  draft: { label: 'Draft', className: 'bg-gray-100 text-gray-700' },
-  awaiting_review: { label: 'Awaiting Review', className: 'bg-amber-100 text-amber-700' },
-  changes_requested: { label: 'Changes Requested', className: 'bg-red-100 text-red-700' },
-  approved: { label: 'Approved', className: 'bg-green-100 text-green-700' },
+  draft: { label: 'Draft', className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' },
+  awaiting_review: { label: 'Awaiting Review', className: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' },
+  changes_requested: { label: 'Changes Requested', className: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400' },
+  approved: { label: 'Approved', className: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' },
 };
 
 export function AlbumDetailPage() {
@@ -191,12 +191,12 @@ export function AlbumDetailPage() {
   if (error || !currentAlbum) {
     return (
       <div className="mx-auto max-w-4xl">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-6 text-sm text-red-700 dark:text-red-400">
           {error ?? 'Album not found'}
         </div>
         <Link
           to={ROUTES.ALBUMS}
-          className="mt-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="mt-4 inline-flex items-center gap-1 text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to albums
@@ -215,7 +215,7 @@ export function AlbumDetailPage() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
           to={ROUTES.ALBUMS}
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors w-fit"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary transition-colors w-fit"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to albums
@@ -230,53 +230,53 @@ export function AlbumDetailPage() {
 
       <div className="mb-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">{album.title}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-text-primary">{album.title}</h1>
           <span
             className={`w-fit rounded-full px-3 py-0.5 text-xs font-medium ${status.className}`}
           >
             {status.label}
           </span>
         </div>
-        <p className="mt-1 text-sm text-gray-500 capitalize">{album.event_type}</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary capitalize">{album.event_type}</p>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <Card>
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
-            <Tag className="h-4 w-4 text-gray-400" />
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-text-primary">
+            <Tag className="h-4 w-4 text-gray-400 dark:text-text-muted" />
             Album Information
           </h2>
           <div className="flex flex-col gap-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Title</span>
-              <span className="font-medium text-gray-900">{album.title}</span>
+              <span className="text-gray-500 dark:text-text-secondary">Title</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary">{album.title}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Event Type</span>
-              <span className="font-medium text-gray-900 capitalize">
+              <span className="text-gray-500 dark:text-text-secondary">Event Type</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary capitalize">
                 {album.event_type}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Status</span>
-              <span className="font-medium text-gray-900">{status.label}</span>
+              <span className="text-gray-500 dark:text-text-secondary">Status</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary">{status.label}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Created</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-gray-500 dark:text-text-secondary">Created</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary">
                 {formatDateTime(album.created_at)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Updated</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-gray-500 dark:text-text-secondary">Updated</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary">
                 {formatDateTime(album.updated_at)}
               </span>
             </div>
             {album.description && (
-              <div className="border-t border-gray-100 pt-3">
-                <span className="mb-1 block text-gray-500">Description</span>
-                <p className="text-gray-700">{album.description}</p>
+              <div className="border-t border-gray-100 dark:border-border-primary pt-3">
+                <span className="mb-1 block text-gray-500 dark:text-text-secondary">Description</span>
+                <p className="text-gray-700 dark:text-text-primary">{album.description}</p>
               </div>
             )}
           </div>
@@ -284,49 +284,49 @@ export function AlbumDetailPage() {
 
         {profile && (
           <Card>
-            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <Building2 className="h-4 w-4 text-gray-400" />
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-text-primary">
+              <Building2 className="h-4 w-4 text-gray-400 dark:text-text-muted" />
               Studio
             </h2>
             <div className="flex flex-col gap-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Studio Name</span>
-                <span className="font-medium text-gray-900">{profile.studio_name || '—'}</span>
+                <span className="text-gray-500 dark:text-text-secondary">Studio Name</span>
+                <span className="font-medium text-gray-900 dark:text-text-primary">{profile.studio_name || '—'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Owner</span>
-                <span className="font-medium text-gray-900">{profile.owner_name || '—'}</span>
+                <span className="text-gray-500 dark:text-text-secondary">Owner</span>
+                <span className="font-medium text-gray-900 dark:text-text-primary">{profile.owner_name || '—'}</span>
               </div>
               {profile.phone_number && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Phone</span>
-                  <span className="font-medium text-gray-900">{profile.phone_number}</span>
+                  <span className="text-gray-500 dark:text-text-secondary">Phone</span>
+                  <span className="font-medium text-gray-900 dark:text-text-primary">{profile.phone_number}</span>
                 </div>
               )}
             </div>
           </Card>
         )}
         <Card>
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
-            <User className="h-4 w-4 text-gray-400" />
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-text-primary">
+            <User className="h-4 w-4 text-gray-400 dark:text-text-muted" />
             Client Information
           </h2>
           <div className="flex flex-col gap-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Name</span>
-              <span className="font-medium text-gray-900">{album.client_name}</span>
+              <span className="text-gray-500 dark:text-text-secondary">Name</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary">{album.client_name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Email</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-gray-500 dark:text-text-secondary">Email</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary">
                 {album.client_email || '—'}
               </span>
             </div>
             {album.deadline && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Deadline</span>
-                <span className="inline-flex items-center gap-1 font-medium text-gray-900">
-                  <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                <span className="text-gray-500 dark:text-text-secondary">Deadline</span>
+                <span className="inline-flex items-center gap-1 font-medium text-gray-900 dark:text-text-primary">
+                  <Calendar className="h-3.5 w-3.5 text-gray-400 dark:text-text-muted" />
                   {formatDate(album.deadline)}
                 </span>
               </div>
@@ -339,10 +339,10 @@ export function AlbumDetailPage() {
       <div className="mt-6">
         <Card>
           <div className="mb-4 flex items-center gap-2">
-            <ImageIcon className="h-5 w-5 text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-900">Images</h2>
+            <ImageIcon className="h-5 w-5 text-gray-400 dark:text-text-muted" />
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-text-primary">Images</h2>
             {pages.length > 0 && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-400 dark:text-text-muted">
                 ({pages.length} page{pages.length !== 1 ? 's' : ''})
               </span>
             )}
@@ -353,7 +353,7 @@ export function AlbumDetailPage() {
               <button
                 onClick={handleDeleteAllPages}
                 disabled={deletingAll}
-                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {deletingAll ? 'Deleting...' : `Delete All (${pages.length})`}
@@ -366,7 +366,7 @@ export function AlbumDetailPage() {
               {pages.map((page) => (
                 <div
                   key={page.id}
-                  className="group relative aspect-[3/4] overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+                  className="group relative aspect-[3/4] overflow-hidden rounded-lg border border-gray-200 dark:border-border-primary bg-gray-50 dark:bg-bg-secondary"
                 >
                   <img
                     src={page.thumbnail_url ?? page.image_url}
@@ -390,14 +390,14 @@ export function AlbumDetailPage() {
               ))}
             </div>
           ) : (
-            <div className="mb-6 flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 py-8">
-              <ImageIcon className="mb-2 h-8 w-8 text-gray-300" />
-              <p className="text-sm text-gray-500">No images uploaded yet</p>
+            <div className="mb-6 flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 dark:border-border-primary py-8">
+              <ImageIcon className="mb-2 h-8 w-8 text-gray-300 dark:text-text-muted" />
+              <p className="text-sm text-gray-500 dark:text-text-secondary">No images uploaded yet</p>
             </div>
           )}
 
-          <div className="border-t border-gray-100 pt-4">
-            <h3 className="mb-3 text-sm font-medium text-gray-700">Upload Images</h3>
+          <div className="border-t border-gray-100 dark:border-border-primary pt-4">
+            <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-text-secondary">Upload Images</h3>
             <ImageUploadSection
               albumId={album.id}
               onUploadComplete={handleUploadComplete}
@@ -412,11 +412,11 @@ export function AlbumDetailPage() {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-text-primary">
                   <SendHorizonal className="h-4 w-4 text-amber-500" />
                   Ready for Review?
                 </h2>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-text-secondary">
                   Send this album to your client for feedback and approval.
                 </p>
               </div>
@@ -433,23 +433,23 @@ export function AlbumDetailPage() {
       {reviewedCount > 0 && (
         <div className="mt-6">
           <Card>
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-text-primary">
               <CheckCircle className="h-4 w-4 text-green-500" />
               Review Progress
             </h2>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Pages Reviewed</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-gray-500 dark:text-text-secondary">Pages Reviewed</span>
+              <span className="font-medium text-gray-900 dark:text-text-primary">
                 {reviewedCount} / {pages.length}
               </span>
             </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-bg-secondary">
               <div
                 className="h-full rounded-full bg-green-500 transition-all"
                 style={{ width: `${Math.min(completionPercent, 100)}%` }}
               />
             </div>
-            <p className="mt-1 text-right text-xs text-gray-400">{completionPercent}% Complete</p>
+            <p className="mt-1 text-right text-xs text-gray-400 dark:text-text-muted">{completionPercent}% Complete</p>
           </Card>
         </div>
       )}
@@ -458,27 +458,27 @@ export function AlbumDetailPage() {
       <div className="mt-6">
         <Card>
           <div className="mb-4 flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-900">Share Review Link</h2>
+            <Share2 className="h-5 w-5 text-gray-400 dark:text-text-muted" />
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-text-primary">Share Review Link</h2>
           </div>
 
           {linksLoading ? (
             <div className="flex items-center justify-center py-4">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-gray-400" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 dark:border-border-primary border-t-gray-400 dark:border-t-text-muted" />
             </div>
           ) : activeLink ? (
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-4">
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                <span className="rounded-full bg-green-100 dark:bg-green-900/40 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400">
                   Active
                 </span>
               </div>
 
-              <code className="block w-full truncate rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700 border border-gray-200">
+              <code className="block w-full truncate rounded-lg bg-gray-50 dark:bg-bg-secondary px-3 py-2 text-sm text-gray-700 dark:text-text-primary border border-gray-200 dark:border-border-primary">
                 {`${window.location.origin}${albumViewRoute(activeLink.token)}`}
               </code>
 
-              <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+              <div className="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-text-secondary">
                 <span>{activeLink.access_count} view{activeLink.access_count !== 1 ? 's' : ''}</span>
                 {activeLink.last_accessed_at && (
                   <span>Last opened: {new Date(activeLink.last_accessed_at).toLocaleDateString()}</span>
@@ -507,21 +507,21 @@ export function AlbumDetailPage() {
                   href={`${window.location.origin}${albumViewRoute(activeLink.token)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 dark:border-border-primary px-3 text-xs font-medium text-gray-600 dark:text-text-secondary hover:bg-gray-50 dark:hover:bg-bg-secondary transition-colors"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   Open
                 </a>
                 <button
                   onClick={() => handleWhatsAppShare(`${window.location.origin}${albumViewRoute(activeLink.token)}`)}
-                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors cursor-pointer"
+                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 dark:border-border-primary px-3 text-xs font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors cursor-pointer"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                   Share WhatsApp
                 </button>
                 <button
                   onClick={() => handleDeleteLink(activeLink.id)}
-                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 dark:text-text-muted hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
                   title="Delete link"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -530,8 +530,8 @@ export function AlbumDetailPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <Share2 className="mb-2 h-8 w-8 text-gray-300" />
-              <p className="text-sm text-gray-500">No review link created</p>
+              <Share2 className="mb-2 h-8 w-8 text-gray-300 dark:text-text-muted" />
+              <p className="text-sm text-gray-500 dark:text-text-secondary">No review link created</p>
               <Button
                 className="mt-3"
                 size="sm"

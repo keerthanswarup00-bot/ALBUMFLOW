@@ -7,7 +7,7 @@ import * as versionsService from '@/services/supabase/versions';
 import * as shareLinkService from '@/services/supabase/shareLinks';
 import { ROUTES } from '@/constants/routes';
 import type { AlbumVersion } from '@/types';
-import { Plus, ImageIcon } from 'lucide-react';
+import { Plus, ImageIcon, LayoutDashboard } from 'lucide-react';
 
 export function DashboardPage() {
   const { albums, isLoading, fetchAlbums } = useAlbumStore();
@@ -51,13 +51,40 @@ export function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl">
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">
+            <LayoutDashboard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-text-primary">Dashboard</h1>
+            <p className="text-sm text-gray-500 dark:text-text-secondary">
+              Welcome back! Here&apos;s an overview of your albums.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-5">
+          <p className="text-sm text-gray-500 dark:text-text-secondary">Total Albums</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-text-primary">{albums.length}</p>
+        </div>
+        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-5">
+          <p className="text-sm text-gray-500 dark:text-text-secondary">Active Reviews</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-text-primary">{albums.filter((a) => a.status === 'awaiting_review' || a.status === 'changes_requested').length}</p>
+        </div>
+        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-5">
+          <p className="text-sm text-gray-500 dark:text-text-secondary">Approved</p>
+          <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{albums.filter((a) => a.status === 'approved').length}</p>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Albums</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {albums.length} {albums.length === 1 ? 'album' : 'albums'}
-          </p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-text-primary">Recent Albums</h2>
         </div>
         <Link
           to={ROUTES.ALBUM_NEW}
@@ -68,14 +95,13 @@ export function DashboardPage() {
         </Link>
       </div>
 
-      {/* Album grid */}
       {albums.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
-            <ImageIcon className="h-8 w-8 text-gray-300" />
+        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 dark:bg-bg-secondary">
+            <ImageIcon className="h-8 w-8 text-gray-300 dark:text-text-muted" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">No Albums Yet</h3>
-          <p className="mt-2 text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-text-primary">No Albums Yet</h3>
+          <p className="mt-2 text-sm text-gray-500 dark:text-text-secondary">
             Create your first album to get started with proofing.
           </p>
           <Link
@@ -88,7 +114,7 @@ export function DashboardPage() {
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {albums.map((album) => (
+          {albums.slice(0, 8).map((album) => (
             <AlbumCard
               key={album.id}
               album={album}

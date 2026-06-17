@@ -14,13 +14,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300',
+    'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 dark:disabled:bg-blue-800',
   secondary:
-    'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50',
+    'bg-white dark:bg-bg-elevated text-gray-700 dark:text-text-secondary border border-gray-300 dark:border-border-primary hover:bg-gray-50 dark:hover:bg-bg-secondary active:bg-gray-100 dark:active:bg-bg-secondary disabled:opacity-50',
   ghost:
-    'bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50',
+    'bg-transparent text-gray-600 dark:text-text-secondary hover:bg-gray-100 dark:hover:bg-bg-secondary active:bg-gray-200 dark:active:bg-bg-secondary disabled:opacity-50',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 disabled:bg-red-300',
+    'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 disabled:bg-red-400 dark:disabled:bg-red-800',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -41,7 +41,7 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-bg-primary cursor-pointer',
         variantStyles[variant],
         sizeStyles[size],
         className,
