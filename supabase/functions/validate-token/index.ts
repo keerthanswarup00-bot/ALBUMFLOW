@@ -17,7 +17,7 @@ serve(async (req: Request) => {
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
     );
 
-    const { data, error } = await supabase.rpc('get_album_by_token', { token_text: token });
+    const { data, error } = await supabase.rpc('get_album_by_token', { p_token: token });
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {

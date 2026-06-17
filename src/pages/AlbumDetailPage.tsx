@@ -136,7 +136,10 @@ export function AlbumDetailPage() {
     setSubmittingReview(true);
     try {
       const { data, error } = await supabase.rpc('submit_album_for_review', { p_album_id: albumId });
-      if (error) throw error;
+      if (error) {
+        console.error('RPC Error', 'submit_album_for_review', { p_album_id: albumId }, error);
+        throw error;
+      }
       const result = data as { error?: string };
       if (result?.error) throw new Error(result.error);
       showToast('Album sent for review!', 'success');

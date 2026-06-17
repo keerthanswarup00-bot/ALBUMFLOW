@@ -48,11 +48,12 @@ export function ViewAlbumPage() {
     (async () => {
       try {
         const { data: result, error: rpcError } = await supabase
-          .rpc('get_album_by_token', { token_text: token });
+          .rpc('get_album_by_token', { p_token: token });
 
         if (cancelled) return;
 
         if (rpcError) {
+          console.error('RPC Error', 'get_album_by_token', { p_token: token }, rpcError);
           setError(rpcError.message);
           return;
         }

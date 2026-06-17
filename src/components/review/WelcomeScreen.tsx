@@ -47,6 +47,7 @@ export function WelcomeScreen({ albumTitle, clientName, phase, token, onStart, o
       p_client_email: '',
     });
     if (error) {
+      console.error('RPC Error', 'approve_album', { p_token: token }, error);
       setActionError(error.message);
     } else if ((data as { error?: string })?.error) {
       setActionError((data as { error: string }).error);
@@ -66,6 +67,7 @@ export function WelcomeScreen({ albumTitle, clientName, phase, token, onStart, o
       p_description: changeDescription.trim(),
     });
     if (error) {
+      console.error('RPC Error', 'request_album_changes', { p_token: token }, error);
       setActionError(error.message);
     } else if ((data as { error?: string })?.error) {
       setActionError((data as { error: string }).error);
