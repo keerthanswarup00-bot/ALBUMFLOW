@@ -52,6 +52,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [selectedRequest, setSelectedRequest] = useState<ViewerRequestChange | null>(null);
   const [selectedPinPos, setSelectedPinPos] = useState<{ xPercent: number; yPercent: number } | null>(null);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [showChangeOptions, setShowChangeOptions] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -77,10 +78,12 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     if (albumContainerSize.width === 0 || albumContainerSize.height === 0) return 400;
     const spreadAspect = 2 * pageAspectRatio;
     const containerAspect = albumContainerSize.width / albumContainerSize.height;
+    const targetHeight = albumContainerSize.height * 0.88;
+    const targetWidth = albumContainerSize.width * 0.96;
     if (containerAspect > spreadAspect) {
-      return Math.round(albumContainerSize.height * pageAspectRatio);
+      return Math.round(Math.min(targetHeight * pageAspectRatio * 2, targetWidth) / 2);
     }
-    return Math.round(albumContainerSize.width / 2);
+    return Math.round(targetWidth / 2);
   }, [albumContainerSize, pageAspectRatio]);
 
   const pageHeight = useMemo(() => {
@@ -178,8 +181,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     }
   }, []);
 
-  const canGoPrev = currentSpread > 0;
-  const canGoNext = currentSpread < totalSpreads - 1;
+  const canGoPrev = currentSpread > 0 && !isPinMode && !showChangeOptions;
+  const canGoNext = currentSpread < totalSpreads - 1 && !isPinMode && !showChangeOptions;
 
   const isCurrentReviewed = (() => {
     const leftIdx = currentSpread * 2;
@@ -248,8 +251,18 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     setIsHelpOpen((prev) => !prev);
   }
 
+  function handleOpenChangeOptions() {
+    setShowChangeOptions(true);
+  }
+
   function handleAddComment() {
+    setShowChangeOptions(false);
     setIsPinMode(true);
+  }
+
+  function handleAddVoice() {
+    setShowChangeOptions(false);
+    setShowVoiceRecorder(true);
   }
 
   function handlePinPlace(xPercent: number, yPercent: number) {
@@ -375,6 +388,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   isPreviewModeRef.current = isPreviewMode;
   const isFullscreenRef = useRef(isFullscreen);
   isFullscreenRef.current = isFullscreen;
+  const isPinModeRef = useRef(isPinMode);
+  isPinModeRef.current = isPinMode;
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -383,6 +398,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         return;
       }
       if (showVoiceRecorderRef.current || showNewPinEditorRef.current || selectedRequestRef.current || showSummaryRef.current) return;
+      if (isPinModeRef.current) return;
 
       switch (e.key) {
         case 'ArrowLeft':
@@ -475,11 +491,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                   drawShadow={true}
                   maxShadowOpacity={0.7}
                   showPageCorners={true}
-                  useMouseEvents={!isZoomed}
-                  swipeDistance={isZoomed ? 9999 : 50}
-                  mobileScrollSupport={!isZoomed}
+                  useMouseEvents={!isZoomed && !isPinMode && !showChangeOptions}
+                  swipeDistance={isZoomed || isPinMode || showChangeOptions ? 9999 : 80}
+                  mobileScrollSupport={!isZoomed && !isPinMode && !showChangeOptions}
                   clickEventForward={false}
-                  disableFlipByClick={isZoomed}
+                  disableFlipByClick={isZoomed || isPinMode || showChangeOptions}
                   autoSize={false}
                   startZIndex={0}
                   className="w-full h-full"
@@ -637,10 +653,13 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         <FloatingActionPills
           isReviewed={isCurrentReviewed}
           saving={isSaving}
-          onRequestChange={handleAddComment}
-          onVoice={() => setShowVoiceRecorder(true)}
+          showOptions={showChangeOptions}
+          onRequestChange={handleOpenChangeOptions}
+          onAddComment={handleAddComment}
+          onAddVoice={handleAddVoice}
           onLooksGood={handleMarkReviewed}
           onUndo={handleUndoReview}
+          onCloseOptions={() => setShowChangeOptions(false)}
         />
       )}
 

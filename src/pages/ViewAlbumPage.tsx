@@ -23,7 +23,6 @@ export function ViewAlbumPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [approved, setApproved] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [studioInfo, setStudioInfo] = useState<{ name: string; owner: string; phone: string; logoUrl: string }>({ name: 'Studio', owner: '', phone: '', logoUrl: '' });
   const [deletedInfo, setDeletedInfo] = useState<{
@@ -219,17 +218,11 @@ export function ViewAlbumPage() {
 
   return (
     <>
-      {showWelcome && !approved && (
+      {showWelcome && (
         <WelcomeScreen
           albumTitle={data.album.title}
           clientName={data.album.client_name}
-          phase={data.album.phase}
-          token={token!}
           onStart={() => setShowWelcome(false)}
-          onApproved={() => {
-            setApproved(true);
-            setCompleted(true);
-          }}
         />
       )}
 
