@@ -2166,6 +2166,22 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- =====================================================
+-- Migration 010: Security definer RPC for account deletion
+-- =====================================================
+create or replace function public.delete_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+grant execute on function public.delete_account to authenticated;
+
+-- =====================================================
 -- 9. Grant table permissions for all existing objects
 --    (ALTER DEFAULT PRIVILEGES in schema.sql handles future objects)
 -- =====================================================

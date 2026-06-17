@@ -126,6 +126,11 @@ export async function updatePassword(newPassword: string) {
   }
 }
 
+export async function deleteAccount(): Promise<void> {
+  const { error } = await supabase.rpc('delete_account');
+  if (error) throw new AuthError(error.message, 'DELETE_ACCOUNT_ERROR');
+}
+
 export function onAuthStateChange(callback: (user: User | null) => void) {
   return supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {

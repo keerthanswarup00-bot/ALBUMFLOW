@@ -18,6 +18,7 @@ interface AuthState {
     phone_number?: string;
   }) => Promise<{ user: User | null; session: boolean }>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   setUser: (user: User | null) => void;
   setProfile: (profile: Profile | null) => void;
   loadProfile: () => Promise<void>;
@@ -98,6 +99,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await authService.signOut();
     } finally {
       set({ user: null, profile: null, isAuthenticated: false, error: null });
+    }
+  },
+
+  deleteAccount: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      await authService.deleteAccount();
+      set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete account';
+      set({ isLoading: false, error: message });
+      throw error;
     }
   },
 

@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import * as profileService from '@/services/supabase/profiles';
 import { uploadStudioLogo } from '@/services/supabase/storage';
-import { Building2, Trash2, Upload, X, Loader2 } from 'lucide-react';
+import { Building2, Trash2, Upload, X, Loader2, AlertTriangle } from 'lucide-react';
 import type { Profile } from '@/types';
 
 function isValidPhone(phone: string): boolean {
@@ -45,7 +45,11 @@ function SettingsForm({
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logout = useAuthStore((s) => s.logout);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
@@ -219,13 +223,79 @@ function SettingsForm({
                   Permanently delete your account and all associated data.
                 </p>
               </div>
-              <Button variant="danger" disabled>
-                Delete Account
+              <Button
+                variant="danger"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Delete Account'
+                )}
               </Button>
             </div>
           </div>
         </Card>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirm && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-[400px] rounded-2xl bg-white p-6 shadow-xl">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+                  <AlertTriangle className="h-6 w-6 text-red-500" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Delete Account?</h2>
+                  <p className="mt-1 text-sm text-gray-500 leading-relaxed">
+                    This will permanently delete your account, all albums, and associated data. This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-2">
+                <button
+                  onClick={async () => {
+                    setIsDeleting(true);
+                    try {
+                      await deleteAccount();
+                      await logout();
+                    } catch (err) {
+                      const message = err instanceof Error ? err.message : 'Failed to delete account';
+                      showToast(message, 'error');
+                      setIsDeleting(false);
+                      setShowDeleteConfirm(false);
+                    }
+                  }}
+                  disabled={isDeleting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:bg-red-300 transition-colors cursor-pointer min-h-[48px]"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Delete Account'
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer min-h-[48px]"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <p className="mt-4 text-center text-xs text-gray-400">
+                After deletion, you will be redirected to the login page.
+              </p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
