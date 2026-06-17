@@ -9,6 +9,8 @@ export const ROUTES = {
   VIEW_ALBUM: '/view/:token',
   REVIEW_ALBUM: '/review/:slug',
   REVIEW_MANAGEMENT: '/review-management',
+  CLIENT_VIEW: '/albums/:albumId/client-view',
+  REVIEW_FEEDBACK: '/albums/:albumId/review-feedback',
   SETTINGS: '/settings',
   PROFILE: '/profile',
   RESET_PASSWORD: '/reset-password',

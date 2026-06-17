@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { ImageUploadSection } from '@/components/album/ImageUploadSection';
-import { ROUTES, albumViewRoute, albumReviewRoute } from '@/constants/routes';
+import { ROUTES, albumViewRoute } from '@/constants/routes';
 import { formatDate, formatDateTime } from '@/utils/formatters';
 import * as shareLinkService from '@/services/supabase/shareLinks';
 import * as pageService from '@/services/supabase/pages';
@@ -23,9 +23,6 @@ import {
   ImageIcon,
   CheckCircle,
   Share2,
-  Link as LinkIcon,
-  Copy,
-  RefreshCw,
   Trash2,
   ExternalLink,
   SendHorizonal,
@@ -59,13 +56,10 @@ export function AlbumDetailPage() {
   const copiedTimerRef = useRef<number | null>(null);
   useEffect(() => () => { if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current); }, []);
 
-  const [shareLinks, setShareLinks] = useState<ShareLink[]>([]);
+  const [activeLink, setActiveLink] = useState<ShareLink | null>(null);
   const [linksLoading, setLinksLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newLinkLabel, setNewLinkLabel] = useState('');
-  const [newLinkExpiry, setNewLinkExpiry] = useState(14);
   const [creating, setCreating] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (albumId) {
@@ -76,8 +70,8 @@ export function AlbumDetailPage() {
 
   useEffect(() => {
     if (!albumId) return;
-    shareLinkService.getShareLinks(albumId).then((links) => {
-      setShareLinks(links);
+    shareLinkService.getActiveShareLink(albumId).then((link) => {
+      setActiveLink(link);
     }).catch(() => {
       // silently fail
     }).finally(() => {
@@ -85,20 +79,13 @@ export function AlbumDetailPage() {
     });
   }, [albumId]);
 
-  async function handleCreateLink() {
+  async function handleGenerateLink() {
     if (!albumId) return;
     setCreating(true);
     try {
-      const link = await shareLinkService.createShareLink({
-        album_id: albumId,
-        label: newLinkLabel || undefined,
-        expires_in_days: newLinkExpiry || undefined,
-      });
-      setShareLinks((prev) => [link, ...prev]);
-      setShowCreateForm(false);
-      setNewLinkLabel('');
-      setNewLinkExpiry(14);
-      showToast('Share link created', 'success');
+      const link = await shareLinkService.createShareLink(albumId);
+      setActiveLink(link);
+      showToast('Review link created', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to create link', 'error');
     } finally {
@@ -106,25 +93,22 @@ export function AlbumDetailPage() {
     }
   }
 
-  async function handleRevokeLink(id: string) {
+  async function handleDeleteLink(id: string) {
     try {
-      await shareLinkService.revokeShareLink(id);
-      setShareLinks((prev) => prev.map((l) => l.id === id ? { ...l, revoked_at: new Date().toISOString() } : l));
-      showToast('Link revoked', 'success');
+      await shareLinkService.deleteShareLink(id);
+      setActiveLink(null);
+      showToast('Link deleted', 'success');
     } catch {
-      showToast('Failed to revoke link', 'error');
+      showToast('Failed to delete link', 'error');
     }
   }
 
-  function handleCopyLink(token: string, id: string) {
-    const slugUrl = currentAlbum?.slug
-      ? `${window.location.origin}${albumReviewRoute(currentAlbum.slug)}`
-      : null;
-    const url = slugUrl || `${window.location.origin}${albumViewRoute(token)}`;
+  function handleCopyLink(token: string) {
+    const url = `${window.location.origin}${albumViewRoute(token)}`;
     navigator.clipboard.writeText(url).then(() => {
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-      setCopiedId(id);
-      copiedTimerRef.current = window.setTimeout(() => setCopiedId(null), 2000);
+      setCopied(true);
+      copiedTimerRef.current = window.setTimeout(() => setCopied(false), 2000);
       showToast('Link copied to clipboard', 'success');
     });
   }
@@ -470,176 +454,93 @@ export function AlbumDetailPage() {
         </div>
       )}
 
-      {/* Share Links Section */}
+      {/* Share Review Link */}
       <div className="mt-6">
         <Card>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <Share2 className="h-4 w-4 text-gray-400" />
-              Share Links
-            </h2>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowCreateForm(true)}
-              disabled={showCreateForm}
-            >
-              <LinkIcon className="h-4 w-4" />
-              Create Link
-            </Button>
+          <div className="mb-4 flex items-center gap-2">
+            <Share2 className="h-5 w-5 text-gray-400" />
+            <h2 className="text-sm font-semibold text-gray-900">Share Review Link</h2>
           </div>
 
-          {/* Create form */}
-          {showCreateForm && (
-            <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
-              <div className="flex flex-col gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">Label (optional)</label>
-                  <input
-                    type="text"
-                    value={newLinkLabel}
-                    onChange={(e) => setNewLinkLabel(e.target.value)}
-                    placeholder="e.g. Client review v1"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">Expires after (days)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={newLinkExpiry}
-                    onChange={(e) => setNewLinkExpiry(Number(e.target.value))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleCreateLink} isLoading={creating}>
-                    Create
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setShowCreateForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Slug-based review URL */}
-          {currentAlbum?.slug && (
-            <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-blue-700">Album Review Link</p>
-                  <p className="mt-0.5 text-xs text-blue-500">
-                    Share this clean URL with clients:
-                  </p>
-                  <code className="mt-1.5 block truncate rounded bg-white px-2 py-1 text-xs text-blue-800 border border-blue-200">
-                    {`${window.location.origin}/review/${currentAlbum.slug}`}
-                  </code>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Links list */}
           {linksLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="h-5 w-5 animate-spin text-gray-300" />
+            <div className="flex items-center justify-center py-4">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-gray-400" />
             </div>
-          ) : shareLinks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Share2 className="mb-2 h-8 w-8 text-gray-300" />
-              <p className="text-sm text-gray-500">No share links yet</p>
-              <p className="mt-1 text-xs text-gray-400">
-                Create a link to share this album with your client
-              </p>
+          ) : activeLink ? (
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                  Active
+                </span>
+              </div>
+
+              <code className="block w-full truncate rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700 border border-gray-200">
+                {`${window.location.origin}${albumViewRoute(activeLink.token)}`}
+              </code>
+
+              <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                <span>{activeLink.access_count} view{activeLink.access_count !== 1 ? 's' : ''}</span>
+                {activeLink.last_accessed_at && (
+                  <span>Last opened: {new Date(activeLink.last_accessed_at).toLocaleDateString()}</span>
+                )}
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleCopyLink(activeLink.token)}
+                >
+                  {copied ? (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4" />
+                      Copy Link
+                    </>
+                  )}
+                </Button>
+                <a
+                  href={`${window.location.origin}${albumViewRoute(activeLink.token)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Open
+                </a>
+                <button
+                  onClick={() => handleWhatsAppShare(`${window.location.origin}${albumViewRoute(activeLink.token)}`)}
+                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors cursor-pointer"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Share WhatsApp
+                </button>
+                <button
+                  onClick={() => handleDeleteLink(activeLink.id)}
+                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                  title="Delete link"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              {shareLinks.map((link) => {
-                const isActive = !link.revoked_at;
-                const tokenUrl = `${window.location.origin}${albumViewRoute(link.token)}`;
-                const slugUrl = currentAlbum?.slug
-                  ? `${window.location.origin}${albumReviewRoute(currentAlbum.slug)}`
-                  : null;
-                const displayUrl = slugUrl || tokenUrl;
-                return (
-                  <div
-                    key={link.id}
-                    className={`rounded-xl border p-3 ${
-                      isActive ? 'border-gray-200 bg-white' : 'border-red-100 bg-red-50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          {link.label && (
-                            <span className="text-sm font-medium text-gray-900 truncate">
-                              {link.label}
-                            </span>
-                          )}
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                            isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {isActive ? 'Active' : 'Revoked'}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                          <span>{link.access_count} view{link.access_count !== 1 ? 's' : ''}</span>
-                          {link.expires_at && (
-                            <span>Expires {new Date(link.expires_at).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                        {isActive && (
-                          <div className="mt-2 flex items-center gap-1.5">
-                            <code className="max-w-[200px] truncate rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                              {displayUrl}
-                            </code>
-                            <button
-                              onClick={() => handleCopyLink(link.token, link.id)}
-                              className="shrink-0 rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                              title="Copy link"
-                            >
-                              {copiedId === link.id ? (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </button>
-                            <a
-                              href={tokenUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="shrink-0 rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                              title="Open link"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                            <button
-                              onClick={() => handleWhatsAppShare(displayUrl)}
-                              className="shrink-0 rounded p-1 text-green-500 hover:text-green-600 hover:bg-green-50 transition-colors cursor-pointer"
-                              title="Share on WhatsApp"
-                            >
-                              <MessageCircle className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      {isActive && (
-                        <button
-                          onClick={() => handleRevokeLink(link.id)}
-                          className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                          title="Revoke link"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <Share2 className="mb-2 h-8 w-8 text-gray-300" />
+              <p className="text-sm text-gray-500">No review link created</p>
+              <Button
+                className="mt-3"
+                size="sm"
+                onClick={handleGenerateLink}
+                isLoading={creating}
+              >
+                <Share2 className="h-4 w-4" />
+                Generate Review Link
+              </Button>
             </div>
           )}
         </Card>

@@ -13,6 +13,8 @@ import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
 import { EditAlbumPage } from '@/pages/EditAlbumPage';
 import { ViewAlbumPage } from '@/pages/ViewAlbumPage';
 import { ReviewManagementPage } from '@/pages/ReviewManagementPage';
+import { ClientViewPage } from '@/pages/ClientViewPage';
+import { ReviewFeedbackPage } from '@/pages/ReviewFeedbackPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
@@ -64,6 +66,8 @@ export default function App() {
           <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
           <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
           <Route path={ROUTES.REVIEW_MANAGEMENT} element={<ReviewManagementPage />} />
+          <Route path={ROUTES.CLIENT_VIEW} element={<ClientViewPage />} />
+          <Route path={ROUTES.REVIEW_FEEDBACK} element={<ReviewFeedbackPage />} />
         </Route>
 
         <Route path={ROUTES.VIEW_ALBUM} element={<ViewAlbumPage />} />

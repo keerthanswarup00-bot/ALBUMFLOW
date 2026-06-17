@@ -1,0 +1,254 @@
+import { useEffect, useState, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAlbumStore } from '@/store/albumStore';
+import { useReviewStore } from '@/store/reviewStore';
+import { useRequestStore } from '@/store/requestStore';
+import { useVoiceStore } from '@/store/voiceStore';
+import { PageSpinner } from '@/components/ui/Spinner';
+import * as pagesService from '@/services/supabase/pages';
+import * as versionsService from '@/services/supabase/versions';
+import type { AlbumPage } from '@/types';
+import type { ViewerRequestChange, VoiceRequest } from '@/types/viewer';
+import { ArrowLeft, MapPin, Mic, FileText, CheckCircle, MessageSquare } from 'lucide-react';
+import { cn } from '@/utils/cn';
+
+export function ReviewFeedbackPage() {
+  const { albumId } = useParams<{ albumId: string }>();
+  const navigate = useNavigate();
+  const { currentAlbum, fetchAlbumById, isLoading: albumLoading } = useAlbumStore();
+  const getReviewedCount = useReviewStore((s) => s.getReviewedCount);
+  const getApprovedPages = useReviewStore((s) => s.getReviewedPages);
+  const getRequests = useRequestStore((s) => s.getRequests);
+  const getRecordings = useVoiceStore((s) => s.getRecordings);
+
+  const [albumPages, setAlbumPages] = useState<AlbumPage[]>([]);
+  const [pagesLoading, setPagesLoading] = useState(true);
+  const [selectedPage, setSelectedPage] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (albumId) {
+      fetchAlbumById(albumId);
+    }
+  }, [albumId, fetchAlbumById]);
+
+  useEffect(() => {
+    if (!albumId) return;
+    const id: string = albumId;
+    let cancelled = false;
+    async function loadPages() {
+      try {
+        const versions = await versionsService.getVersions(id);
+        if (cancelled || versions.length === 0) return;
+        const pages = await pagesService.getPagesByVersion(versions[0].id);
+        if (!cancelled) setAlbumPages(pages);
+      } catch {
+        // silently fail
+      } finally {
+        if (!cancelled) setPagesLoading(false);
+      }
+    }
+    loadPages();
+    return () => { cancelled = true; };
+  }, [albumId]);
+
+  const requests = albumId ? getRequests(albumId) : [];
+  const voiceRecordings = albumId ? getRecordings(albumId) : [];
+  const totalPages = albumPages.length;
+  const reviewedCount = albumId ? getReviewedCount(albumId) : 0;
+  const approvedPageNumbers = albumId ? getApprovedPages(albumId) : [];
+
+  const groupedByPage = useMemo(() => {
+    const map = new Map<number, { text: ViewerRequestChange[]; voice: VoiceRequest[] }>();
+    requests.forEach((r) => {
+      if (!map.has(r.page_number)) {
+        map.set(r.page_number, { text: [], voice: [] });
+      }
+      map.get(r.page_number)!.text.push(r);
+    });
+    voiceRecordings.forEach((v) => {
+      if (!map.has(v.page_number)) {
+        map.set(v.page_number, { text: [], voice: [] });
+      }
+      map.get(v.page_number)!.voice.push(v);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => a - b);
+  }, [requests, voiceRecordings]);
+
+  const selectedItems = selectedPage ? groupedByPage.find(([p]) => p === selectedPage) : null;
+
+  if (albumLoading || pagesLoading) return <PageSpinner />;
+
+  return (
+    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-7xl flex-col">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">{currentAlbum?.title || 'Album'} — Review Feedback</h1>
+          <p className="text-xs text-gray-500">
+            {totalPages} pages &middot; {reviewedCount} reviewed &middot; {requests.length} requests &middot; {voiceRecordings.length} voice notes
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-1 gap-4 overflow-hidden">
+        {/* Left: Album pages */}
+        <div className="w-64 shrink-0 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Pages</h2>
+          {totalPages === 0 ? (
+            <p className="text-xs text-gray-400">No pages yet</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {albumPages.map((page) => {
+                const pageNum = page.page_number;
+                const isApproved = approvedPageNumbers.includes(pageNum);
+                const pageRequests = requests.filter((r) => r.page_number === pageNum);
+                const pageVoice = voiceRecordings.filter((v) => v.page_number === pageNum);
+                const hasFeedback = pageRequests.length > 0 || pageVoice.length > 0;
+                const isSelected = selectedPage === pageNum;
+
+                return (
+                  <button
+                    key={page.id}
+                    onClick={() => setSelectedPage(isSelected ? null : pageNum)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors cursor-pointer',
+                      isSelected
+                        ? 'bg-blue-50 border border-blue-200'
+                        : 'border border-transparent hover:bg-gray-50'
+                    )}
+                  >
+                    <div className="flex h-10 w-8 shrink-0 items-center justify-center overflow-hidden rounded bg-gray-100">
+                      {page.thumbnail_url ? (
+                        <img
+                          src={page.thumbnail_url}
+                          alt={`Page ${pageNum}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <FileText className="h-4 w-4 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-gray-900">Page {pageNum}</span>
+                        {isApproved && (
+                          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                        )}
+                      </div>
+                      {hasFeedback && (
+                        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-400">
+                          {pageRequests.length > 0 && (
+                            <span>{pageRequests.length} {pageRequests.length === 1 ? 'request' : 'requests'}</span>
+                          )}
+                          {pageVoice.length > 0 && (
+                            <span>{pageVoice.length} voice</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Feedback timeline */}
+        <div className="flex-1 overflow-y-auto rounded-xl border border-gray-200 bg-white p-5">
+          {selectedPage !== null && selectedItems ? (
+            <div>
+              <h2 className="mb-4 text-sm font-semibold text-gray-700">
+                Feedback for Page {selectedPage}
+              </h2>
+              <div className="flex flex-col gap-3">
+                {selectedItems[1].text.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-start gap-3 rounded-lg bg-gray-50 p-3"
+                  >
+                    <div className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                      request.category === 'pin' ? 'bg-amber-50' : 'bg-blue-50'
+                    )}>
+                      {request.category === 'pin' ? (
+                        <MapPin className="h-4 w-4 text-amber-600" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-blue-600" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          {request.category === 'pin' ? `Pin #${request.pin?.label}` : 'Change Request'}
+                        </span>
+                        <span className={cn(
+                          'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                          request.status === 'open' ? 'bg-amber-100 text-amber-700' :
+                          request.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                          'bg-blue-100 text-blue-700'
+                        )}>
+                          {request.status === 'open' ? 'Pending' :
+                           request.status === 'resolved' ? 'Resolved' : 'Designer Review'}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-sm text-gray-500">{request.message}</p>
+                      {request.pin && (
+                        <p className="mt-1 text-xs text-gray-400">
+                          Position: ({Math.round(request.pin.xPercent)}%, {Math.round(request.pin.yPercent)}%)
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {selectedItems[1].voice.map((voice) => (
+                  <div
+                    key={voice.id}
+                    className="flex items-start gap-3 rounded-lg bg-gray-50 p-3"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50">
+                      <Mic className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">Voice Message</span>
+                        <span className={cn(
+                          'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                          voice.status === 'open' ? 'bg-amber-100 text-amber-700' :
+                          voice.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                          'bg-blue-100 text-blue-700'
+                        )}>
+                          {voice.status === 'open' ? 'Pending' :
+                           voice.status === 'resolved' ? 'Resolved' : 'Designer Review'}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-sm text-gray-500">
+                        {Math.floor(voice.duration / 60)}:{(voice.duration % 60).toString().padStart(2, '0')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {selectedItems[1].text.length === 0 && selectedItems[1].voice.length === 0 && (
+                  <p className="text-sm text-gray-400">No feedback for this page.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <MessageSquare className="mb-3 h-10 w-10 text-gray-300" />
+              <p className="text-sm font-medium text-gray-500">Select a page</p>
+              <p className="mt-1 text-xs text-gray-400">
+                Click a page on the left to view its feedback
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -127,8 +127,15 @@ export function ViewAlbumPage() {
   }, [identifier]);
 
   if (!identifier) {
-    navigate('/album-unavailable?no_studio=1', { replace: true });
-    return null;
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+          <ImageIcon className="h-8 w-8 text-red-300" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900">Invalid link</h1>
+        <p className="mt-2 text-sm text-gray-500">This link is missing a share token or album slug.</p>
+      </div>
+    );
   }
 
   if (isLoading) {
@@ -141,8 +148,15 @@ export function ViewAlbumPage() {
   }
 
   if (error || !data) {
-    navigate('/album-unavailable?no_studio=1', { replace: true });
-    return null;
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+          <ImageIcon className="h-8 w-8 text-red-300" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900">Unable to load album</h1>
+        <p className="mt-2 text-sm text-gray-500">{error || 'Album not found.'}</p>
+      </div>
+    );
   }
 
   if (data.pages.length === 0) {

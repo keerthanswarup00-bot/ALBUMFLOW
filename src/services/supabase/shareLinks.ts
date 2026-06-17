@@ -1,6 +1,6 @@
 import { supabase } from './client';
 import { ApiError } from '@/utils/errors';
-import type { ShareLink, CreateShareLinkInput } from '@/types/viewer';
+import type { ShareLink } from '@/types/viewer';
 
 function mapRowToShareLink(row: Record<string, unknown>): ShareLink {
   return {
@@ -18,6 +18,22 @@ function mapRowToShareLink(row: Record<string, unknown>): ShareLink {
   };
 }
 
+export async function getActiveShareLink(albumId: string): Promise<ShareLink | null> {
+  const { data, error } = await supabase
+    .from('share_links')
+    .select('*')
+    .eq('album_id', albumId)
+    .is('revoked_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw new ApiError(`Failed to fetch share link: ${error.message}`, 500, error);
+  }
+
+  return (data && data.length > 0) ? mapRowToShareLink(data[0]) : null;
+}
+
 export async function getShareLinks(albumId: string): Promise<ShareLink[]> {
   const { data, error } = await supabase
     .from('share_links')
@@ -32,26 +48,17 @@ export async function getShareLinks(albumId: string): Promise<ShareLink[]> {
   return (data ?? []).map(mapRowToShareLink);
 }
 
-export async function createShareLink(input: CreateShareLinkInput): Promise<ShareLink> {
+export async function createShareLink(albumId: string): Promise<ShareLink> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) {
     throw new ApiError('Not authenticated', 401);
   }
 
   const payload: Record<string, unknown> = {
-    album_id: input.album_id,
+    album_id: albumId,
     token: await generateToken(),
     created_by: userData.user.id,
-    label: input.label || null,
   };
-
-  if (input.expires_in_days) {
-    payload.expires_at = new Date(Date.now() + input.expires_in_days * 86400000).toISOString();
-  }
-
-  if (input.max_access_count) {
-    payload.max_access_count = input.max_access_count;
-  }
 
   const { data, error } = await supabase
     .from('share_links')
@@ -72,17 +79,6 @@ async function generateToken(): Promise<string> {
   return Array.from(array)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-}
-
-export async function revokeShareLink(linkId: string): Promise<void> {
-  const { error } = await supabase
-    .from('share_links')
-    .update({ revoked_at: new Date().toISOString() })
-    .eq('id', linkId);
-
-  if (error) {
-    throw new ApiError(`Failed to revoke share link: ${error.message}`, 500, error);
-  }
 }
 
 export async function deleteShareLink(linkId: string): Promise<void> {
