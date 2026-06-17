@@ -13,6 +13,7 @@ interface TokenResult {
   version: ReviewData['version'] | null;
   pages: ReviewData['pages'] | [];
   error?: string;
+  designer_id?: string;
 }
 
 export function ViewAlbumPage() {
@@ -54,10 +55,10 @@ export function ViewAlbumPage() {
           return;
         }
 
-        const typedResult = result as unknown as TokenResult & { designer_id?: string };
+        const typedResult = result as unknown as TokenResult;
 
         if (typedResult?.error === 'album_deleted') {
-          const designerId = typedResult.album?.designer_id as string | undefined;
+          const designerId = typedResult.designer_id ?? typedResult.album?.designer_id;
           if (designerId) {
             const { data: profile } = await supabase
               .from('profiles')
@@ -100,7 +101,7 @@ export function ViewAlbumPage() {
           pages: typedResult.pages ?? [],
         });
 
-        const designerId = typedResult.album?.designer_id as string | undefined ?? typedResult.designer_id;
+        const designerId = typedResult.designer_id ?? typedResult.album?.designer_id;
         if (designerId) {
           const { data: profile } = await supabase
             .from('profiles')
