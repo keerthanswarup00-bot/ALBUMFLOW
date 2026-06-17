@@ -7,7 +7,7 @@ import { ReviewCompletedPage } from './ReviewCompletedPage';
 import { Spinner } from '@/components/ui/Spinner';
 import { useMetaTags } from '@/hooks/useMetaTags';
 import type { ReviewData } from '@/types/viewer';
-import { AlertCircle, ImageIcon } from 'lucide-react';
+import { ImageIcon } from 'lucide-react';
 
 interface TokenResult {
   album: ReviewData['album'] | null;
@@ -134,30 +134,15 @@ export function ViewAlbumPage() {
   if (deletedInfo) {
     const params = new URLSearchParams({
       studio_name: deletedInfo.studio_name,
-      owner_name: deletedInfo.owner_name,
       phone: deletedInfo.phone_number,
-      album: deletedInfo.album_title,
-      logo_url: deletedInfo.studio_logo_url,
     });
     navigate(`/album-unavailable?${params.toString()}`, { replace: true });
     return null;
   }
 
   if (!token) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-          <AlertCircle className="h-8 w-8 text-red-400" />
-        </div>
-        <h1 className="text-xl font-bold text-gray-900">Invalid Link</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          No album link was provided.
-        </p>
-        <p className="mt-6 text-xs text-gray-400">
-          Please check the link you received from your designer.
-        </p>
-      </div>
-    );
+    navigate('/album-unavailable?no_studio=1', { replace: true });
+    return null;
   }
 
   if (isLoading) {
@@ -170,20 +155,8 @@ export function ViewAlbumPage() {
   }
 
   if (error || !data) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-          <AlertCircle className="h-8 w-8 text-red-400" />
-        </div>
-        <h1 className="text-xl font-bold text-gray-900">Album Not Found</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {error ?? 'This album could not be found or is no longer available.'}
-        </p>
-        <p className="mt-6 text-xs text-gray-400">
-          If you believe this is a mistake, please contact your designer.
-        </p>
-      </div>
-    );
+    navigate('/album-unavailable?no_studio=1', { replace: true });
+    return null;
   }
 
   if (completed) {
