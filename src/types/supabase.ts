@@ -10,6 +10,12 @@ import type {
 import type {
   ShareLink,
 } from './viewer';
+import type {
+  Notification,
+} from '@/services/supabase/notifications';
+import type {
+  ReviewAnalytics,
+} from '@/services/supabase/analytics';
 
 export type Tables = {
   profiles: Profile;
@@ -20,6 +26,8 @@ export type Tables = {
   page_reviews: PageReview;
   approvals: Approval;
   share_links: ShareLink;
+  notifications: Notification;
+  review_analytics: ReviewAnalytics;
 };
 
 export type TableName = keyof Tables;

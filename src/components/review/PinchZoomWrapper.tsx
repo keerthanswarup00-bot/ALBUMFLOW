@@ -65,7 +65,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
     };
   }
 
-  function updateScale(newScale: number, centerX?: number, centerY?: number) {
+  const updateScale = useCallback((newScale: number, centerX?: number, centerY?: number) => {
     const s = clamp(newScale, MIN_SCALE, MAX_SCALE);
     const cw = containerSize.current.width;
     const ch = containerSize.current.height;
@@ -85,7 +85,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
       }
       return constrainPosition({ x, y }, s);
     });
-  }
+  }, [scale]);
 
   const resetZoom = useCallback(() => {
     setScale(1);
@@ -99,13 +99,11 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  function startMomentum(vx: number, vy: number) {
+  const startMomentum = useCallback((vx: number, vy: number) => {
     if (momentumRef.current) return;
     if (Math.abs(vx) < MOMENTUM_MIN_VELOCITY && Math.abs(vy) < MOMENTUM_MIN_VELOCITY) return;
 
-    momentumRef.current = { vx, vy };
-
-    function tick() {
+    function tick(scaleSnapshot: number) {
       const m = momentumRef.current;
       if (!m) return;
       m.vx *= MOMENTUM_FRICTION;
@@ -115,17 +113,16 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
         return;
       }
       setPosition((prev) => {
-        const s = scale;
         const next = constrainPosition(
           { x: prev.x + m.vx, y: prev.y + m.vy },
-          s
+          scaleSnapshot
         );
         return next;
       });
-      rafRef.current = requestAnimationFrame(tick);
+      rafRef.current = requestAnimationFrame(() => tick(scaleSnapshot));
     }
-    rafRef.current = requestAnimationFrame(tick);
-  }
+    rafRef.current = requestAnimationFrame(() => tick(scale));
+  }, [scale]);
 
   function stopMomentum() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -168,7 +165,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
         lastTapRef.current = now;
       }
     }
-  }, [isActive, isZoomed, scale, position]);
+  }, [isActive, isZoomed, scale, position, updateScale]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isActive) return;
@@ -198,7 +195,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
       );
       e.preventDefault();
     }
-  }, [isActive, isZoomed, scale]);
+  }, [isActive, isZoomed, scale, updateScale]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!isActive) return;
@@ -222,7 +219,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
       pinchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       initialPos.current = { ...position };
     }
-  }, [isActive, isZoomed, position, scale]);
+  }, [isActive, isZoomed, position, startMomentum]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!isActive) return;
@@ -238,7 +235,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
     } else {
       updateScale(nextScale, cx, cy);
     }
-  }, [isActive, scale, resetZoom]);
+  }, [isActive, scale, resetZoom, updateScale]);
 
   useEffect(() => {
     return () => {

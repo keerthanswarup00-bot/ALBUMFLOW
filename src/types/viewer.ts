@@ -93,7 +93,7 @@ export interface AlbumReviewData {
 }
 
 export type RequestChangeCategory = 'general' | 'pin';
-export type RequestChangeStatus = 'open' | 'resolved' | 'designer_review';
+export type RequestChangeStatus = 'open' | 'resolved' | 'dismissed' | 'designer_review';
 
 export interface PinPlacement {
   xPercent: number;

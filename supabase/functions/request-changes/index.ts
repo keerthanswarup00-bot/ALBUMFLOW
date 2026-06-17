@@ -25,7 +25,7 @@ serve(async (req: Request) => {
 
     const { data, error } = await supabase.rpc('request_album_changes', {
       p_token: token,
-      p_comment: comment,
+      p_description: comment,
     });
 
     if (error) {

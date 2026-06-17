@@ -5,14 +5,12 @@ interface ReviewProgressTrackerProps {
   reviewedCount: number;
   totalPages: number;
   completionPercent: number;
-  albumTitle: string;
   onBack?: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onToggleHelp: () => void;
   onToggleSummary: () => void;
   onTogglePreview?: () => void;
-  isPreviewMode?: boolean;
   requestCount?: number;
   onToggleRequests?: () => void;
   className?: string;
@@ -25,12 +23,9 @@ export function ReviewProgressTracker({
   reviewedCount,
   totalPages,
   completionPercent,
-  albumTitle,
   onBack,
-  isPreviewMode,
   studioLogoUrl,
   studioName,
-  onBack: _onBack,
   ..._rest
 }: ReviewProgressTrackerProps) {
   return (

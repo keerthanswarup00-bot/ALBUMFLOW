@@ -24,6 +24,7 @@ export interface Profile {
 
 export interface Client {
   id: string;
+  designer_id: string;
   name: string;
   email: string;
   phone: string | null;
@@ -31,7 +32,7 @@ export interface Client {
   updated_at: string;
 }
 
-export type AlbumStatus = 'draft' | 'awaiting_review' | 'changes_requested' | 'approved';
+export type AlbumStatus = 'draft' | 'active' | 'awaiting_review' | 'changes_requested' | 'approved';
 export type AlbumDbStatus = AlbumStatus | 'archived';
 
 export type AlbumPhase = 'proofing' | 'review' | 'approved' | 'in_production';
@@ -113,7 +114,7 @@ export interface AlbumPage {
   created_at: string;
 }
 
-export type RequestStatus = 'open' | 'resolved' | 'dismissed';
+export type RequestStatus = 'open' | 'resolved' | 'dismissed' | 'designer_review';
 export type RequestType = 'change' | 'retouch' | 'layout' | 'other';
 
 export interface RequestChange {

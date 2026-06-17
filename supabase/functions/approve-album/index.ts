@@ -20,7 +20,7 @@ serve(async (req: Request) => {
     const { data, error } = await supabase.rpc('approve_album', {
       p_token: token,
       p_client_name: '',
-      p_comment: comment ?? '',
+      p_client_email: comment ?? '',
     });
 
     if (error) {

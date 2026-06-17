@@ -85,7 +85,7 @@ export function CreateStudioPage() {
           type="tel"
           value={phoneNumber}
           onChange={(e) => setPhoneNumber(e.target.value)}
-          placeholder="+1 (555) 000-0000"
+          placeholder="+91 98765 43210"
           error={errors.phone_number}
         />
         <Input

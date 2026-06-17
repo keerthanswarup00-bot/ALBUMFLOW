@@ -317,20 +317,20 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }, [zoomScale, pages]);
 
   // --- Auto-hide controls in preview mode ---
-  function startHideTimer() {
+  const startHideTimer = useCallback(() => {
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     if (!isPreviewMode) return;
     hideTimerRef.current = setTimeout(() => {
       setControlsVisible(false);
     }, AUTO_HIDE_DELAY);
-  }
+  }, [isPreviewMode]);
 
-  function cancelHideTimer() {
+  const cancelHideTimer = useCallback(() => {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-  }
+  }, []);
 
   function handleUserInteraction() {
     if (isPreviewMode) {
@@ -358,7 +358,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       setControlsVisible(true);
     }
     return () => cancelHideTimer();
-  }, [isPreviewMode]);
+  }, [isPreviewMode, startHideTimer, cancelHideTimer]);
 
   // --- Keyboard shortcuts (using refs to avoid re-registration) ---
   const isHelpOpenRef = useRef(isHelpOpen);
@@ -416,7 +416,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [enterPreview, handleNext, handlePrev]);
 
   useEffect(() => {
     function handleChange() {
@@ -441,12 +441,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       {/* Header bar */}
       <ReviewProgressTracker
         currentSpread={currentSpread}
-        albumTitle={album.title}
         reviewedCount={reviewedSpreads}
         totalPages={totalSpreads}
         completionPercent={completionPercent}
         isFullscreen={isFullscreen}
-        isPreviewMode={isPreviewMode}
         studioLogoUrl={studioLogoUrl}
         studioName={studioName}
         onBack={() => window.history.back()}

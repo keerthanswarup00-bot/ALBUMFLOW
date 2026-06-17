@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -7,6 +7,7 @@ import { useUIStore } from '@/store/uiStore';
 import * as profileService from '@/services/supabase/profiles';
 import { uploadStudioLogo } from '@/services/supabase/storage';
 import { Building2, Trash2, Upload, X, Loader2 } from 'lucide-react';
+import type { Profile } from '@/types';
 
 function isValidPhone(phone: string): boolean {
   const digits = phone.replace(/\D/g, '');
@@ -17,23 +18,34 @@ export function SettingsPage() {
   const { profile, loadProfile } = useAuthStore();
   const showToast = useUIStore((s) => s.showToast);
 
-  const [studioName, setStudioName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [studioLogoUrl, setStudioLogoUrl] = useState('');
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  return <SettingsForm key={profile.user_id} profile={profile} loadProfile={loadProfile} showToast={showToast} />;
+}
+
+function SettingsForm({
+  profile,
+  loadProfile,
+  showToast,
+}: {
+  profile: Profile;
+  loadProfile: () => Promise<void>;
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+}) {
+  const [studioName, setStudioName] = useState(profile.studio_name || '');
+  const [ownerName, setOwnerName] = useState(profile.owner_name || '');
+  const [phoneNumber, setPhoneNumber] = useState(profile.phone_number || '');
+  const [studioLogoUrl, setStudioLogoUrl] = useState(profile.studio_logo_url || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (profile) {
-      setStudioName(profile.studio_name || '');
-      setOwnerName(profile.owner_name || '');
-      setPhoneNumber(profile.phone_number || '');
-      setStudioLogoUrl(profile.studio_logo_url || '');
-    }
-  }, [profile]);
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
@@ -175,7 +187,7 @@ export function SettingsPage() {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+1 (555) 000-0000"
+              placeholder="+91 98765 43210"
               error={errors.phone_number}
             />
             <div>
