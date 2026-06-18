@@ -3,18 +3,29 @@ import type { AlbumUpdate, AlbumUpdatePage } from '@/types/viewer';
 
 const UPDATES_PREFIX = 'albumflow_updates_';
 
-function loadUpdates(albumId: string): AlbumUpdate[] {
+function loadUpdates(
+  albumId: string,
+  onError?: (error: string) => void
+): AlbumUpdate[] {
   try {
     const raw = localStorage.getItem(`${UPDATES_PREFIX}${albumId}`);
     if (raw) return JSON.parse(raw) as AlbumUpdate[];
-  } catch { /* ignore */ }
+  } catch (e) {
+    onError?.((e as Error).message);
+  }
   return [];
 }
 
-function saveUpdates(albumId: string, updates: AlbumUpdate[]) {
+function saveUpdates(
+  albumId: string,
+  updates: AlbumUpdate[],
+  onError?: (error: string) => void
+) {
   try {
     localStorage.setItem(`${UPDATES_PREFIX}${albumId}`, JSON.stringify(updates));
-  } catch { /* ignore */ }
+  } catch (e) {
+    onError?.((e as Error).message);
+  }
 }
 
 function generateId(): string {
@@ -23,21 +34,24 @@ function generateId(): string {
 
 interface UpdateState {
   updates: Record<string, AlbumUpdate[]>;
+  error: string | null;
 
   getUpdates: (albumId: string) => AlbumUpdate[];
   getLatestUpdate: (albumId: string) => AlbumUpdate | null;
   getUpdateByNumber: (albumId: string, number: number) => AlbumUpdate | null;
   createUpdate: (albumId: string, notes: string, pages: AlbumUpdatePage[]) => AlbumUpdate;
   getUpdateCount: (albumId: string) => number;
+  clearError: () => void;
 }
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
   updates: {},
+  error: null,
 
   getUpdates: (albumId: string) => {
     const cached = get().updates[albumId];
     if (cached) return cached;
-    const loaded = loadUpdates(albumId);
+    const loaded = loadUpdates(albumId, (msg) => set({ error: msg }));
     set((s) => ({ updates: { ...s.updates, [albumId]: loaded } }));
     return loaded;
   },
@@ -67,11 +81,15 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     };
     const updated = [...updates, newUpdate];
     set((s) => ({ updates: { ...s.updates, [albumId]: updated } }));
-    saveUpdates(albumId, updated);
+    saveUpdates(albumId, updated, (msg) => set({ error: msg }));
     return newUpdate;
   },
 
   getUpdateCount: (albumId: string) => {
     return get().getUpdates(albumId).length;
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));

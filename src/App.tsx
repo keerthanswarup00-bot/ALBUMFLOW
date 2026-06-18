@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { AppLayout } from '@/layouts/AppLayout';
@@ -15,20 +15,24 @@ import { ViewAlbumPage } from '@/pages/ViewAlbumPage';
 import { ReviewManagementPage } from '@/pages/ReviewManagementPage';
 import { ClientViewPage } from '@/pages/ClientViewPage';
 import { ReviewFeedbackPage } from '@/pages/ReviewFeedbackPage';
+import { AlbumUpdatePage } from '@/pages/AlbumUpdatePage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { AlbumUnavailablePage } from '@/pages/AlbumUnavailablePage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/pages/TermsPage';
 import { CookiePolicyPage } from '@/pages/CookiePolicyPage';
 import { useAuth } from '@/hooks/useAuth';
 import { EnvBanner } from '@/components/EnvBanner';
+import { Toast } from '@/components/ui/Toast';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 export default function App() {
   useAuth();
   return (
-    <>
+    <ErrorBoundary>
       <EnvBanner />
       <BrowserRouter>
         <Routes>
@@ -70,6 +74,7 @@ export default function App() {
           <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
           <Route path={ROUTES.REVIEW_MANAGEMENT} element={<ReviewManagementPage />} />
           <Route path={ROUTES.REVIEW_FEEDBACK} element={<ReviewFeedbackPage />} />
+          <Route path={ROUTES.ALBUM_UPDATE} element={<AlbumUpdatePage />} />
         </Route>
 
         <Route path={ROUTES.CLIENT_VIEW} element={<ClientViewPage />} />
@@ -82,9 +87,10 @@ export default function App() {
         <Route path={ROUTES.TERMS} element={<TermsPage />} />
         <Route path={ROUTES.COOKIE_POLICY} element={<CookiePolicyPage />} />
 
-        <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
-    </>
+    <Toast />
+    </ErrorBoundary>
   );
 }

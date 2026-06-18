@@ -5,24 +5,29 @@ const CYCLE_PREFIX = 'albumflow_cycle_';
 const TIMELINE_PREFIX = 'albumflow_timeline_';
 const APPROVAL_PREFIX = 'albumflow_approval_';
 
-function loadJSON<T>(key: string): T | null {
+function loadJSON<T>(key: string, onError?: (error: string) => void): T | null {
   try {
     const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw) as T;
-  } catch { /* ignore */ }
+  } catch (e) {
+    onError?.((e as Error).message);
+  }
   return null;
 }
 
-function saveJSON(key: string, data: unknown) {
+function saveJSON(key: string, data: unknown, onError?: (error: string) => void) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
-  } catch { /* ignore */ }
+  } catch (e) {
+    onError?.((e as Error).message);
+  }
 }
 
 interface ReviewCycleState {
   statuses: Record<string, ReviewCycleStatus>;
   timelines: Record<string, TimelineEntry[]>;
   approvals: Record<string, ApprovalRecord>;
+  error: string | null;
 
   getStatus: (albumId: string) => ReviewCycleStatus;
   setStatus: (albumId: string, status: ReviewCycleStatus) => void;
@@ -40,17 +45,19 @@ interface ReviewCycleState {
   markReadyForApproval: (albumId: string) => void;
   markClosed: (albumId: string) => void;
   resetStatus: (albumId: string) => void;
+  clearError: () => void;
 }
 
 export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
   statuses: {},
   timelines: {},
   approvals: {},
+  error: null,
 
   getStatus: (albumId: string) => {
     const cached = get().statuses[albumId];
     if (cached) return cached;
-    const stored = loadJSON<ReviewCycleStatus>(`${CYCLE_PREFIX}${albumId}`);
+    const stored = loadJSON<ReviewCycleStatus>(`${CYCLE_PREFIX}${albumId}`, (msg) => set({ error: msg }));
     if (stored) {
       set((s) => ({ statuses: { ...s.statuses, [albumId]: stored } }));
       return stored;
@@ -60,13 +67,13 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
 
   setStatus: (albumId: string, status: ReviewCycleStatus) => {
     set((s) => ({ statuses: { ...s.statuses, [albumId]: status } }));
-    saveJSON(`${CYCLE_PREFIX}${albumId}`, status);
+    saveJSON(`${CYCLE_PREFIX}${albumId}`, status, (msg) => set({ error: msg }));
   },
 
   getTimeline: (albumId: string) => {
     const cached = get().timelines[albumId];
     if (cached) return cached;
-    const stored = loadJSON<TimelineEntry[]>(`${TIMELINE_PREFIX}${albumId}`);
+    const stored = loadJSON<TimelineEntry[]>(`${TIMELINE_PREFIX}${albumId}`, (msg) => set({ error: msg }));
     const entries = stored ?? [];
     set((s) => ({ timelines: { ...s.timelines, [albumId]: entries } }));
     return entries;
@@ -81,7 +88,7 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
     };
     const updated = [...timeline, newEntry];
     set((s) => ({ timelines: { ...s.timelines, [albumId]: updated } }));
-    saveJSON(`${TIMELINE_PREFIX}${albumId}`, updated);
+    saveJSON(`${TIMELINE_PREFIX}${albumId}`, updated, (msg) => set({ error: msg }));
   },
 
   isApproved: (albumId: string) => {
@@ -92,7 +99,7 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
   getApproval: (albumId: string) => {
     const cached = get().approvals[albumId];
     if (cached) return cached;
-    const stored = loadJSON<ApprovalRecord>(`${APPROVAL_PREFIX}${albumId}`);
+    const stored = loadJSON<ApprovalRecord>(`${APPROVAL_PREFIX}${albumId}`, (msg) => set({ error: msg }));
     if (stored) {
       set((s) => ({ approvals: { ...s.approvals, [albumId]: stored } }));
       return stored;
@@ -108,7 +115,7 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
       checklist,
     };
     set((s) => ({ approvals: { ...s.approvals, [albumId]: record } }));
-    saveJSON(`${APPROVAL_PREFIX}${albumId}`, record);
+    saveJSON(`${APPROVAL_PREFIX}${albumId}`, record, (msg) => set({ error: msg }));
     get().setStatus(albumId, 'approved');
     get().addTimelineEntry(albumId, {
       type: 'approved',
@@ -170,7 +177,11 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
 
   resetStatus: (albumId: string) => {
     get().setStatus(albumId, 'draft');
-    saveJSON(`${TIMELINE_PREFIX}${albumId}`, []);
+    saveJSON(`${TIMELINE_PREFIX}${albumId}`, [], (msg) => set({ error: msg }));
     set((s) => ({ timelines: { ...s.timelines, [albumId]: [] } }));
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));

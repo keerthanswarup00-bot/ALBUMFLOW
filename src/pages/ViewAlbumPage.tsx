@@ -52,7 +52,8 @@ export function ViewAlbumPage() {
 
         if (rpcError) {
           console.error('RPC Error', rpcName, rpcParams, rpcError);
-          setError(rpcError.message);
+          const message = rpcError.message.includes('expired') ? 'This link has expired. Please request a new link from your studio.' : 'Unable to load this album. Please try again later.';
+          setError(message);
           return;
         }
 
@@ -126,7 +127,7 @@ export function ViewAlbumPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [identifier]);
+  }, [identifier, isSlug, navigate, slug, token]);
 
   if (!identifier) {
     return (

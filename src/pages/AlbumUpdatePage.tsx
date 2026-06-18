@@ -142,11 +142,12 @@ export function AlbumUpdatePage() {
                 return (
                   <div key={page.id} className="flex flex-col">
                     <label className={cn(
-                      'relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg border-2 transition-all',
+                      'relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all',
                       isSelected
                         ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-200 dark:ring-blue-900/50'
                         : 'border-border-primary hover:border-border-secondary'
-                    )}>
+                    )}
+                      style={page.width && page.height ? { aspectRatio: `${page.width}/${page.height}` } : { aspectRatio: '3/4' }}>
                       <img
                         src={selectedPages[page.page_number]?.preview ?? page.thumbnail_url ?? page.image_url}
                         alt={`Page ${page.page_number}`}

@@ -12,6 +12,7 @@ export const ROUTES = {
   REVIEW_MANAGEMENT: '/review-management',
   CLIENT_VIEW: '/albums/:albumId/client-view',
   REVIEW_FEEDBACK: '/albums/:albumId/review-feedback',
+  ALBUM_UPDATE: '/albums/:albumId/update',
   SETTINGS: '/settings',
   PROFILE: '/profile',
   RESET_PASSWORD: '/reset-password',

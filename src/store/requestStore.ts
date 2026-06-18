@@ -5,6 +5,7 @@ import { REVIEW_CONFIG } from '@/constants/review';
 interface RequestState {
   requests: Record<string, ViewerRequestChange[]>;
   drafts: Record<string, RequestDraft | null>;
+  error: string | null;
 
   getRequests: (albumId: string) => ViewerRequestChange[];
   addRequest: (albumId: string, pageNumber: number, category: RequestChangeCategory, message: string, pin: PinPlacement | null) => void;
@@ -20,23 +21,31 @@ interface RequestState {
   saveDraft: (albumId: string, draft: RequestDraft) => void;
   getDraft: (albumId: string) => RequestDraft | null;
   clearDraft: (albumId: string) => void;
+  clearError: () => void;
 }
 
-function loadRequests(albumId: string): ViewerRequestChange[] {
+function loadRequests(
+  albumId: string,
+  onError?: (error: string) => void
+): ViewerRequestChange[] {
   try {
     const raw = localStorage.getItem(`${REVIEW_CONFIG.storage.requestsPrefix}${albumId}`);
     if (raw) return JSON.parse(raw) as ViewerRequestChange[];
-  } catch {
-    // localStorage read failed
+  } catch (e) {
+    onError?.((e as Error).message);
   }
   return [];
 }
 
-function saveRequests(albumId: string, requests: ViewerRequestChange[]) {
+function saveRequests(
+  albumId: string,
+  requests: ViewerRequestChange[],
+  onError?: (error: string) => void
+) {
   try {
     localStorage.setItem(`${REVIEW_CONFIG.storage.requestsPrefix}${albumId}`, JSON.stringify(requests));
-  } catch {
-    // localStorage write failed (quota or unavailable)
+  } catch (e) {
+    onError?.((e as Error).message);
   }
 }
 
@@ -47,11 +56,12 @@ function generateId(): string {
 export const useRequestStore = create<RequestState>((set, get) => ({
   requests: {},
   drafts: {},
+  error: null,
 
   getRequests: (albumId: string) => {
     const cached = get().requests[albumId];
     if (cached) return cached;
-    const loaded = loadRequests(albumId);
+    const loaded = loadRequests(albumId, (msg) => set({ error: msg }));
     set((state) => ({ requests: { ...state.requests, [albumId]: loaded } }));
     return loaded;
   },
@@ -72,7 +82,7 @@ export const useRequestStore = create<RequestState>((set, get) => ({
     };
     const updated = [...requests, newRequest];
     set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
-    saveRequests(albumId, updated);
+    saveRequests(albumId, updated, (msg) => set({ error: msg }));
   },
 
   updateRequest: (albumId: string, requestId: string, updates: Partial<ViewerRequestChange>) => {
@@ -81,14 +91,14 @@ export const useRequestStore = create<RequestState>((set, get) => ({
       r.id === requestId ? { ...r, ...updates, updated_at: Date.now() } : r
     );
     set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
-    saveRequests(albumId, updated);
+    saveRequests(albumId, updated, (msg) => set({ error: msg }));
   },
 
   deleteRequest: (albumId: string, requestId: string) => {
     const requests = get().getRequests(albumId);
     const updated = requests.filter((r) => r.id !== requestId);
     set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
-    saveRequests(albumId, updated);
+    saveRequests(albumId, updated, (msg) => set({ error: msg }));
   },
 
   getRequestsByPage: (albumId: string, pageNumber: number) => {
@@ -119,15 +129,15 @@ export const useRequestStore = create<RequestState>((set, get) => ({
     const requests = get().getRequests(albumId);
     const updated = requests.map((r) => ({ ...r, submitted: true, updated_at: Date.now() }));
     set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
-    saveRequests(albumId, updated);
+    saveRequests(albumId, updated, (msg) => set({ error: msg }));
   },
 
   saveDraft: (albumId: string, draft: RequestDraft) => {
     set((state) => ({ drafts: { ...state.drafts, [albumId]: draft } }));
     try {
       localStorage.setItem(`${REVIEW_CONFIG.storage.draftPrefix}${albumId}`, JSON.stringify(draft));
-    } catch {
-      // localStorage write failed
+    } catch (e) {
+      set({ error: (e as Error).message });
     }
   },
 
@@ -141,8 +151,8 @@ export const useRequestStore = create<RequestState>((set, get) => ({
         set((state) => ({ drafts: { ...state.drafts, [albumId]: draft } }));
         return draft;
       }
-    } catch {
-      // localStorage read failed
+    } catch (e) {
+      set({ error: (e as Error).message });
     }
     set((state) => ({ drafts: { ...state.drafts, [albumId]: null } }));
     return null;
@@ -152,8 +162,12 @@ export const useRequestStore = create<RequestState>((set, get) => ({
     set((state) => ({ drafts: { ...state.drafts, [albumId]: null } }));
     try {
       localStorage.removeItem(`${REVIEW_CONFIG.storage.draftPrefix}${albumId}`);
-    } catch {
-      // localStorage removal failed
+    } catch (e) {
+      set({ error: (e as Error).message });
     }
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));

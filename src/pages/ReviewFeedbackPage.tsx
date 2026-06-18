@@ -15,7 +15,7 @@ import { cn } from '@/utils/cn';
 export function ReviewFeedbackPage() {
   const { albumId } = useParams<{ albumId: string }>();
   const navigate = useNavigate();
-  const { currentAlbum, fetchAlbumById, isLoading: albumLoading } = useAlbumStore();
+  const { currentAlbum, fetchAlbumById, isLoading: albumLoading, error: albumError } = useAlbumStore();
   const getReviewedCount = useReviewStore((s) => s.getReviewedCount);
   const getApprovedPages = useReviewStore((s) => s.getReviewedPages);
   const getRequests = useRequestStore((s) => s.getRequests);
@@ -23,6 +23,7 @@ export function ReviewFeedbackPage() {
 
   const [albumPages, setAlbumPages] = useState<AlbumPage[]>([]);
   const [pagesLoading, setPagesLoading] = useState(true);
+  const [pagesError, setPagesError] = useState<string | null>(null);
   const [selectedPage, setSelectedPage] = useState<number | null>(null);
 
   useEffect(() => {
@@ -38,11 +39,14 @@ export function ReviewFeedbackPage() {
     async function loadPages() {
       try {
         const versions = await versionsService.getVersions(id);
-        if (cancelled || versions.length === 0) return;
+        if (cancelled || versions.length === 0) {
+          if (!cancelled) setPagesLoading(false);
+          return;
+        }
         const pages = await pagesService.getPagesByVersion(versions[0].id);
         if (!cancelled) setAlbumPages(pages);
       } catch {
-        // silently fail
+        if (!cancelled) setPagesError('Failed to load album pages');
       } finally {
         if (!cancelled) setPagesLoading(false);
       }
@@ -51,8 +55,8 @@ export function ReviewFeedbackPage() {
     return () => { cancelled = true; };
   }, [albumId]);
 
-  const requests = albumId ? getRequests(albumId) : [];
-  const voiceRecordings = albumId ? getRecordings(albumId) : [];
+  const requests = useMemo(() => albumId ? getRequests(albumId) : [], [albumId, getRequests]);
+  const voiceRecordings = useMemo(() => albumId ? getRecordings(albumId) : [], [albumId, getRecordings]);
   const totalPages = albumPages.length;
   const reviewedCount = albumId ? getReviewedCount(albumId) : 0;
   const approvedPageNumbers = albumId ? getApprovedPages(albumId) : [];
@@ -76,10 +80,34 @@ export function ReviewFeedbackPage() {
 
   const selectedItems = selectedPage ? groupedByPage.find(([p]) => p === selectedPage) : null;
 
+  if (albumError) {
+    return (
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-16">
+        <p className="text-sm text-text-secondary">Failed to load album. Please try again.</p>
+      </div>
+    );
+  }
+
+  if (pagesError && albumPages.length === 0) {
+    return (
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-16">
+        <p className="text-sm text-text-secondary">{pagesError}</p>
+      </div>
+    );
+  }
+
   if (albumLoading || pagesLoading) return <PageSpinner />;
 
+  if (!currentAlbum) {
+    return (
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-16">
+        <p className="text-sm text-text-secondary">Album not found.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-7xl flex-col">
+    <div className="mx-auto flex min-h-dvh max-w-7xl flex-col px-4 py-4">
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <button
@@ -98,8 +126,8 @@ export function ReviewFeedbackPage() {
       </div>
 
       <div className="flex flex-1 gap-4 overflow-hidden">
-        {/* Left: Album pages */}
-        <div className="w-64 shrink-0 overflow-y-auto rounded-xl border border-border-primary bg-bg-primary p-3">
+        {/* Left: Album pages — hidden on mobile */}
+        <div className="hidden md:block w-64 shrink-0 overflow-y-auto rounded-xl border border-border-primary bg-bg-primary p-3">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">Pages</h2>
           {totalPages === 0 ? (
             <p className="text-xs text-text-muted">No pages yet</p>
@@ -158,6 +186,31 @@ export function ReviewFeedbackPage() {
               })}
             </div>
           )}
+        </div>
+
+        {/* Mobile page selector */}
+        <div className="flex md:hidden gap-1 overflow-x-auto pb-2 -mx-4 px-4">
+          {albumPages.map((page) => {
+            const isSelected = selectedPage === page.page_number;
+            const hasFeedback = requests.some((r) => r.page_number === page.page_number) ||
+              voiceRecordings.some((v) => v.page_number === page.page_number);
+            return (
+              <button
+                key={page.id}
+                onClick={() => setSelectedPage(isSelected ? null : page.page_number)}
+                className={cn(
+                  'shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap',
+                  isSelected
+                    ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                    : hasFeedback
+                    ? 'bg-bg-secondary text-text-secondary'
+                    : 'text-text-muted'
+                )}
+              >
+                P{page.page_number}
+              </button>
+            );
+          })}
         </div>
 
         {/* Right: Feedback timeline */}

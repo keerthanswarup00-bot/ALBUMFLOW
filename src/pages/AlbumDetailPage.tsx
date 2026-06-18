@@ -418,7 +418,8 @@ export function AlbumDetailPage() {
               {pages.map((page) => (
                 <div
                   key={page.id}
-                  className="group relative aspect-[3/4] overflow-hidden rounded-lg border border-border-primary dark:border-border-primary bg-bg-secondary dark:bg-bg-secondary"
+                  className="group relative overflow-hidden rounded-lg border border-border-primary dark:border-border-primary bg-bg-secondary dark:bg-bg-secondary"
+                  style={page.width && page.height ? { aspectRatio: `${page.width}/${page.height}` } : { aspectRatio: '3/4' }}
                 >
                   <img
                     src={page.thumbnail_url ?? page.image_url}
@@ -512,14 +513,22 @@ export function AlbumDetailPage() {
                   <Settings className="h-4 w-4 text-teal-500" />
                   Changes in Progress
                 </h2>
-                <p className="mt-1 text-xs text-text-secondary dark:text-text-secondary">
-                  When you've finished updating, mark the album as ready for final approval.
+                <p className="mt-1 text-xs text-text-secondary">
+                  Upload updated pages, then mark the album as ready for final approval.
                 </p>
               </div>
-              <Button onClick={handleReadyForApproval}>
-                <CheckCircle className="h-4 w-4" />
-                Mark Ready for Approval
-              </Button>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={ROUTES.ALBUM_UPDATE.replace(':albumId', album.id)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-bg-secondary px-4 py-2.5 text-sm font-medium text-text-primary hover:bg-bg-secondary/80 transition-colors"
+                >
+                  Upload New Version
+                </Link>
+                <Button onClick={handleReadyForApproval}>
+                  <CheckCircle className="h-4 w-4" />
+                  Mark Ready
+                </Button>
+              </div>
             </div>
           </Card>
         </div>
