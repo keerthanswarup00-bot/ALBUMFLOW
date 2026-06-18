@@ -57,8 +57,8 @@ export function DashboardPage() {
             <LayoutDashboard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-text-primary">Dashboard</h1>
-            <p className="text-sm text-gray-500 dark:text-text-secondary">
+            <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary">Dashboard</h1>
+            <p className="text-sm text-text-secondary dark:text-text-secondary">
               Welcome back! Here&apos;s an overview of your albums.
             </p>
           </div>
@@ -67,16 +67,16 @@ export function DashboardPage() {
 
       {/* Stats */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-5">
-          <p className="text-sm text-gray-500 dark:text-text-secondary">Total Albums</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-text-primary">{albums.length}</p>
+        <div className="rounded-xl border border-border-primary dark:border-border-primary bg-bg-primary dark:bg-bg-elevated p-5">
+          <p className="text-sm text-text-secondary dark:text-text-secondary">Total Albums</p>
+          <p className="mt-1 text-2xl font-bold text-text-primary dark:text-text-primary">{albums.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-5">
-          <p className="text-sm text-gray-500 dark:text-text-secondary">Active Reviews</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-text-primary">{albums.filter((a) => a.status === 'awaiting_review' || a.status === 'changes_requested').length}</p>
+        <div className="rounded-xl border border-border-primary dark:border-border-primary bg-bg-primary dark:bg-bg-elevated p-5">
+          <p className="text-sm text-text-secondary dark:text-text-secondary">Active Reviews</p>
+          <p className="mt-1 text-2xl font-bold text-text-primary dark:text-text-primary">{albums.filter((a) => a.status === 'awaiting_review' || a.status === 'changes_requested').length}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-5">
-          <p className="text-sm text-gray-500 dark:text-text-secondary">Approved</p>
+        <div className="rounded-xl border border-border-primary dark:border-border-primary bg-bg-primary dark:bg-bg-elevated p-5">
+          <p className="text-sm text-text-secondary dark:text-text-secondary">Approved</p>
           <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{albums.filter((a) => a.status === 'approved').length}</p>
         </div>
       </div>
@@ -84,7 +84,7 @@ export function DashboardPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-text-primary">Recent Albums</h2>
+          <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary">Recent Albums</h2>
         </div>
         <Link
           to={ROUTES.ALBUM_NEW}
@@ -96,12 +96,12 @@ export function DashboardPage() {
       </div>
 
       {albums.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 dark:bg-bg-secondary">
-            <ImageIcon className="h-8 w-8 text-gray-300 dark:text-text-muted" />
+        <div className="rounded-xl border border-border-primary dark:border-border-primary bg-bg-primary dark:bg-bg-elevated p-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-bg-secondary dark:bg-bg-secondary">
+            <ImageIcon className="h-8 w-8 text-text-muted dark:text-text-muted" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-text-primary">No Albums Yet</h3>
-          <p className="mt-2 text-sm text-gray-500 dark:text-text-secondary">
+          <h3 className="text-lg font-semibold text-text-primary dark:text-text-primary">No Albums Yet</h3>
+          <p className="mt-2 text-sm text-text-secondary dark:text-text-secondary">
             Create your first album to get started with proofing.
           </p>
           <Link

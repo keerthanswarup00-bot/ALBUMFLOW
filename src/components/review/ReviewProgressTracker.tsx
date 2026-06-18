@@ -11,30 +11,29 @@ interface ReviewProgressTrackerProps {
   onToggleHelp: () => void;
   onToggleSummary: () => void;
   onTogglePreview?: () => void;
-  requestCount?: number;
-  onToggleRequests?: () => void;
   className?: string;
   studioLogoUrl?: string;
   studioName?: string;
+  hasFeedback?: boolean;
 }
 
 export function ReviewProgressTracker({
   currentSpread,
   totalPages,
-  completionPercent,
   onBack,
   studioLogoUrl,
   studioName,
+  hasFeedback,
   ..._rest
 }: ReviewProgressTrackerProps) {
   return (
-    <div className={cn('bg-white/95 backdrop-blur-sm border-b border-gray-200 safe-area-top select-none', _rest.className)}>
+    <div className={cn('bg-bg-primary/95 backdrop-blur-sm border-b border-border-primary safe-area-top select-none', _rest.className)}>
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2 min-w-0">
           {onBack && (
             <button
               onClick={onBack}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-text-secondary hover:bg-gray-100 transition-colors cursor-pointer"
               aria-label="Back"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -51,20 +50,19 @@ export function ReviewProgressTracker({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="h-1.5 w-16 rounded-full bg-gray-200 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-green-500 transition-all"
-              style={{ width: `${Math.min(completionPercent, 100)}%` }}
-            />
+          <div className="flex items-center gap-1.5">
+            {hasFeedback ? (
+              <span className="text-xs text-amber-600 font-medium">Has feedback</span>
+            ) : (
+              <span className="text-xs text-green-600 font-medium">Approved</span>
+            )}
           </div>
-          {completionPercent === 100 && (
-            <button
-              onClick={_rest.onToggleSummary}
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Finish Review
-            </button>
-          )}
+          <button
+            onClick={_rest.onToggleSummary}
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap min-h-[44px]"
+          >
+            Finish Review
+          </button>
         </div>
       </div>
     </div>

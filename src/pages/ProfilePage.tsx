@@ -21,7 +21,7 @@ export function ProfilePage() {
   if (!profile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400 dark:text-text-muted" />
+        <Loader2 className="h-8 w-8 animate-spin text-text-muted dark:text-text-muted" />
       </div>
     );
   }
@@ -112,8 +112,8 @@ function ProfileForm({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-text-primary">Profile</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary">
+        <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary">Profile</h1>
+        <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary">
           Manage your studio and personal information
         </p>
       </div>
@@ -129,10 +129,10 @@ function ProfileForm({
               </div>
             )}
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-text-primary">
+              <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary">
                 {profile?.studio_name || user?.full_name || 'Your Studio'}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-text-secondary">{user?.email}</p>
+              <p className="text-sm text-text-secondary dark:text-text-secondary">{user?.email}</p>
             </div>
           </div>
         </Card>
@@ -140,7 +140,7 @@ function ProfileForm({
         <Card>
           <div className="flex flex-col gap-5">
             <div>
-              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-text-secondary">Studio Logo</p>
+              <p className="mb-2 text-sm font-medium text-text-secondary dark:text-text-secondary">Studio Logo</p>
               <div className="flex items-center gap-3">
                 {studioLogoUrl ? (
                   <div className="relative">
@@ -163,7 +163,7 @@ function ProfileForm({
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingLogo}
-                  className="flex items-center gap-2 rounded-lg border border-gray-300 dark:border-border-primary px-4 py-2 text-sm font-medium text-gray-700 dark:text-text-secondary hover:bg-gray-50 dark:hover:bg-bg-secondary disabled:opacity-50 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 rounded-lg border border-border-primary dark:border-border-primary px-4 py-2 text-sm font-medium text-text-secondary dark:text-text-secondary hover:bg-bg-secondary dark:hover:bg-bg-secondary disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {isUploadingLogo ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -173,7 +173,7 @@ function ProfileForm({
                   {studioLogoUrl ? 'Change Logo' : 'Upload Logo'}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-400 dark:text-text-muted">
+              <p className="mt-1 text-xs text-text-muted dark:text-text-muted">
                 PNG, JPEG or WebP. Shown on share pages, previews, and reports.
               </p>
             </div>
@@ -185,7 +185,7 @@ function ProfileForm({
                 onChange={(e) => setStudioName(e.target.value)}
                 placeholder="Your studio name"
               />
-              <p className="mt-1 text-xs text-gray-400 dark:text-text-muted">
+              <p className="mt-1 text-xs text-text-muted dark:text-text-muted">
                 Used across share pages and client communications
               </p>
             </div>

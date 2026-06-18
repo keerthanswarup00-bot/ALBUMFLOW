@@ -88,20 +88,20 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full rounded-2xl bg-white dark:bg-bg-elevated shadow-xl outline-none',
+          'relative z-10 w-full rounded-2xl bg-bg-primary dark:bg-bg-elevated shadow-xl outline-none',
           sizeStyles[size],
         )}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-border-primary px-5 py-4">
-          <h2 id="modal-title" className="text-lg font-semibold text-gray-900 dark:text-text-primary">
+        <div className="flex items-center justify-between border-b border-border-primary dark:border-border-primary px-5 py-4">
+          <h2 id="modal-title" className="text-lg font-semibold text-text-primary dark:text-text-primary">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 dark:text-text-muted hover:bg-gray-100 dark:hover:bg-bg-secondary hover:text-gray-600 dark:hover:text-text-secondary transition-colors cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-text-muted dark:text-text-muted hover:bg-gray-100 dark:hover:bg-bg-secondary hover:text-text-secondary dark:hover:text-text-secondary transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="h-5 w-5" />

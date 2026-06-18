@@ -42,41 +42,41 @@ export function FloatingFeedbackCard({
       {!expanded && (
         <button
           onClick={handleToggle}
-          className="flex w-full items-center gap-3 rounded-xl bg-white/95 backdrop-blur-md px-4 py-3.5 shadow-lg border border-gray-200/80 hover:bg-white transition-all cursor-pointer min-h-[52px]"
+          className="flex w-full items-center gap-3 rounded-xl bg-bg-primary/95 backdrop-blur-md px-4 py-3.5 shadow-lg border border-border-primary/80 hover:bg-bg-primary transition-all cursor-pointer min-h-[52px]"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
             <MessageSquareText className="h-5 w-5 text-blue-600" />
           </div>
           <div className="flex flex-1 flex-col text-left">
-            <span className="text-sm font-bold text-gray-900">
+            <span className="text-sm font-bold text-text-primary">
               {comments.length > 0 ? `${comments.length} Comment${comments.length !== 1 ? 's' : ''}` : 'No comments'}
             </span>
             {voiceCount > 0 && (
-              <span className="text-xs text-gray-500">{voiceCount} Voice Note{voiceCount !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-text-secondary">{voiceCount} Voice Note{voiceCount !== 1 ? 's' : ''}</span>
             )}
           </div>
-          <ChevronUp className="h-5 w-5 text-gray-400" />
+          <ChevronUp className="h-5 w-5 text-text-muted" />
         </button>
       )}
 
       {expanded && (
-        <div className="rounded-xl bg-white/95 backdrop-blur-md shadow-lg border border-gray-200/80 overflow-hidden">
+        <div className="rounded-xl bg-bg-primary/95 backdrop-blur-md shadow-lg border border-border-primary/80 overflow-hidden">
           <button
             onClick={handleToggle}
-            className="flex w-full items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 min-h-[48px]"
+            className="flex w-full items-center justify-between px-4 py-3.5 hover:bg-bg-secondary transition-colors cursor-pointer border-b border-gray-100 min-h-[48px]"
           >
-            <span className="text-sm font-bold text-gray-900">
+            <span className="text-sm font-bold text-text-primary">
               Feedback{totalItems > 0 && ` (${totalItems})`}
             </span>
-            <ChevronDown className="h-5 w-5 text-gray-400" />
+            <ChevronDown className="h-5 w-5 text-text-muted" />
           </button>
 
           <div ref={listRef} className="max-h-[50vh] overflow-y-auto px-3 py-2 space-y-1.5">
             {comments.length === 0 && voiceCount === 0 && (
               <div className="flex flex-col items-center py-8 text-center">
                 <MessageSquareText className="mb-2 h-10 w-10 text-gray-200" />
-                <p className="text-sm text-gray-400">No feedback yet</p>
-                <p className="text-xs text-gray-300 mt-0.5">Tap the comment button below</p>
+                <p className="text-sm text-text-muted">No feedback yet</p>
+                <p className="text-xs text-text-muted mt-0.5">Tap the comment button below</p>
               </div>
             )}
 
@@ -92,7 +92,7 @@ export function FloatingFeedbackCard({
                   'w-full text-left rounded-lg border p-3.5 transition-colors cursor-pointer min-h-[44px]',
                   focusedPinId === c.id
                     ? 'border-blue-300 bg-blue-50'
-                    : 'border-gray-100 bg-gray-50 hover:bg-gray-100'
+                    : 'border-gray-100 bg-bg-secondary hover:bg-gray-100'
                 )}
               >
                 <div className="flex items-center gap-1.5 mb-1">
@@ -101,20 +101,20 @@ export function FloatingFeedbackCard({
                       {c.pin.label}
                     </span>
                   ) : (
-                    <span className="text-xs font-medium text-gray-400">📌</span>
+                    <span className="text-xs font-medium text-text-muted">📌</span>
                   )}
-                  <span className="text-xs font-medium text-gray-400">
+                  <span className="text-xs font-medium text-text-muted">
                     Spread {c.page_number}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">{c.message}</p>
+                <p className="text-sm text-text-secondary line-clamp-2 leading-relaxed">{c.message}</p>
               </button>
             ))}
 
             {voiceCount > 0 && (
-              <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3.5 min-h-[44px]">
+              <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-bg-secondary p-3.5 min-h-[44px]">
                 <span className="text-lg">🎤</span>
-                <span className="text-sm text-gray-600 font-medium">
+                <span className="text-sm text-text-secondary font-medium">
                   {voiceCount} Voice Note{voiceCount !== 1 ? 's' : ''}
                 </span>
               </div>

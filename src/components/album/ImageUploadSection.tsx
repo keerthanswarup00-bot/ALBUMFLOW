@@ -57,10 +57,10 @@ export function ImageUploadSection({ albumId, onUploadComplete }: ImageUploadSec
       />
 
       {files.length > 0 && !isUploading && (
-        <div className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-4">
+        <div className="flex items-center justify-between rounded-xl border border-border-primary dark:border-border-primary bg-bg-primary dark:bg-bg-elevated p-4">
           <div className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-            <span className="text-sm font-medium text-gray-700 dark:text-text-secondary">
+            <span className="text-sm font-medium text-text-secondary dark:text-text-secondary">
               {files.length} file{files.length !== 1 ? 's' : ''} selected
             </span>
           </div>

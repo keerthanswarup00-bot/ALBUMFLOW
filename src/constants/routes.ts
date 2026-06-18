@@ -1,4 +1,5 @@
 export const ROUTES = {
+  HOME: '/',
   LOGIN: '/login',
   SIGNUP: '/signup',
   DASHBOARD: '/dashboard',
@@ -15,6 +16,9 @@ export const ROUTES = {
   PROFILE: '/profile',
   RESET_PASSWORD: '/reset-password',
   ALBUM_UNAVAILABLE: '/album-unavailable',
+  PRIVACY_POLICY: '/privacy-policy',
+  TERMS: '/terms',
+  COOKIE_POLICY: '/cookie-policy',
 } as const;
 
 export function albumViewRoute(token: string) {

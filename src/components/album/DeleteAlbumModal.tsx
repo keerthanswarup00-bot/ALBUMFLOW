@@ -24,11 +24,11 @@ export function DeleteAlbumModal({
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/30">
           <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
         </div>
-        <p className="text-sm text-gray-600 dark:text-text-secondary">
+        <p className="text-sm text-text-secondary dark:text-text-secondary">
           Are you sure you want to delete{' '}
-          <span className="font-semibold text-gray-900 dark:text-text-primary">{album?.title}</span>?
+          <span className="font-semibold text-text-primary dark:text-text-primary">{album?.title}</span>?
         </p>
-        <p className="mt-2 text-xs text-gray-400 dark:text-text-muted">This action cannot be undone.</p>
+        <p className="mt-2 text-xs text-text-muted dark:text-text-muted">This action cannot be undone.</p>
         <div className="mt-6 flex w-full gap-3">
           <Button
             variant="secondary"

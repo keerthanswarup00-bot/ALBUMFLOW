@@ -84,13 +84,14 @@ export function ReviewFeedbackPage() {
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+          aria-label="Go back"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-bg-secondary transition-colors cursor-pointer"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">{currentAlbum?.title || 'Album'} — Review Feedback</h1>
-          <p className="text-xs text-gray-500">
+          <h1 className="text-lg font-bold text-text-primary">{currentAlbum?.title || 'Album'} — Review Feedback</h1>
+          <p className="text-xs text-text-secondary">
             {totalPages} pages &middot; {reviewedCount} reviewed &middot; {requests.length} requests &middot; {voiceRecordings.length} voice notes
           </p>
         </div>
@@ -98,10 +99,10 @@ export function ReviewFeedbackPage() {
 
       <div className="flex flex-1 gap-4 overflow-hidden">
         {/* Left: Album pages */}
-        <div className="w-64 shrink-0 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Pages</h2>
+        <div className="w-64 shrink-0 overflow-y-auto rounded-xl border border-border-primary bg-bg-primary p-3">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">Pages</h2>
           {totalPages === 0 ? (
-            <p className="text-xs text-gray-400">No pages yet</p>
+            <p className="text-xs text-text-muted">No pages yet</p>
           ) : (
             <div className="flex flex-col gap-1.5">
               {albumPages.map((page) => {
@@ -119,11 +120,11 @@ export function ReviewFeedbackPage() {
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors cursor-pointer',
                       isSelected
-                        ? 'bg-blue-50 border border-blue-200'
-                        : 'border border-transparent hover:bg-gray-50'
+                        ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
+                        : 'border border-transparent hover:bg-bg-secondary'
                     )}
                   >
-                    <div className="flex h-10 w-8 shrink-0 items-center justify-center overflow-hidden rounded bg-gray-100">
+                    <div className="flex h-10 w-8 shrink-0 items-center justify-center overflow-hidden rounded bg-bg-secondary">
                       {page.thumbnail_url ? (
                         <img
                           src={page.thumbnail_url}
@@ -131,18 +132,18 @@ export function ReviewFeedbackPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <FileText className="h-4 w-4 text-gray-400" />
+                        <FileText className="h-4 w-4 text-text-muted" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-medium text-gray-900">Page {pageNum}</span>
+                        <span className="text-sm font-medium text-text-primary">Page {pageNum}</span>
                         {isApproved && (
-                          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                          <CheckCircle className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
                         )}
                       </div>
                       {hasFeedback && (
-                        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-400">
+                        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-text-muted">
                           {pageRequests.length > 0 && (
                             <span>{pageRequests.length} {pageRequests.length === 1 ? 'request' : 'requests'}</span>
                           )}
@@ -160,46 +161,46 @@ export function ReviewFeedbackPage() {
         </div>
 
         {/* Right: Feedback timeline */}
-        <div className="flex-1 overflow-y-auto rounded-xl border border-gray-200 bg-white p-5">
+        <div className="flex-1 overflow-y-auto rounded-xl border border-border-primary bg-bg-primary p-5">
           {selectedPage !== null && selectedItems ? (
             <div>
-              <h2 className="mb-4 text-sm font-semibold text-gray-700">
+              <h2 className="mb-4 text-sm font-semibold text-text-secondary">
                 Feedback for Page {selectedPage}
               </h2>
               <div className="flex flex-col gap-3">
                 {selectedItems[1].text.map((request) => (
                   <div
                     key={request.id}
-                    className="flex items-start gap-3 rounded-lg bg-gray-50 p-3"
+                    className="flex items-start gap-3 rounded-lg bg-bg-secondary p-3"
                   >
                     <div className={cn(
                       'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                      request.category === 'pin' ? 'bg-amber-50' : 'bg-blue-50'
+                      request.category === 'pin' ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-blue-50 dark:bg-blue-900/30'
                     )}>
                       {request.category === 'pin' ? (
-                        <MapPin className="h-4 w-4 text-amber-600" />
+                        <MapPin className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       ) : (
-                        <FileText className="h-4 w-4 text-blue-600" />
+                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-text-primary">
                           {request.category === 'pin' ? `Pin #${request.pin?.label}` : 'Change Request'}
                         </span>
                         <span className={cn(
                           'rounded-full px-2 py-0.5 text-[10px] font-medium',
-                          request.status === 'open' ? 'bg-amber-100 text-amber-700' :
-                          request.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                          'bg-blue-100 text-blue-700'
+                          request.status === 'open' ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' :
+                          request.status === 'resolved' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
+                          'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
                         )}>
                           {request.status === 'open' ? 'Pending' :
                            request.status === 'resolved' ? 'Resolved' : 'Designer Review'}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-sm text-gray-500">{request.message}</p>
+                      <p className="mt-0.5 text-sm text-text-secondary">{request.message}</p>
                       {request.pin && (
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1 text-xs text-text-muted">
                           Position: ({Math.round(request.pin.xPercent)}%, {Math.round(request.pin.yPercent)}%)
                         </p>
                       )}
@@ -209,40 +210,40 @@ export function ReviewFeedbackPage() {
                 {selectedItems[1].voice.map((voice) => (
                   <div
                     key={voice.id}
-                    className="flex items-start gap-3 rounded-lg bg-gray-50 p-3"
+                    className="flex items-start gap-3 rounded-lg bg-bg-secondary p-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50">
-                      <Mic className="h-4 w-4 text-purple-600" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-900/30">
+                      <Mic className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">Voice Message</span>
+                        <span className="text-sm font-medium text-text-primary">Voice Message</span>
                         <span className={cn(
                           'rounded-full px-2 py-0.5 text-[10px] font-medium',
-                          voice.status === 'open' ? 'bg-amber-100 text-amber-700' :
-                          voice.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                          'bg-blue-100 text-blue-700'
+                          voice.status === 'open' ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' :
+                          voice.status === 'resolved' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
+                          'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
                         )}>
                           {voice.status === 'open' ? 'Pending' :
                            voice.status === 'resolved' ? 'Resolved' : 'Designer Review'}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-sm text-gray-500">
+                      <p className="mt-0.5 text-sm text-text-secondary">
                         {Math.floor(voice.duration / 60)}:{(voice.duration % 60).toString().padStart(2, '0')}
                       </p>
                     </div>
                   </div>
                 ))}
                 {selectedItems[1].text.length === 0 && selectedItems[1].voice.length === 0 && (
-                  <p className="text-sm text-gray-400">No feedback for this page.</p>
+                  <p className="text-sm text-text-muted">No feedback for this page.</p>
                 )}
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <MessageSquare className="mb-3 h-10 w-10 text-gray-300" />
-              <p className="text-sm font-medium text-gray-500">Select a page</p>
-              <p className="mt-1 text-xs text-gray-400">
+              <MessageSquare className="mb-3 h-10 w-10 text-text-muted" />
+              <p className="text-sm font-medium text-text-secondary">Select a page</p>
+              <p className="mt-1 text-xs text-text-muted">
                 Click a page on the left to view its feedback
               </p>
             </div>

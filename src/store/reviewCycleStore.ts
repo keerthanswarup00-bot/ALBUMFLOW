@@ -34,9 +34,12 @@ interface ReviewCycleState {
   getApproval: (albumId: string) => ApprovalRecord | null;
   submitApproval: (albumId: string, checklist: ApprovalChecklistItem[]) => void;
 
+  markReviewStarted: (albumId: string) => void;
   submitReview: (albumId: string) => void;
-  markDesignerReviewing: (albumId: string) => void;
-  markAlbumUpdated: (albumId: string) => void;
+  markChangesInProgress: (albumId: string) => void;
+  markReadyForApproval: (albumId: string) => void;
+  markClosed: (albumId: string) => void;
+  resetStatus: (albumId: string) => void;
 }
 
 export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
@@ -52,7 +55,7 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
       set((s) => ({ statuses: { ...s.statuses, [albumId]: stored } }));
       return stored;
     }
-    return 'draft_review';
+    return 'draft';
   },
 
   setStatus: (albumId: string, status: ReviewCycleStatus) => {
@@ -109,7 +112,18 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
     get().setStatus(albumId, 'approved');
     get().addTimelineEntry(albumId, {
       type: 'approved',
-      description: 'Album approved',
+      description: 'Album approved by client',
+      timestamp: Date.now(),
+    });
+  },
+
+  markReviewStarted: (albumId: string) => {
+    const status = get().getStatus(albumId);
+    if (status !== 'awaiting_review') return;
+    get().setStatus(albumId, 'review_in_progress');
+    get().addTimelineEntry(albumId, {
+      type: 'review_started',
+      description: 'Client opened album for review',
       timestamp: Date.now(),
     });
   },
@@ -125,16 +139,38 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
     });
   },
 
-  markDesignerReviewing: (albumId: string) => {
-    get().setStatus(albumId, 'designer_reviewing');
-  },
-
-  markAlbumUpdated: (albumId: string) => {
-    get().setStatus(albumId, 'album_updated');
+  markChangesInProgress: (albumId: string) => {
+    const status = get().getStatus(albumId);
+    if (status !== 'review_submitted') return;
+    get().setStatus(albumId, 'changes_in_progress');
     get().addTimelineEntry(albumId, {
-      type: 'album_updated',
-      description: 'Album updated by designer',
+      type: 'changes_in_progress',
+      description: 'Designer is implementing changes',
       timestamp: Date.now(),
     });
+  },
+
+  markReadyForApproval: (albumId: string) => {
+    get().setStatus(albumId, 'ready_for_approval');
+    get().addTimelineEntry(albumId, {
+      type: 'ready_for_approval',
+      description: 'Updated version ready for final approval',
+      timestamp: Date.now(),
+    });
+  },
+
+  markClosed: (albumId: string) => {
+    get().setStatus(albumId, 'closed');
+    get().addTimelineEntry(albumId, {
+      type: 'closed',
+      description: 'Album closed',
+      timestamp: Date.now(),
+    });
+  },
+
+  resetStatus: (albumId: string) => {
+    get().setStatus(albumId, 'draft');
+    saveJSON(`${TIMELINE_PREFIX}${albumId}`, []);
+    set((s) => ({ timelines: { ...s.timelines, [albumId]: [] } }));
   },
 }));

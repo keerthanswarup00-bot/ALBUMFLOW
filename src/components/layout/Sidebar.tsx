@@ -25,7 +25,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r border-gray-200 dark:border-border-primary bg-white dark:bg-bg-primary pt-16 transition-transform duration-200 lg:static lg:translate-x-0',
+        'fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r border-border-primary dark:border-border-primary bg-bg-primary dark:bg-bg-primary pt-16 transition-transform duration-200 lg:static lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
       )}
     >
@@ -40,7 +40,7 @@ export function Sidebar() {
                     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive
                       ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                      : 'text-gray-600 dark:text-text-secondary hover:bg-gray-100 dark:hover:bg-bg-secondary hover:text-gray-900 dark:hover:text-text-primary',
+                      : 'text-text-secondary dark:text-text-secondary hover:bg-gray-100 dark:hover:bg-bg-secondary hover:text-text-primary dark:hover:text-text-primary',
                   )
                 }
               >
@@ -52,18 +52,18 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-gray-200 dark:border-border-primary p-4">
+      <div className="border-t border-border-primary dark:border-border-primary p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50 text-sm font-medium text-blue-700 dark:text-blue-400">
             <ImageIcon className="h-4 w-4" />
           </div>
           <div className="flex-1 text-sm">
-            <p className="font-medium text-gray-900 dark:text-text-primary">AlbumFlow</p>
-            <p className="text-gray-500 dark:text-text-muted">v1.0.0</p>
+            <p className="font-medium text-text-primary dark:text-text-primary">AlbumFlow</p>
+            <p className="text-text-secondary dark:text-text-muted">v1.0.0</p>
           </div>
           <button
             onClick={cycleTheme}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 dark:text-text-muted hover:bg-gray-100 dark:hover:bg-bg-secondary transition-colors cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary dark:text-text-muted hover:bg-gray-100 dark:hover:bg-bg-secondary transition-colors cursor-pointer"
             title={`Theme: ${mode}`}
           >
             <SunMoon className="h-4 w-4" />

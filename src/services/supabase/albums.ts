@@ -99,7 +99,7 @@ export async function createAlbum(
 
 export async function updateAlbum(
   id: string,
-  updates: Partial<AlbumFormData & { status?: Album['status']; slug?: string }>
+  updates: Partial<AlbumFormData & { status?: Album['status']; slug?: string; cover_image_url?: string | null }>
 ): Promise<Album> {
   const payload: Record<string, unknown> = {};
 
@@ -116,6 +116,7 @@ export async function updateAlbum(
   if (updates.description !== undefined) payload.description = updates.description || null;
   if (updates.deadline !== undefined) payload.deadline = updates.deadline || null;
   if (updates.status !== undefined) payload.status = updates.status;
+  if (updates.cover_image_url !== undefined) payload.cover_image_url = updates.cover_image_url;
 
   if (Object.keys(payload).length === 0) {
     throw new ApiError('No fields to update', 400);

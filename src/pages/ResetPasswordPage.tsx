@@ -47,25 +47,25 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 px-4 py-12 safe-area-inset">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-bg-primary px-4 py-12 safe-area-inset">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">AlbumFlow</h1>
-        <p className="mt-2 text-center text-sm text-gray-500">
+        <h1 className="text-3xl font-bold text-text-primary">AlbumFlow</h1>
+        <p className="mt-2 text-center text-sm text-text-secondary">
           Set a new password
         </p>
       </div>
       <div className="w-full max-w-sm">
         {success ? (
           <div className="flex flex-col gap-5">
-            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/30 px-4 py-3 text-sm text-green-700 dark:text-green-400">
               Password updated successfully! Redirecting to sign in...
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900">New Password</h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <h2 className="text-2xl font-semibold text-text-primary">New Password</h2>
+              <p className="mt-1 text-sm text-text-secondary">
                 Enter your new password below
               </p>
             </div>
@@ -92,7 +92,7 @@ export function ResetPasswordPage() {
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}

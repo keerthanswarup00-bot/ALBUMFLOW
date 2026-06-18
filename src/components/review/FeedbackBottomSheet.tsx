@@ -44,16 +44,16 @@ export function FeedbackBottomSheet({
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
 
-      <div className="absolute bottom-0 left-0 right-0 max-h-[70dvh] rounded-t-2xl bg-white shadow-xl flex flex-col">
+      <div className="absolute bottom-0 left-0 right-0 max-h-[70dvh] rounded-t-2xl bg-bg-primary shadow-xl flex flex-col">
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
-          <h2 className="text-base font-bold text-gray-900">
+          <h2 className="text-base font-bold text-text-primary">
             Feedback{comments.length + voiceCount > 0 && ` (${comments.length + voiceCount})`}
           </h2>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-text-muted hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -63,8 +63,8 @@ export function FeedbackBottomSheet({
           {comments.length === 0 && voiceCount === 0 && (
             <div className="flex flex-col items-center py-10 text-center">
               <MessageSquareText className="mb-2 h-10 w-10 text-gray-200" />
-              <p className="text-sm text-gray-400">No feedback yet</p>
-              <p className="text-xs text-gray-300 mt-1">Tap the comment button on the spread</p>
+              <p className="text-sm text-text-muted">No feedback yet</p>
+              <p className="text-xs text-text-muted mt-1">Tap the comment button on the spread</p>
             </div>
           )}
 
@@ -80,7 +80,7 @@ export function FeedbackBottomSheet({
                 'w-full text-left rounded-xl border p-4 transition-colors cursor-pointer',
                 focusedPinId === c.id
                   ? 'border-blue-300 bg-blue-50'
-                  : 'border-gray-100 bg-gray-50 hover:bg-gray-100'
+                  : 'border-gray-100 bg-bg-secondary hover:bg-gray-100'
               )}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -89,20 +89,20 @@ export function FeedbackBottomSheet({
                     {c.pin.label}
                   </span>
                 ) : (
-                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <MapPin className="h-4 w-4 text-text-muted" />
                 )}
-                <span className="text-xs font-medium text-gray-400">
+                <span className="text-xs font-medium text-text-muted">
                   Spread {c.page_number}
                 </span>
               </div>
-              <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">{c.message}</p>
+              <p className="text-sm text-text-secondary line-clamp-3 leading-relaxed">{c.message}</p>
             </button>
           ))}
 
           {voiceCount > 0 && (
-            <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-bg-secondary p-4">
               <Mic className="h-5 w-5 text-purple-500" />
-              <span className="text-sm text-gray-600 font-medium">
+              <span className="text-sm text-text-secondary font-medium">
                 {voiceCount} Voice Note{voiceCount !== 1 ? 's' : ''}
               </span>
             </div>

@@ -169,12 +169,12 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="w-full max-w-sm rounded-t-2xl bg-white p-6 sm:rounded-2xl">
+      <div className="w-full max-w-sm rounded-t-2xl bg-bg-primary p-6 sm:rounded-2xl">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Send Voice Message</h2>
+          <h2 className="text-lg font-bold text-text-primary">Send Voice Message</h2>
           <button
             onClick={onClose}
-            className="flex h-12 w-12 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+            className="flex h-12 w-12 items-center justify-center rounded-xl text-text-muted hover:bg-gray-100 hover:text-text-secondary transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X className="h-6 w-6" />
@@ -198,7 +198,7 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
 
         <div className="flex flex-col items-center gap-4 py-4">
           {(state === 'recording' || state === 'finished') && (
-            <div className="text-4xl font-mono font-bold tabular-nums text-gray-900">
+            <div className="text-4xl font-mono font-bold tabular-nums text-text-primary">
               {formatTime(duration)}
             </div>
           )}
@@ -212,7 +212,7 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
               >
                 <Mic className="h-10 w-10" />
               </button>
-              <p className="text-base font-medium text-gray-500">Tap to Start Recording</p>
+              <p className="text-base font-medium text-text-secondary">Tap to Start Recording</p>
             </div>
           )}
 
@@ -223,7 +223,7 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
                   <div className="h-24 w-24 rounded-full bg-red-500 animate-ping absolute opacity-30" />
                   <button
                     onClick={stopRecording}
-                    className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-white cursor-pointer"
+                    className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-bg-primary cursor-pointer"
                     aria-label="Stop recording"
                   >
                     <Square className="h-7 w-7 text-red-500" />
@@ -233,7 +233,7 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
               <p className="text-base font-bold text-red-500 animate-pulse">Recording...</p>
               <button
                 onClick={stopRecording}
-                className="text-base text-gray-500 underline hover:text-gray-700 cursor-pointer"
+                className="text-base text-text-secondary underline hover:text-text-secondary cursor-pointer"
               >
                 Stop Recording
               </button>
@@ -255,8 +255,8 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
                   )}
                 </button>
                 <div className="flex flex-col">
-                  <p className="text-base font-bold text-gray-900">Voice Message Ready</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-base font-bold text-text-primary">Voice Message Ready</p>
+                  <p className="text-sm text-text-secondary">
                     {formatTime(playbackTime || duration)}
                   </p>
                 </div>
@@ -265,7 +265,7 @@ export function VoiceMessageRecorder({ onSend, onClose }: VoiceMessageRecorderPr
               <div className="flex w-full gap-3">
                 <button
                   onClick={deleteRecording}
-                  className="flex items-center justify-center gap-2 rounded-xl border-2 border-gray-300 px-4 py-3.5 text-base font-bold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 rounded-xl border-2 border-gray-300 px-4 py-3.5 text-base font-bold text-text-secondary hover:bg-bg-secondary transition-colors cursor-pointer"
                 >
                   <Trash2 className="h-5 w-5" />
                   Delete

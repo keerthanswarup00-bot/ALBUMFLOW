@@ -140,26 +140,35 @@ export interface VoiceDraft {
 
 // Review Cycle Types
 export type ReviewCycleStatus =
-  | 'draft_review'
+  | 'draft'
+  | 'awaiting_review'
+  | 'review_in_progress'
   | 'review_submitted'
-  | 'designer_reviewing'
-  | 'album_updated'
-  | 'approved';
+  | 'changes_in_progress'
+  | 'ready_for_approval'
+  | 'approved'
+  | 'closed';
 
 export const REVIEW_CYCLE_LABELS: Record<ReviewCycleStatus, string> = {
-  draft_review: 'Draft Review',
+  draft: 'Draft',
+  awaiting_review: 'Awaiting Review',
+  review_in_progress: 'Review In Progress',
   review_submitted: 'Review Submitted',
-  designer_reviewing: 'Designer Reviewing',
-  album_updated: 'Album Updated',
+  changes_in_progress: 'Changes In Progress',
+  ready_for_approval: 'Ready For Final Approval',
   approved: 'Approved',
+  closed: 'Closed',
 };
 
 export const REVIEW_CYCLE_STYLES: Record<ReviewCycleStatus, string> = {
-  draft_review: 'bg-gray-100 text-gray-700',
-  review_submitted: 'bg-blue-100 text-blue-700',
-  designer_reviewing: 'bg-amber-100 text-amber-700',
-  album_updated: 'bg-purple-100 text-purple-700',
-  approved: 'bg-green-100 text-green-700',
+  draft: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  awaiting_review: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+  review_in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+  review_submitted: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
+  changes_in_progress: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
+  ready_for_approval: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
+  approved: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
+  closed: 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
 };
 
 export interface AlbumUpdate {
@@ -184,7 +193,7 @@ export interface AlbumUpdatePage {
 export interface TimelineEntry {
   id: string;
   album_id: string;
-  type: 'album_created' | 'review_submitted' | 'album_updated' | 'update_reviewed' | 'approved';
+  type: 'album_created' | 'review_started' | 'review_submitted' | 'changes_in_progress' | 'ready_for_approval' | 'approved' | 'closed';
   description: string;
   timestamp: number;
 }

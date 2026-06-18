@@ -10,12 +10,11 @@ import { HelpBottomSheet } from './HelpBottomSheet';
 import { PinMarker } from './PinMarker';
 import { PinPopup } from './PinPopup';
 import { NewPinEditor } from './NewPinEditor';
-import { FloatingActionPills } from './FloatingActionPills';
+import { StickyBottomBar } from './StickyBottomBar';
 import { PinchZoomWrapper } from './PinchZoomWrapper';
 import { VoiceMessageRecorder } from './VoiceMessageRecorder';
 import { uploadVoiceNote } from '@/services/supabase/storage';
 import type { ReviewAlbum, ReviewPage, ViewerRequestChange } from '@/types/viewer';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface FlipBookHandle {
   pageFlip: () => {
@@ -38,20 +37,16 @@ interface WeddingAlbumViewerProps {
   studioLogoUrl?: string;
 }
 
-const AUTO_HIDE_DELAY = 3000;
-
 const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((props, ref) => {
   const { album, pages, studioName = 'Studio', phoneNumber = '', studioLogoUrl = '' } = props;
   const [currentSpread, setCurrentSpread] = useState(0);
   const [showCompletion, setShowCompletion] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isPinMode, setIsPinMode] = useState(false);
   const [pendingPin, setPendingPin] = useState<{ xPercent: number; yPercent: number; label: string } | null>(null);
   const [showNewPinEditor, setShowNewPinEditor] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ViewerRequestChange | null>(null);
   const [selectedPinPos, setSelectedPinPos] = useState<{ xPercent: number; yPercent: number } | null>(null);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
-  const [showChangeOptions, setShowChangeOptions] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -64,8 +59,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [albumContainerSize, setAlbumContainerSize] = useState({ width: 0, height: 0 });
 
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(true);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const pageAspectRatio = useMemo(() => {
@@ -109,10 +102,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   const {
     markPageViewed,
-    markPageReviewed,
-    undoReview,
     getReviewedCount,
-    getPageStatus,
     ensureAlbum,
   } = useReviewStore();
 
@@ -126,6 +116,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   const {
     addRecording,
+    getRecordingsByPage,
+    deleteRecording,
   } = useVoiceStore();
 
   const { showToast } = useUIStore();
@@ -135,6 +127,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const completionPercent = totalSpreads > 0 ? Math.round((reviewedSpreads / totalSpreads) * 100) : 0;
 
   const currentPageRequests = getRequestsByPage(album.id, currentSpread + 1);
+  const currentPageVoice = getRecordingsByPage(album.id, currentSpread + 1);
+  const hasFeedback = currentPageRequests.length > 0 || currentPageVoice.length > 0;
 
   const currentPinRequests = currentPageRequests.filter((r) => r.category === 'pin' && r.pin);
 
@@ -172,39 +166,26 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     }
   }, []);
 
-  const canGoPrev = currentSpread > 0 && !isPinMode && !showChangeOptions;
-  const canGoNext = currentSpread < totalSpreads - 1 && !isPinMode && !showChangeOptions;
+  const canGoPrev = currentSpread > 0 && !isPinMode;
+  const canGoNext = currentSpread < totalSpreads - 1 && !isPinMode;
 
-  const isCurrentReviewed = (() => {
-    const leftIdx = currentSpread * 2;
-    const rightIdx = leftIdx + 1;
-    const leftPageStatus = getPageStatus(album.id, leftIdx + 1);
-    const rightPageStatus = rightIdx < pages.length ? getPageStatus(album.id, rightIdx + 1) : 'reviewed';
-    return leftPageStatus === 'reviewed' && rightPageStatus === 'reviewed';
-  })();
-
-  const approveTimerRef = useRef<number | null>(null);
-  useEffect(() => () => { if (approveTimerRef.current) clearTimeout(approveTimerRef.current); }, []);
-
-  function handleMarkReviewed() {
-    if (isSaving) return;
-    setIsSaving(true);
-    approveTimerRef.current = window.setTimeout(() => {
-      const leftIdx = currentSpread * 2;
-      markPageReviewed(album.id, leftIdx + 1, pages.length);
-      if (leftIdx + 2 <= pages.length) {
-        markPageReviewed(album.id, leftIdx + 2, pages.length);
+  function handleUndoFeedback() {
+    const pageNumbers = [currentSpread + 1];
+    if (currentPageRight < pages.length) {
+      pageNumbers.push(currentSpread + 2);
+    }
+    for (const pn of pageNumbers) {
+      const pageReqs = getRequestsByPage(album.id, pn);
+      for (const req of pageReqs) {
+        deleteRequest(album.id, req.id);
       }
-      setIsSaving(false);
-      approveTimerRef.current = null;
-    }, 300);
-  }
-
-  function handleUndoReview() {
-    const leftIdx = currentSpread * 2;
-    undoReview(album.id, leftIdx + 1, pages.length);
-    if (leftIdx + 2 <= pages.length) {
-      undoReview(album.id, leftIdx + 2, pages.length);
+      const pageVoices = getRecordingsByPage(album.id, pn);
+      for (const v of pageVoices) {
+        deleteRecording(album.id, v.id);
+      }
+    }
+    if (pageNumbers.length > 0) {
+      showToast('Feedback removed', 'success');
     }
   }
 
@@ -224,7 +205,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   const enterPreview = useCallback(() => {
     setIsPreviewMode(true);
-    setControlsVisible(true);
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
@@ -234,17 +214,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     setIsHelpOpen((prev) => !prev);
   }
 
-  function handleOpenChangeOptions() {
-    setShowChangeOptions(true);
-  }
-
   function handleAddComment() {
-    setShowChangeOptions(false);
     setIsPinMode(true);
   }
 
   function handleAddVoice() {
-    setShowChangeOptions(false);
     setShowVoiceRecorder(true);
   }
 
@@ -301,7 +275,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     setSelectedPinPos(null);
   }
 
-  // --- Image quality: swap to full-res when zoomed ---
   useEffect(() => {
     const useFullRes = zoomScale >= 2;
     pages.forEach((page, i) => {
@@ -312,51 +285,9 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     });
   }, [zoomScale, pages]);
 
-  // --- Auto-hide controls in preview mode ---
-  const startHideTimer = useCallback(() => {
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    if (!isPreviewMode) return;
-    hideTimerRef.current = setTimeout(() => {
-      setControlsVisible(false);
-    }, AUTO_HIDE_DELAY);
-  }, [isPreviewMode]);
-
-  const cancelHideTimer = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  }, []);
-
   function handleUserInteraction() {
-    if (isPreviewMode) {
-      setControlsVisible(true);
-      startHideTimer();
-    }
   }
 
-  function handleTapControls() {
-    if (isPreviewMode) {
-      setControlsVisible((p) => !p);
-      if (controlsVisible) {
-        cancelHideTimer();
-      } else {
-        startHideTimer();
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (isPreviewMode) {
-      startHideTimer();
-    } else {
-      cancelHideTimer();
-      setControlsVisible(true);
-    }
-    return () => cancelHideTimer();
-  }, [isPreviewMode, startHideTimer, cancelHideTimer]);
-
-  // --- Keyboard shortcuts (using refs to avoid re-registration) ---
   const isHelpOpenRef = useRef(isHelpOpen);
   isHelpOpenRef.current = isHelpOpen;
   const showVoiceRecorderRef = useRef(showVoiceRecorder);
@@ -395,7 +326,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         case 'Escape':
           if (isPreviewModeRef.current) {
             setIsPreviewMode(false);
-            setControlsVisible(true);
           }
           if (isFullscreenRef.current) document.exitFullscreen().catch(() => {});
           break;
@@ -437,7 +367,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       onTouchStart={handleUserInteraction}
       onMouseMove={handleUserInteraction}
     >
-      {/* Header bar */}
       <ReviewProgressTracker
         currentSpread={currentSpread}
         reviewedCount={reviewedSpreads}
@@ -451,10 +380,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         onToggleHelp={toggleHelp}
         onToggleSummary={() => setShowCompletion(true)}
         onTogglePreview={enterPreview}
+        hasFeedback={hasFeedback}
       />
 
-      <div className="flex flex-1 overflow-hidden" onClick={(e) => { if (isPreviewMode) { e.stopPropagation(); handleTapControls(); } }}>
-        {/* Album area */}
+      <div className="flex flex-1 overflow-hidden">
         <div ref={albumContainerRef} className="relative flex-1 overflow-hidden bg-[#2c1810]">
           <PinchZoomWrapper isActive={true} onZoomChange={setIsZoomed} onScaleChange={setZoomScale}>
             {pages.length > 0 && (
@@ -474,11 +403,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                   drawShadow={true}
                   maxShadowOpacity={0.7}
                   showPageCorners={true}
-                  useMouseEvents={!isZoomed && !isPinMode && !showChangeOptions}
-                  swipeDistance={isZoomed || isPinMode || showChangeOptions ? 9999 : 80}
-                  mobileScrollSupport={!isZoomed && !isPinMode && !showChangeOptions}
+                  useMouseEvents={!isZoomed && !isPinMode}
+                  swipeDistance={isZoomed || isPinMode ? 9999 : 80}
+                  mobileScrollSupport={!isZoomed && !isPinMode}
                   clickEventForward={false}
-                  disableFlipByClick={isZoomed || isPinMode || showChangeOptions}
+                  disableFlipByClick={isZoomed || isPinMode}
                   autoSize={false}
                   startZIndex={0}
                   className="w-full h-full"
@@ -505,7 +434,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                 </HTMLFlipBook>
               )}
 
-            {/* Spine shadow */}
             <div
               className="absolute top-0 bottom-0 left-1/2 w-[2px] pointer-events-none z-[5]"
               style={{
@@ -514,7 +442,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
               }}
             />
 
-            {/* Pin overlay — inside zoom transform tree so pins scale with album */}
             {!isPinMode && currentPinRequests.map((pin) => (
               <PinMarker
                 key={pin.id}
@@ -539,26 +466,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
             )}
           </PinchZoomWrapper>
 
-          {/* Nav arrows: always visible, but auto-hide in preview */}
-          <div className={`transition-opacity duration-300 ${isPreviewMode && !controlsVisible ? 'opacity-0 pointer-events-none' : ''}`}>
-            <button
-              onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-              disabled={!canGoPrev}
-              className="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-black/40 text-white shadow-lg backdrop-blur-sm hover:bg-black/60 active:bg-black/70 disabled:opacity-0 disabled:cursor-default transition-all cursor-pointer"
-              aria-label="Previous spread"
-            >
-              <ChevronLeft className="h-7 w-7" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleNext(); }}
-              disabled={!canGoNext}
-              className="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-black/40 text-white shadow-lg backdrop-blur-sm hover:bg-black/60 active:bg-black/70 disabled:opacity-0 disabled:cursor-default transition-all cursor-pointer"
-              aria-label="Next spread"
-            >
-              <ChevronRight className="h-7 w-7" />
-            </button>
-          </div>
-
           {showDebug && (
             <>
               <style>{`
@@ -579,7 +486,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
             </>
           )}
         </div>
-
       </div>
 
       {pendingPin && showNewPinEditor && (
@@ -631,18 +537,19 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         </div>
       )}
 
-      {/* Action bar */}
       {!isPreviewMode && (
-        <FloatingActionPills
-          isReviewed={isCurrentReviewed}
-          saving={isSaving}
-          showOptions={showChangeOptions}
-          onRequestChange={handleOpenChangeOptions}
+        <StickyBottomBar
+          currentSpread={currentSpread}
+          totalSpreads={totalSpreads}
+          hasFeedback={hasFeedback}
+          isPinMode={isPinMode}
           onAddComment={handleAddComment}
           onAddVoice={handleAddVoice}
-          onLooksGood={handleMarkReviewed}
-          onUndo={handleUndoReview}
-          onCloseOptions={() => setShowChangeOptions(false)}
+          onUndo={handleUndoFeedback}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          canGoPrev={canGoPrev}
+          canGoNext={canGoNext}
         />
       )}
 
@@ -665,8 +572,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           onClose={() => setShowVoiceRecorder(false)}
         />
       )}
-
-
     </div>
   );
 });

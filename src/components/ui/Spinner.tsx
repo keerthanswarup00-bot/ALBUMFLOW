@@ -15,7 +15,7 @@ const sizeStyles = {
 export function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
     <Loader2
-      className={cn('animate-spin text-gray-400 dark:text-text-muted', sizeStyles[size], className)}
+      className={cn('animate-spin text-text-muted dark:text-text-muted', sizeStyles[size], className)}
     />
   );
 }

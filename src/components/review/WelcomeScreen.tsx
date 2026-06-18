@@ -24,13 +24,13 @@ export function WelcomeScreen({ albumTitle, clientName, onStart }: WelcomeScreen
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+      <div className="w-full max-w-sm rounded-2xl bg-bg-primary shadow-2xl">
         <div className="px-6 pt-8 pb-4 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
             <Eye className="h-7 w-7 text-blue-600" />
           </div>
-          <h1 className="text-lg font-bold text-gray-900">{albumTitle}</h1>
-          <p className="mt-1 text-sm text-gray-500">{clientName}</p>
+          <h1 className="text-lg font-bold text-text-primary">{albumTitle}</h1>
+          <p className="mt-1 text-sm text-text-secondary">{clientName}</p>
         </div>
 
         <div className="px-6 pb-4">
@@ -38,7 +38,7 @@ export function WelcomeScreen({ albumTitle, clientName, onStart }: WelcomeScreen
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <li key={feature.text} className="flex items-start gap-2.5 text-xs text-gray-600 leading-relaxed">
+                <li key={feature.text} className="flex items-start gap-2.5 text-xs text-text-secondary leading-relaxed">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 mt-0.5">
                     <Icon className="h-3.5 w-3.5 text-blue-600" />
                   </span>
@@ -60,7 +60,7 @@ export function WelcomeScreen({ albumTitle, clientName, onStart }: WelcomeScreen
             Start Viewing Album
           </button>
 
-          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 text-xs text-gray-400">
+          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 text-xs text-text-muted">
             <input
               type="checkbox"
               checked={!!dontShowAgain[albumKey]}

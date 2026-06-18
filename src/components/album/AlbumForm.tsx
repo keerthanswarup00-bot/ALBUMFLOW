@@ -94,8 +94,9 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
       />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700 dark:text-text-secondary">Event Type</label>
+        <label htmlFor="event-type" className="text-sm font-medium text-gray-700 dark:text-text-secondary">Event Type</label>
         <select
+          id="event-type"
           value={formData.event_type}
           onChange={(e) => handleField('event_type', e.target.value as EventType)}
           className="rounded-xl border border-gray-300 dark:border-border-primary bg-white dark:bg-bg-primary text-gray-900 dark:text-text-primary px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -117,8 +118,9 @@ export function AlbumForm({ initialData, onSubmit, onCancel, isSaving }: AlbumFo
       />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700 dark:text-text-secondary">Description (optional)</label>
+        <label htmlFor="album-description" className="text-sm font-medium text-gray-700 dark:text-text-secondary">Description (optional)</label>
         <textarea
+          id="album-description"
           value={formData.description}
           onChange={(e) => handleField('description', e.target.value)}
           rows={3}

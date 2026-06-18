@@ -5,6 +5,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import * as albumService from '@/services/supabase/albums';
 import * as versionsService from '@/services/supabase/versions';
 import * as pagesService from '@/services/supabase/pages';
+import { supabase } from '@/services/supabase/client';
 import { useAuthStore } from '@/store/authStore';
 import type { ReviewAlbum, ReviewPage } from '@/types/viewer';
 
@@ -28,6 +29,12 @@ export function ClientViewPage() {
         if (cancelled) return;
         if (!albumData) {
           setError('Album not found');
+          return;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && session.user.id !== albumData.designer_id) {
+          setError("You don't have permission to view this album");
           return;
         }
 

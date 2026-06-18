@@ -39,16 +39,16 @@ export function PinPopup({ request, onUpdate, onDelete, onClose }: PinPopupProps
 
   return (
     <>
-      <div ref={popupRef} className="w-72 rounded-xl bg-white shadow-xl border border-gray-200/80 overflow-hidden">
+      <div ref={popupRef} className="w-72 rounded-xl bg-bg-primary shadow-xl border border-border-primary/80 overflow-hidden">
         <div className="flex items-center gap-2 px-3 pt-3 pb-1">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-black text-white">
             {request.pin?.label || '?'}
           </span>
-          <span className="text-xs font-bold text-gray-500">Pin #{request.pin?.label}</span>
+          <span className="text-xs font-bold text-text-secondary">Pin #{request.pin?.label}</span>
           <div className="ml-auto">
             <button
               onClick={() => setShowConfirm(true)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
               aria-label="Delete comment"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -59,20 +59,21 @@ export function PinPopup({ request, onUpdate, onDelete, onClose }: PinPopupProps
           value={editMessage}
           onChange={(e) => setEditMessage(e.target.value)}
           rows={2}
-          className="w-full resize-none border-0 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+          aria-label="Edit comment"
+          className="w-full resize-none border-0 px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
           autoFocus
         />
         <div className="flex items-center justify-end gap-2 border-t border-gray-100 px-3 py-2.5">
           <button
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer min-h-[36px]"
+            className="rounded-lg px-3 py-2 text-xs font-bold text-text-secondary hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
           >
             Close
           </button>
           <button
             onClick={handleSaveEdit}
             disabled={!editMessage.trim() || editMessage.trim() === request.message}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer min-h-[36px]"
+            className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer min-h-[44px]"
           >
             Save
           </button>
@@ -81,12 +82,12 @@ export function PinPopup({ request, onUpdate, onDelete, onClose }: PinPopupProps
 
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-80 rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-base font-bold text-gray-900">Delete this comment?</h3>
+          <div className="w-80 rounded-xl bg-bg-primary p-6 shadow-xl">
+            <h3 className="text-base font-bold text-text-primary">Delete this comment?</h3>
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="flex-1 rounded-lg border-2 border-gray-300 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer min-h-[44px]"
+                className="flex-1 rounded-lg border-2 border-gray-300 py-3 text-sm font-bold text-text-secondary hover:bg-bg-secondary transition-colors cursor-pointer min-h-[44px]"
               >
                 Cancel
               </button>

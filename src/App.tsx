@@ -19,6 +19,9 @@ import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { AlbumUnavailablePage } from '@/pages/AlbumUnavailablePage';
+import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
+import { TermsPage } from '@/pages/TermsPage';
+import { CookiePolicyPage } from '@/pages/CookiePolicyPage';
 import { useAuth } from '@/hooks/useAuth';
 import { EnvBanner } from '@/components/EnvBanner';
 
@@ -66,14 +69,18 @@ export default function App() {
           <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
           <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
           <Route path={ROUTES.REVIEW_MANAGEMENT} element={<ReviewManagementPage />} />
-          <Route path={ROUTES.CLIENT_VIEW} element={<ClientViewPage />} />
           <Route path={ROUTES.REVIEW_FEEDBACK} element={<ReviewFeedbackPage />} />
         </Route>
+
+        <Route path={ROUTES.CLIENT_VIEW} element={<ClientViewPage />} />
 
         <Route path={ROUTES.VIEW_ALBUM} element={<ViewAlbumPage />} />
         <Route path={ROUTES.REVIEW_ALBUM} element={<ViewAlbumPage />} />
         <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
         <Route path={ROUTES.ALBUM_UNAVAILABLE} element={<AlbumUnavailablePage />} />
+        <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
+        <Route path={ROUTES.TERMS} element={<TermsPage />} />
+        <Route path={ROUTES.COOKIE_POLICY} element={<CookiePolicyPage />} />
 
         <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
       </Routes>

@@ -39,7 +39,7 @@ export function EditAlbumPage() {
         </div>
         <Link
           to={ROUTES.ALBUMS}
-          className="mt-4 inline-flex items-center gap-1 text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary"
+          className="mt-4 inline-flex items-center gap-1 text-sm text-text-secondary dark:text-text-secondary hover:text-text-secondary dark:hover:text-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to albums
@@ -53,7 +53,7 @@ export function EditAlbumPage() {
       <div className="mb-6">
         <Link
           to={ROUTES.ALBUM_DETAIL.replace(':albumId', albumId!)}
-          className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-text-secondary hover:text-gray-700 dark:hover:text-text-primary transition-colors"
+          className="inline-flex items-center gap-1 text-sm text-text-secondary dark:text-text-secondary hover:text-text-secondary dark:hover:text-text-primary transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to album
@@ -61,11 +61,11 @@ export function EditAlbumPage() {
       </div>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-text-primary">Edit Album</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary">{currentAlbum.title}</p>
+        <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary">Edit Album</h1>
+        <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary">{currentAlbum.title}</p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 dark:border-border-primary bg-white dark:bg-bg-elevated p-6 shadow-sm">
+      <div className="rounded-xl border border-border-primary dark:border-border-primary bg-bg-primary dark:bg-bg-elevated p-6 shadow-sm">
         <AlbumForm
           initialData={currentAlbum}
           onSubmit={handleSubmit}

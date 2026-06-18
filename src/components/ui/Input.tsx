@@ -15,7 +15,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor={inputId}
-          className="text-sm font-medium text-gray-700 dark:text-text-secondary"
+          className="text-sm font-medium text-text-secondary dark:text-text-secondary"
         >
           {label}
         </label>
@@ -25,13 +25,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           className={cn(
             'rounded-xl border px-3.5 py-2.5 text-sm transition-colors',
-            'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-            'bg-white dark:bg-bg-primary text-gray-900 dark:text-text-primary',
+            'placeholder:text-gray-400 dark:placeholder:text-text-secondary',
+            'bg-bg-primary dark:bg-bg-primary text-text-primary dark:text-text-primary',
             'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
             error
               ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
               : 'border-gray-300 dark:border-border-primary',
-            'disabled:bg-gray-50 dark:disabled:bg-bg-secondary disabled:text-gray-500 dark:disabled:text-text-muted',
+            'disabled:bg-bg-secondary dark:disabled:bg-bg-secondary disabled:text-text-secondary dark:disabled:text-text-muted',
             className,
           )}
           aria-invalid={!!error}
@@ -44,7 +44,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {hint && !error && (
-          <p className="text-sm text-gray-500 dark:text-text-muted">{hint}</p>
+          <p className="text-sm text-text-secondary dark:text-text-muted">{hint}</p>
         )}
       </div>
     );

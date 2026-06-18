@@ -23,7 +23,7 @@ export function SettingsPage() {
   if (!profile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400 dark:text-text-muted" />
+        <Loader2 className="h-8 w-8 animate-spin text-text-muted dark:text-text-muted" />
       </div>
     );
   }
@@ -117,8 +117,8 @@ function SettingsForm({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-text-primary">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary">
+        <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary">Settings</h1>
+        <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary">
           Manage your studio and account settings
         </p>
       </div>
@@ -130,8 +130,8 @@ function SettingsForm({
               <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-text-primary">Studio Information</h2>
-              <p className="text-sm text-gray-500 dark:text-text-secondary">
+              <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary">Studio Information</h2>
+              <p className="text-sm text-text-secondary dark:text-text-secondary">
                 This information appears on share pages and client communications
               </p>
             </div>
@@ -139,7 +139,7 @@ function SettingsForm({
 
           <div className="flex flex-col gap-5">
             <div>
-              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-text-secondary">Studio Logo</p>
+              <p className="mb-2 text-sm font-medium text-text-secondary dark:text-text-secondary">Studio Logo</p>
               <div className="flex items-center gap-3">
                 {studioLogoUrl ? (
                   <div className="relative">
@@ -147,6 +147,7 @@ function SettingsForm({
                     <button
                       onClick={handleRemoveLogo}
                       className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer"
+                      aria-label="Remove logo"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -162,7 +163,7 @@ function SettingsForm({
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingLogo}
-                  className="flex items-center gap-2 rounded-lg border border-gray-300 dark:border-border-primary px-4 py-2 text-sm font-medium text-gray-700 dark:text-text-secondary hover:bg-gray-50 dark:hover:bg-bg-secondary disabled:opacity-50 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 rounded-lg border border-border-primary dark:border-border-primary px-4 py-2 text-sm font-medium text-text-secondary dark:text-text-secondary hover:bg-bg-secondary dark:hover:bg-bg-secondary disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {isUploadingLogo ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -172,7 +173,7 @@ function SettingsForm({
                   {studioLogoUrl ? 'Change Logo' : 'Upload Logo'}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-400 dark:text-text-muted">
+              <p className="mt-1 text-xs text-text-muted dark:text-text-muted">
                 PNG, JPEG or WebP. Shown on share pages, previews, and reports.
               </p>
             </div>
@@ -211,8 +212,8 @@ function SettingsForm({
               <SunMoon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-text-primary">Theme</h2>
-              <p className="text-sm text-gray-500 dark:text-text-secondary">
+              <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary">Theme</h2>
+              <p className="text-sm text-text-secondary dark:text-text-secondary">
                 Choose your preferred appearance
               </p>
             </div>
@@ -226,7 +227,7 @@ function SettingsForm({
                 className={`flex-1 rounded-xl border py-3 text-sm font-medium transition-colors cursor-pointer ${
                   mode === t
                     ? 'border-accent bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                    : 'border-gray-200 dark:border-border-primary text-gray-600 dark:text-text-secondary hover:bg-gray-50 dark:hover:bg-bg-secondary'
+                    : 'border-border-primary dark:border-border-primary text-text-secondary dark:text-text-secondary hover:bg-bg-secondary dark:hover:bg-bg-secondary'
                 }`}
               >
                 <div className="flex flex-col items-center gap-1">
@@ -244,8 +245,8 @@ function SettingsForm({
               <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-text-primary">Danger Zone</h2>
-              <p className="text-sm text-gray-500 dark:text-text-secondary">
+              <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary">Danger Zone</h2>
+              <p className="text-sm text-text-secondary dark:text-text-secondary">
                 Irreversible actions affecting your account
               </p>
             </div>
@@ -280,14 +281,14 @@ function SettingsForm({
         <>
           <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/65" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-[400px] rounded-2xl bg-white dark:bg-bg-elevated p-6 shadow-xl dark:shadow-black/40">
+            <div className="w-full max-w-[400px] rounded-2xl bg-bg-primary dark:bg-bg-elevated p-6 shadow-xl dark:shadow-black/40">
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/30">
                   <AlertTriangle className="h-6 w-6 text-red-500 dark:text-red-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-text-primary">Delete Account?</h2>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-text-secondary leading-relaxed">
+                  <h2 className="text-lg font-bold text-text-primary dark:text-text-primary">Delete Account?</h2>
+                  <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary leading-relaxed">
                     This will permanently delete your account, all albums, and associated data. This action cannot be undone.
                   </p>
                 </div>
@@ -319,13 +320,13 @@ function SettingsForm({
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={isDeleting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 dark:border-border-primary py-3 text-sm font-bold text-gray-600 dark:text-text-secondary hover:bg-gray-50 dark:hover:bg-bg-secondary transition-colors cursor-pointer min-h-[48px]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-primary dark:border-border-primary py-3 text-sm font-bold text-text-secondary dark:text-text-secondary hover:bg-bg-secondary dark:hover:bg-bg-secondary transition-colors cursor-pointer min-h-[48px]"
                 >
                   Cancel
                 </button>
               </div>
 
-              <p className="mt-4 text-center text-xs text-gray-400 dark:text-text-muted">
+              <p className="mt-4 text-center text-xs text-text-muted dark:text-text-muted">
                 After deletion, you will be redirected to the login page.
               </p>
             </div>

@@ -41,6 +41,7 @@ export function Toast() {
         <p className="text-sm font-medium">{toastMessage}</p>
         <button
           onClick={clearToast}
+          aria-label="Dismiss notification"
           className="ml-2 rounded p-0.5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
         >
           <X className="h-4 w-4" />

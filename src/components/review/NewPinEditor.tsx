@@ -25,12 +25,12 @@ export function NewPinEditor({ pinNumber, onSave, onCancel }: NewPinEditorProps)
   }
 
   return (
-    <div className="w-72 rounded-xl bg-white shadow-xl border border-gray-200/80 overflow-hidden">
+    <div className="w-72 rounded-xl bg-bg-primary shadow-xl border border-border-primary/80 overflow-hidden">
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
         <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-black text-white">
           {pinNumber}
         </span>
-        <span className="text-xs font-bold text-gray-500">Pin #{pinNumber}</span>
+        <span className="text-xs font-bold text-text-secondary">Pin #{pinNumber}</span>
       </div>
       <textarea
         ref={textareaRef}
@@ -39,12 +39,13 @@ export function NewPinEditor({ pinNumber, onSave, onCancel }: NewPinEditorProps)
         onKeyDown={handleKeyDown}
         placeholder="Type change request..."
         rows={2}
-        className="w-full resize-none border-0 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+        aria-label="Change request description"
+        className="w-full resize-none border-0 px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
       />
       <div className="flex items-center justify-end gap-2 border-t border-gray-100 px-3 py-2.5">
         <button
           onClick={onCancel}
-          className="rounded-lg px-3 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer min-h-[36px]"
+          className="rounded-lg px-3 py-2 text-xs font-bold text-text-secondary hover:bg-gray-100 transition-colors cursor-pointer min-h-[36px]"
         >
           Cancel
         </button>

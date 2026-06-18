@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ROUTES } from '@/constants/routes';
 import { supabase } from '@/services/supabase/client';
 import { WelcomeScreen } from '@/components/review/WelcomeScreen';
 import { AlbumViewer } from '@/components/review/AlbumViewer';
@@ -129,48 +130,48 @@ export function ViewAlbumPage() {
 
   if (!identifier) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-          <ImageIcon className="h-8 w-8 text-red-300" />
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-bg-primary p-4 safe-area-inset">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <ImageIcon className="h-8 w-8 text-red-400 dark:text-red-300" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Invalid link</h1>
-        <p className="mt-2 text-sm text-gray-500">This link is missing a share token or album slug.</p>
+        <h1 className="text-xl font-bold text-text-primary">Invalid link</h1>
+        <p className="mt-2 text-sm text-text-secondary">This link is missing a share token or album slug.</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-bg-primary p-4 safe-area-inset">
         <Spinner size="lg" />
-        <p className="mt-4 text-sm text-gray-500">Loading album...</p>
+        <p className="mt-4 text-sm text-text-secondary">Loading album...</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-          <ImageIcon className="h-8 w-8 text-red-300" />
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-bg-primary p-4 safe-area-inset">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <ImageIcon className="h-8 w-8 text-red-400 dark:text-red-300" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Unable to load album</h1>
-        <p className="mt-2 text-sm text-gray-500">{error || 'Album not found.'}</p>
+        <h1 className="text-xl font-bold text-text-primary">Unable to load album</h1>
+        <p className="mt-2 text-sm text-text-secondary">{error || 'Album not found.'}</p>
       </div>
     );
   }
 
   if (data.pages.length === 0) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 p-4 safe-area-inset">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
-          <ImageIcon className="h-8 w-8 text-gray-300" />
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-bg-primary p-4 safe-area-inset">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-bg-secondary">
+          <ImageIcon className="h-8 w-8 text-text-muted" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900">{data.album.title}</h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <h1 className="text-xl font-bold text-text-primary">{data.album.title}</h1>
+        <p className="mt-2 text-sm text-text-secondary">
           This album doesn't have any pages yet.
         </p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-text-muted">
           Your designer is working on it. Check back soon!
         </p>
       </div>
@@ -195,6 +196,14 @@ export function ViewAlbumPage() {
         phoneNumber={studioInfo.phone}
         studioLogoUrl={studioInfo.logoUrl}
       />
+
+      <div className="mt-8 flex items-center justify-center gap-4 pb-8 text-xs text-text-muted">
+        <Link to={ROUTES.PRIVACY_POLICY} className="hover:text-text-secondary transition-colors">Privacy Policy</Link>
+        <span>&middot;</span>
+        <Link to={ROUTES.TERMS} className="hover:text-text-secondary transition-colors">Terms of Service</Link>
+        <span>&middot;</span>
+        <Link to={ROUTES.COOKIE_POLICY} className="hover:text-text-secondary transition-colors">Cookie Policy</Link>
+      </div>
     </>
   );
 }
