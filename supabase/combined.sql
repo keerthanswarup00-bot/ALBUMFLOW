@@ -1,401 +1,16 @@
--- Reset public schema for idempotent re-run
-drop schema if exists public cascade; create schema public;
-
 -- =====================================================
--- AlbumFlow Database Schema
--- PostgreSQL for Supabase
--- =====================================================
-
--- 0. EXTENSIONS
--- =====================================================
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
-
--- Restore schema + default privileges lost when public schema was recreated
-grant usage on schema public to anon, authenticated, service_role;
-alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
-alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
-alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
-
--- =====================================================
--- 1. USERS
--- Designers only. Clients never have accounts.
--- =====================================================
-create table if not exists public.users (
-  id uuid primary key default uuid_generate_v4(),
-  email text not null unique,
-  full_name text not null,
-  avatar_url text,
-  studio_name text,
-  studio_logo_url text,
-  phone text,
-  website text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
--- Syncs auth.users -> public.users on signup
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.users (id, email, full_name, avatar_url)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1)),
-    new.raw_user_meta_data ->> 'avatar_url'
-  );
-  return new;
-end;
-$$;
-
-create or replace trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
-
--- Indexes
-create index if not exists idx_users_email on public.users (email);
-
--- =====================================================
--- 2. CLIENTS
--- Client records for couples (no auth accounts)
--- =====================================================
-create table if not exists public.clients (
-  id uuid primary key default uuid_generate_v4(),
-  designer_id uuid not null references public.users(id) on delete cascade,
-  name text not null,
-  email text not null,
-  phone text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(designer_id, email)
-);
-
-create index if not exists idx_clients_designer on public.clients (designer_id);
-create index if not exists idx_clients_email on public.clients (email);
-
--- =====================================================
--- 3. ALBUMS
--- Each album belongs to a designer and has a client
--- =====================================================
-do $$ begin
-  create type album_status as enum ('draft', 'active', 'archived');
-exception
-  when duplicate_object then null;
-end $$;
-
-do $$ begin
-  create type album_phase as enum ('proofing', 'review', 'approved', 'in_production');
-exception
-  when duplicate_object then null;
-end $$;
-
-create table if not exists public.albums (
-  id uuid primary key default uuid_generate_v4(),
-  designer_id uuid not null references public.users(id) on delete cascade,
-  client_id uuid references public.clients(id) on delete set null,
-  client_name text not null,
-  client_email text not null,
-  title text not null,
-  description text,
-  cover_image_url text,
-  status album_status not null default 'draft',
-  phase album_phase not null default 'proofing',
-  deadline date,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists idx_albums_designer on public.albums (designer_id);
-create index if not exists idx_albums_status on public.albums (status);
-create index if not exists idx_albums_phase on public.albums (phase);
-create index if not exists idx_albums_created on public.albums (created_at desc);
-
--- =====================================================
--- 4. ALBUM VERSIONS
--- Versioned iterations of an album (v1, v2, v3...)
--- =====================================================
-do $$ begin
-  create type album_version_status as enum ('uploading', 'processing', 'ready', 'failed');
-exception
-  when duplicate_object then null;
-end $$;
-
-create table if not exists public.album_versions (
-  id uuid primary key default uuid_generate_v4(),
-  album_id uuid not null references public.albums(id) on delete cascade,
-  version_number integer not null,
-  label text,
-  status album_version_status not null default 'uploading',
-  thumbnail_url text,
-  page_count integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(album_id, version_number)
-);
-
-create index if not exists idx_versions_album on public.album_versions (album_id);
-create index if not exists idx_versions_status on public.album_versions (status);
-
--- =====================================================
--- 5. ALBUM PAGES
--- Individual pages/spreads within a version
--- =====================================================
-do $$ begin
-  create type page_orientation as enum ('portrait', 'landscape');
-exception
-  when duplicate_object then null;
-end $$;
-
-create table if not exists public.album_pages (
-  id uuid primary key default uuid_generate_v4(),
-  album_version_id uuid not null references public.album_versions(id) on delete cascade,
-  page_number integer not null,
-  spread_number integer not null,
-  orientation page_orientation not null default 'portrait',
-  image_url text not null,
-  thumbnail_url text,
-  width integer not null,
-  height integer not null,
-  file_size bigint not null,
-  created_at timestamptz not null default now(),
-  unique(album_version_id, page_number)
-);
-
-create index if not exists idx_pages_version on public.album_pages (album_version_id);
-create index if not exists idx_pages_spread on public.album_pages (album_version_id, spread_number);
-
--- =====================================================
--- 6. REQUESTS (Change Requests)
--- Client feedback and change requests on pages
--- =====================================================
-do $$ begin
-  create type request_status as enum ('open', 'resolved', 'dismissed');
-exception
-  when duplicate_object then null;
-end $$;
-
-do $$ begin
-  create type request_type as enum ('change', 'retouch', 'layout', 'other');
-exception
-  when duplicate_object then null;
-end $$;
-
-create table if not exists public.requests (
-  id uuid primary key default uuid_generate_v4(),
-  album_id uuid not null references public.albums(id) on delete cascade,
-  page_id uuid references public.album_pages(id) on delete set null,
-  reviewer_name text not null,
-  type request_type not null default 'change',
-  description text not null,
-  status request_status not null default 'open',
-  resolved_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists idx_requests_album on public.requests (album_id);
-create index if not exists idx_requests_page on public.requests (page_id);
-create index if not exists idx_requests_status on public.requests (status);
-
--- =====================================================
--- 7. PAGE REVIEWS
--- Per-page ratings and notes from clients
--- =====================================================
-create table if not exists public.page_reviews (
-  id uuid primary key default uuid_generate_v4(),
-  page_id uuid not null references public.album_pages(id) on delete cascade,
-  album_id uuid not null references public.albums(id) on delete cascade,
-  reviewer_name text not null,
-  rating smallint check (rating >= 1 and rating <= 5),
-  notes text,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists idx_reviews_page on public.page_reviews (page_id);
-create index if not exists idx_reviews_album on public.page_reviews (album_id);
-
--- =====================================================
--- 8. APPROVALS
--- Final album approval with client signature
--- =====================================================
-do $$ begin
-  create type approval_status as enum ('pending', 'approved', 'rejected');
-exception
-  when duplicate_object then null;
-end $$;
-
-create table if not exists public.approvals (
-  id uuid primary key default uuid_generate_v4(),
-  album_id uuid not null references public.albums(id) on delete cascade,
-  album_version_id uuid not null references public.album_versions(id) on delete cascade,
-  client_name text not null,
-  client_email text not null,
-  status approval_status not null default 'pending',
-  signed_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(album_id, album_version_id)
-);
-
-create index if not exists idx_approvals_album on public.approvals (album_id);
-create index if not exists idx_approvals_status on public.approvals (status);
-
--- =====================================================
--- 9. ROW LEVEL SECURITY
--- Enforce multi-tenant isolation by designer_id
+-- AlbumFlow Database Schema — GENERATED from migrations
+-- Generated: $(date "+%Y-%m-%d")
+-- Source: supabase/migrations/
+--
+-- Apply to a fresh database to bootstrap all tables.
+-- Use individual migrations for incremental updates.
 -- =====================================================
 
--- Helper: get current user's id
-create or replace function public.current_user_id()
-returns uuid
-language sql
-stable
-as $$
-  select id from public.users where id = auth.uid()
-$$;
-
--- Albums: designers own their albums
-alter table public.albums enable row level security;
-
-drop policy if exists "Designers can manage their own albums" on public.albums;
-create policy "Designers can manage their own albums"
-  on public.albums
-  using (designer_id = auth.uid());
-
--- Album versions inherit from album
-alter table public.album_versions enable row level security;
-
-drop policy if exists "Designers can manage versions of their albums" on public.album_versions;
-create policy "Designers can manage versions of their albums"
-  on public.album_versions
-  using (
-    exists (
-      select 1 from public.albums
-      where albums.id = album_versions.album_id
-      and albums.designer_id = auth.uid()
-    )
-  );
-
--- Album pages inherit through version -> album
-alter table public.album_pages enable row level security;
-
-drop policy if exists "Designers can manage pages of their albums" on public.album_pages;
-create policy "Designers can manage pages of their albums"
-  on public.album_pages
-  using (
-    exists (
-      select 1 from public.album_versions
-      join public.albums on albums.id = album_versions.album_id
-      where album_versions.id = album_pages.album_version_id
-      and albums.designer_id = auth.uid()
-    )
-  );
-
--- Requests: designers can manage requests on their albums
-alter table public.requests enable row level security;
-
-drop policy if exists "Designers can manage requests on their albums" on public.requests;
-create policy "Designers can manage requests on their albums"
-  on public.requests
-  using (
-    exists (
-      select 1 from public.albums
-      where albums.id = requests.album_id
-      and albums.designer_id = auth.uid()
-    )
-  );
-
--- Page reviews: designers can view reviews on their albums
-alter table public.page_reviews enable row level security;
-
-drop policy if exists "Designers can manage reviews on their albums" on public.page_reviews;
-create policy "Designers can manage reviews on their albums"
-  on public.page_reviews
-  using (
-    exists (
-      select 1 from public.albums
-      where albums.id = page_reviews.album_id
-      and albums.designer_id = auth.uid()
-    )
-  );
-
--- Approvals: designers can manage approvals on their albums
-alter table public.approvals enable row level security;
-
-drop policy if exists "Designers can manage approvals on their albums" on public.approvals;
-create policy "Designers can manage approvals on their albums"
-  on public.approvals
-  using (
-    exists (
-      select 1 from public.albums
-      where albums.id = approvals.album_id
-      and albums.designer_id = auth.uid()
-    )
-  );
-
--- Users: designers can only see their own profile
-alter table public.users enable row level security;
-
-drop policy if exists "Users can manage their own profile" on public.users;
-create policy "Users can manage their own profile"
-  on public.users
-  using (id = auth.uid());
-
--- Clients: designers can manage their own clients
-alter table public.clients enable row level security;
-
-drop policy if exists "Designers can manage their own clients" on public.clients;
-create policy "Designers can manage their own clients"
-  on public.clients
-  using (designer_id = auth.uid());
 
 -- =====================================================
--- 10. UPDATED_AT TRIGGER
--- Auto-update updated_at timestamp on row changes
+-- File: 001_album_management.sql
 -- =====================================================
-create or replace function public.handle_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_users_updated_at on public.users;
-create trigger trg_users_updated_at
-  before update on public.users
-  for each row execute function public.handle_updated_at();
-
-drop trigger if exists trg_clients_updated_at on public.clients;
-create trigger trg_clients_updated_at
-  before update on public.clients
-  for each row execute function public.handle_updated_at();
-
-drop trigger if exists trg_albums_updated_at on public.albums;
-create trigger trg_albums_updated_at
-  before update on public.albums
-  for each row execute function public.handle_updated_at();
-
-drop trigger if exists trg_album_versions_updated_at on public.album_versions;
-create trigger trg_album_versions_updated_at
-  before update on public.album_versions
-  for each row execute function public.handle_updated_at();
-
-drop trigger if exists trg_requests_updated_at on public.requests;
-create trigger trg_requests_updated_at
-  before update on public.requests
-  for each row execute function public.handle_updated_at();
-
-drop trigger if exists trg_approvals_updated_at on public.approvals;
-create trigger trg_approvals_updated_at
-  before update on public.approvals
-  for each row execute function public.handle_updated_at();
 -- =====================================================
 -- AlbumFlow Migration 001: Album Management
 -- Adds event_type, new statuses, and storage fields
@@ -421,6 +36,11 @@ alter table public.album_pages
 
 alter table public.album_pages
   add column if not exists original_url text;
+
+
+-- =====================================================
+-- File: 002_review_functions.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Migration 002: Public Review Functions
 -- Creates SECURITY DEFINER functions so the anon key
@@ -489,6 +109,11 @@ $$;
 
 grant execute on function public.get_album_review_data to anon;
 grant execute on function public.get_album_review_data to authenticated;
+
+
+-- =====================================================
+-- File: 003_share_links_and_missing_tables.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Complete Schema & Migration (v2)
 -- Fixes: unambiguous variable names in functions
@@ -1138,6 +763,11 @@ drop policy if exists "Designers can manage settings on their albums" on public.
 create policy "Designers can manage settings on their albums"
   on public.album_settings
   using (exists (select 1 from public.albums a where a.id = album_settings.album_id and a.designer_id = auth.uid()));
+
+
+-- =====================================================
+-- File: 004_fix_ambiguous_columns.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Migration 004: Fix Ambiguous Column References
 -- Fixes: "column reference album_id is ambiguous" in
@@ -1310,6 +940,11 @@ $$;
 
 grant execute on function public.get_album_review_data to anon;
 grant execute on function public.get_album_review_data to authenticated;
+
+
+-- =====================================================
+-- File: 005_album_review_workflow.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Migration 005: Album-Level Review Workflow
 -- Adds: submit for review, approve all, request changes
@@ -1448,6 +1083,11 @@ $$;
 
 grant execute on function public.request_album_changes to anon;
 grant execute on function public.request_album_changes to authenticated;
+
+
+-- =====================================================
+-- File: 006_profiles_and_slugs.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Migration 006: Profiles table, album slugs,
 -- deleted album contact page, slug-based routing
@@ -1674,100 +1314,17 @@ grant execute on function public.get_studio_by_album_token to anon;
 grant execute on function public.get_studio_by_album_token to authenticated;
 
 -- =====================================================
--- 6b. NEW RPC: GET ALBUM BY SLUG
--- =====================================================
-drop function if exists public.get_album_by_slug(text);
-create or replace function public.get_album_by_slug(p_slug text)
-returns json
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_album_id uuid;
-  v_album_json json;
-  v_version_id uuid;
-  v_version_json json;
-  v_pages_json json;
-  v_album_status text;
-begin
-  select a.id, a.status::text into v_album_id, v_album_status
-  from public.albums a
-  where a.slug = p_slug
-  limit 1;
-
-  if v_album_id is null then
-    return json_build_object('error', 'album_not_found');
-  end if;
-
-  if v_album_status = 'archived' then
-    select row_to_json(t.*) into v_album_json
-    from (
-      select a.id, a.title, a.client_name, a.event_type, a.status::text, a.cover_image_url, a.created_at, a.designer_id
-      from public.albums a
-      where a.id = v_album_id
-    ) t;
-
-    return json_build_object(
-      'error', 'album_deleted',
-      'album', v_album_json
-    );
-  end if;
-
-  select row_to_json(t.*) into v_album_json
-  from (
-    select a.id, a.designer_id, a.title, a.client_name, a.event_type, a.status::text, a.phase::text, a.cover_image_url, a.created_at
-    from public.albums a
-    where a.id = v_album_id
-  ) t;
-
-  if v_album_json is null then
-    return json_build_object('error', 'album_not_found');
-  end if;
-
-  select av.id into v_version_id
-  from public.album_versions av
-  where av.album_id = v_album_id
-    and av.status = 'ready'
-  order by av.version_number desc
-  limit 1;
-
-  if v_version_id is not null then
-    select row_to_json(t.*) into v_version_json
-    from (
-      select v.id, v.version_number, v.label, v.status, v.page_count
-      from public.album_versions v
-      where v.id = v_version_id
-    ) t;
-
-    select json_agg(t.* order by t.page_number) into v_pages_json
-    from (
-      select p.id, p.page_number, p.spread_number, p.orientation,
-             p.image_url, p.thumbnail_url, p.medium_url, p.original_url,
-             p.width, p.height, p.file_size
-      from public.album_pages p
-      where p.album_version_id = v_version_id
-    ) t;
-  end if;
-
-  return json_build_object(
-    'album', v_album_json,
-    'version', v_version_json,
-    'pages', coalesce(v_pages_json, '[]'::json)
-  );
-end;
-$$;
-
-grant execute on function public.get_album_by_slug to anon;
-grant execute on function public.get_album_by_slug to authenticated;
-
--- =====================================================
 -- 7. UPDATED_AT TRIGGER FOR PROFILES
 -- =====================================================
 drop trigger if exists trg_profiles_updated_at on public.profiles;
 create trigger trg_profiles_updated_at
   before update on public.profiles
   for each row execute function public.handle_updated_at();
+
+
+-- =====================================================
+-- File: 007_multi_studio_and_branding.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Migration 007: Multi-Studio, Branding,
 -- RLS fixes, Analytics, Notifications
@@ -2047,6 +1604,11 @@ $$;
 
 grant execute on function public.get_studio_by_album_token to anon;
 grant execute on function public.get_studio_by_album_token to authenticated;
+
+
+-- =====================================================
+-- File: 008_remove_public_users.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Migration 008: Remove public.users table
 -- Eliminates the duplicate user system.
@@ -2166,8 +1728,121 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- =====================================================
--- Migration 010: Security definer RPC for account deletion
+-- 9. Grant table permissions for all existing objects
+--    (ALTER DEFAULT PRIVILEGES in schema.sql handles future objects)
 -- =====================================================
+grant all privileges on all tables in schema public to anon, authenticated, service_role;
+grant all privileges on all sequences in schema public to anon, authenticated, service_role;
+grant all privileges on all functions in schema public to anon, authenticated, service_role;
+
+
+-- =====================================================
+-- File: 009_album_slug_routes.sql
+-- =====================================================
+-- =====================================================
+-- AlbumFlow Migration 009: Album Slug Routes
+-- Adds get_album_by_slug RPC for /review/:slug route
+-- =====================================================
+
+-- =====================================================
+-- 1. NEW RPC: GET ALBUM BY SLUG
+-- =====================================================
+drop function if exists public.get_album_by_slug(text);
+create or replace function public.get_album_by_slug(p_slug text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_album_id uuid;
+  v_album_json json;
+  v_version_id uuid;
+  v_version_json json;
+  v_pages_json json;
+  v_album_status text;
+begin
+  select a.id, a.status::text into v_album_id, v_album_status
+  from public.albums a
+  where a.slug = p_slug
+  limit 1;
+
+  if v_album_id is null then
+    return json_build_object('error', 'album_not_found');
+  end if;
+
+  if v_album_status = 'archived' then
+    select row_to_json(t.*) into v_album_json
+    from (
+      select a.id, a.title, a.client_name, a.event_type, a.status::text, a.cover_image_url, a.created_at, a.designer_id
+      from public.albums a
+      where a.id = v_album_id
+    ) t;
+
+    return json_build_object(
+      'error', 'album_deleted',
+      'album', v_album_json
+    );
+  end if;
+
+  select row_to_json(t.*) into v_album_json
+  from (
+    select a.id, a.designer_id, a.title, a.client_name, a.event_type, a.status::text, a.phase::text, a.cover_image_url, a.created_at
+    from public.albums a
+    where a.id = v_album_id
+  ) t;
+
+  if v_album_json is null then
+    return json_build_object('error', 'album_not_found');
+  end if;
+
+  select av.id into v_version_id
+  from public.album_versions av
+  where av.album_id = v_album_id
+    and av.status = 'ready'
+  order by av.version_number desc
+  limit 1;
+
+  if v_version_id is not null then
+    select row_to_json(t.*) into v_version_json
+    from (
+      select v.id, v.version_number, v.label, v.status, v.page_count
+      from public.album_versions v
+      where v.id = v_version_id
+    ) t;
+
+    select json_agg(t.* order by t.page_number) into v_pages_json
+    from (
+      select p.id, p.page_number, p.spread_number, p.orientation,
+             p.image_url, p.thumbnail_url, p.medium_url, p.original_url,
+             p.width, p.height, p.file_size
+      from public.album_pages p
+      where p.album_version_id = v_version_id
+    ) t;
+  end if;
+
+  return json_build_object(
+    'album', v_album_json,
+    'version', v_version_json,
+    'pages', coalesce(v_pages_json, '[]'::json)
+  );
+end;
+$$;
+
+grant execute on function public.get_album_by_slug to anon;
+grant execute on function public.get_album_by_slug to authenticated;
+
+
+-- =====================================================
+-- File: 010_delete_account.sql
+-- =====================================================
+-- =====================================================
+-- AlbumFlow Migration 010: Delete Account RPC
+-- Security definer RPC that allows authenticated users
+-- to delete their own auth.users record (cascades to
+-- profiles, albums, and other related data).
+-- =====================================================
+
 create or replace function public.delete_account()
 returns void
 language plpgsql
@@ -2181,21 +1856,10 @@ $$;
 
 grant execute on function public.delete_account to authenticated;
 
--- =====================================================
--- 9. Grant table permissions for all existing objects
---    (ALTER DEFAULT PRIVILEGES in schema.sql handles future objects)
--- =====================================================
-grant all privileges on all tables in schema public to anon, authenticated, service_role;
-grant all privileges on all sequences in schema public to anon, authenticated, service_role;
-grant all privileges on all functions in schema public to anon, authenticated, service_role;
--- ============================================================
--- Migration 011: Security Hardening
---   - Revokes anon access to get_album_review_data
---   - Tightens activity_logs RLS
---   - Restricts share_link SELECT policy
---   - Adds rate-limiting to approve_album and request_album_changes
--- ============================================================
 
+-- =====================================================
+-- File: 011_security_hardening.sql
+-- =====================================================
 -- =====================================================
 -- AlbumFlow Migration 011: Security Hardening Sprint
 -- Fixes: anon access to get_album_review_data, activity_logs RLS
@@ -2376,3 +2040,326 @@ $$;
 
 grant execute on function public.request_album_changes to anon;
 grant execute on function public.request_album_changes to authenticated;
+
+
+-- =====================================================
+-- File: 012_storage_rls_and_security.sql
+-- =====================================================
+-- =====================================================
+-- AlbumFlow Migration 012: Storage RLS & Security Hardening
+-- Fixes: storage bucket RLS, share_links column exposure,
+-- activity_logs restrictions, analytics policy tightening
+-- =====================================================
+
+-- =====================================================
+-- 1. STORAGE BUCKET RLS — albums bucket
+-- =====================================================
+-- Enable RLS on the storage bucket (requires storage extension)
+-- Note: This uses the storage schema which is a Supabase extension
+
+-- Allow authenticated users to manage their own album images
+-- Path format: albums/{albumId}/v{versionNumber}/{variant}/{filename}
+create policy "Designers can manage their own album images"
+  on storage.objects
+  for all
+  to authenticated
+  using (
+    bucket_id = 'albums'
+    and (storage.foldername(name))[1] = 'albums'
+    and exists (
+      select 1 from public.albums a
+      where a.id::text = (storage.foldername(name))[2]
+      and a.designer_id = auth.uid()
+    )
+  );
+
+-- Allow anon users to read images via valid share link
+create policy "Anyone with valid share link can view images"
+  on storage.objects
+  for select
+  to anon, authenticated
+  using (
+    bucket_id = 'albums'
+    and (storage.foldername(name))[1] = 'albums'
+    and exists (
+      select 1 from public.albums a
+      where a.id::text = (storage.foldername(name))[2]
+      and (
+        a.designer_id = auth.uid()
+        or public.album_has_valid_share_link(a.id)
+      )
+    )
+  );
+
+-- =====================================================
+-- 2. SHARE LINKS — Restrict anon SELECT to token only
+-- =====================================================
+-- Drop the overly permissive anon SELECT policy
+drop policy if exists "Anyone can read valid share links for token check" on public.share_links;
+
+-- Create a restricted policy: anon can only see the token column
+-- We accomplish this by only creating a policy for authenticated users
+-- and letting anon access go through the validate_share_token RPC instead
+create policy "Anyone can read valid share links for token check"
+  on public.share_links
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.albums a
+      where a.id = share_links.album_id
+      and a.designer_id = auth.uid()
+    )
+  );
+
+-- Create a separate view for public token validation
+create or replace view public.valid_share_tokens as
+  select token
+  from public.share_links
+  where revoked_at is null
+    and (expires_at is null or expires_at > now());
+
+grant select on public.valid_share_tokens to anon;
+grant select on public.valid_share_tokens to authenticated;
+
+-- =====================================================
+-- 3. ACTIVITY LOGS — Tighten insert policy
+-- =====================================================
+drop policy if exists "System can insert activity logs" on public.activity_logs;
+create policy "System can insert activity logs"
+  on public.activity_logs
+  for insert
+  to authenticated
+  with check (auth.role() = 'authenticated');
+
+-- =====================================================
+-- 4. ACTIVITY LOGS — Restrict SELECT to own studio
+-- =====================================================
+drop policy if exists "Users can view activity logs" on public.activity_logs;
+create policy "Users can view activity logs"
+  on public.activity_logs
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.albums a
+      where a.id = album_id
+      and a.designer_id = auth.uid()
+    )
+  );
+
+-- =====================================================
+-- 5. REVIEW ANALYTICS — Remove share-link update bypass
+-- =====================================================
+drop policy if exists "System can update analytics" on public.review_analytics;
+create policy "System can update analytics"
+  on public.review_analytics
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.albums a
+      where a.id = review_analytics.album_id
+      and a.designer_id = auth.uid()
+    )
+  );
+
+-- =====================================================
+-- 6. COVER IMAGE URL TRIGGER
+-- Auto-set cover_image_url when first page is added
+-- =====================================================
+create or replace function public.auto_set_cover_image()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.albums
+  set cover_image_url = coalesce(new.thumbnail_url, new.image_url)
+  where id = (
+    select av.album_id
+    from public.album_versions av
+    where av.id = new.album_version_id
+  )
+  and cover_image_url is null;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_auto_set_cover on public.album_pages;
+create trigger trg_auto_set_cover
+  after insert on public.album_pages
+  for each row
+  execute function public.auto_set_cover_image();
+
+-- =====================================================
+-- 7. PAGE DELETE — Trigger to clean up storage
+-- =====================================================
+create or replace function public.cleanup_page_storage()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_paths text[];
+begin
+  v_paths := array_remove(
+    array[
+      regexp_replace(old.original_url, '^.*?/storage/v1/object/public/albums/', 'albums/'),
+      regexp_replace(old.image_url, '^.*?/storage/v1/object/public/albums/', 'albums/'),
+      regexp_replace(old.thumbnail_url, '^.*?/storage/v1/object/public/albums/', 'albums/')
+    ],
+    null
+  );
+  -- Delete from storage if paths are valid
+  if array_length(v_paths, 1) > 0 then
+    perform storage.delete('albums', v_paths);
+  end if;
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_cleanup_page_storage on public.album_pages;
+create trigger trg_cleanup_page_storage
+  after delete on public.album_pages
+  for each row
+  execute function public.cleanup_page_storage();
+
+-- =====================================================
+-- 8. NOTIFICATION — Also insert into activity_logs
+-- =====================================================
+create or replace function public.log_comment_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.activity_logs (album_id, actor_id, action, entity_type, entity_id, metadata)
+  values (
+    new.album_id,
+    new.author_id,
+    'comment_created',
+    'comments',
+    new.id,
+    jsonb_build_object('page_number', new.page_number)
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_log_comment_activity on public.comments;
+create trigger trg_log_comment_activity
+  after insert on public.comments
+  for each row
+  execute function public.log_comment_activity();
+
+
+-- =====================================================
+-- File: 013_review_data_persistence.sql
+-- =====================================================
+-- =====================================================
+-- AlbumFlow Migration 013: Review Data Persistence
+-- Adds server-side storage for review data so it
+-- survives browser cache clears and device changes.
+-- =====================================================
+
+-- =====================================================
+-- 1. REVIEW DATA TABLE
+-- Stores review state as JSONB for flexibility.
+-- Each album has exactly one review data record.
+-- =====================================================
+create table if not exists public.review_data (
+  id uuid primary key default gen_random_uuid(),
+  album_id uuid not null references public.albums(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(album_id)
+);
+
+create index if not exists idx_review_data_album on public.review_data (album_id);
+
+alter table public.review_data enable row level security;
+
+-- Designers can manage review data on their albums
+create policy "Designers can manage review data on their albums"
+  on public.review_data
+  using (exists (
+    select 1 from public.albums a where a.id = review_data.album_id and a.designer_id = auth.uid()
+  ));
+
+-- Anyone with a valid share link can view/update review data
+create policy "Clients can view review data via valid share link"
+  on public.review_data for select
+  using (public.album_has_valid_share_link(album_id));
+
+create policy "Clients can insert review data via valid share link"
+  on public.review_data for insert
+  with check (public.album_has_valid_share_link(album_id));
+
+create policy "Clients can update review data via valid share link"
+  on public.review_data for update
+  using (public.album_has_valid_share_link(album_id));
+
+-- =====================================================
+-- 2. UPDATED_AT TRIGGER
+-- =====================================================
+drop trigger if exists trg_review_data_updated_at on public.review_data;
+create trigger trg_review_data_updated_at
+  before update on public.review_data
+  for each row execute function public.handle_updated_at();
+
+-- =====================================================
+-- 3. RPC: UPSERT REVIEW DATA
+-- =====================================================
+create or replace function public.upsert_review_data(
+  p_album_id uuid,
+  p_data jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_result jsonb;
+begin
+  insert into public.review_data (album_id, data)
+  values (p_album_id, p_data)
+  on conflict (album_id)
+  do update set data = p_data, updated_at = now()
+  returning data into v_result;
+
+  return v_result;
+end;
+$$;
+
+grant execute on function public.upsert_review_data to authenticated;
+grant execute on function public.upsert_review_data to anon;
+
+-- =====================================================
+-- 4. RPC: GET REVIEW DATA
+-- =====================================================
+create or replace function public.get_review_data(p_album_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_result jsonb;
+begin
+  select data into v_result
+  from public.review_data
+  where album_id = p_album_id;
+
+  return v_result;
+end;
+$$;
+
+grant execute on function public.get_review_data to authenticated;
+grant execute on function public.get_review_data to anon;
+
