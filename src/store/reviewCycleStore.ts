@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ReviewCycleStatus, TimelineEntry, ApprovalRecord, ApprovalChecklistItem } from '@/types/viewer';
+import { saveReviewData } from '@/services/supabase/reviewData';
 
 const CYCLE_PREFIX = 'albumflow_cycle_';
 const TIMELINE_PREFIX = 'albumflow_timeline_';
@@ -21,6 +22,10 @@ function saveJSON(key: string, data: unknown, onError?: (error: string) => void)
   } catch (e) {
     onError?.((e as Error).message);
   }
+}
+
+function syncCycleData(albumId: string, data: { statuses?: Record<string, ReviewCycleStatus>; timelines?: Record<string, TimelineEntry[]>; approvals?: Record<string, ApprovalRecord> }) {
+  saveReviewData(albumId, { cycle: data });
 }
 
 interface ReviewCycleState {
@@ -68,6 +73,12 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
   setStatus: (albumId: string, status: ReviewCycleStatus) => {
     set((s) => ({ statuses: { ...s.statuses, [albumId]: status } }));
     saveJSON(`${CYCLE_PREFIX}${albumId}`, status, (msg) => set({ error: msg }));
+    const state = get();
+    syncCycleData(albumId, {
+      statuses: { ...state.statuses, [albumId]: status },
+      timelines: state.timelines,
+      approvals: state.approvals,
+    });
   },
 
   getTimeline: (albumId: string) => {
@@ -89,6 +100,12 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
     const updated = [...timeline, newEntry];
     set((s) => ({ timelines: { ...s.timelines, [albumId]: updated } }));
     saveJSON(`${TIMELINE_PREFIX}${albumId}`, updated, (msg) => set({ error: msg }));
+    const state = get();
+    syncCycleData(albumId, {
+      statuses: state.statuses,
+      timelines: { ...state.timelines, [albumId]: updated },
+      approvals: state.approvals,
+    });
   },
 
   isApproved: (albumId: string) => {
@@ -116,6 +133,12 @@ export const useReviewCycleStore = create<ReviewCycleState>((set, get) => ({
     };
     set((s) => ({ approvals: { ...s.approvals, [albumId]: record } }));
     saveJSON(`${APPROVAL_PREFIX}${albumId}`, record, (msg) => set({ error: msg }));
+    const state = get();
+    syncCycleData(albumId, {
+      statuses: { ...state.statuses, [albumId]: 'approved' },
+      timelines: state.timelines,
+      approvals: { ...state.approvals, [albumId]: record },
+    });
     get().setStatus(albumId, 'approved');
     get().addTimelineEntry(albumId, {
       type: 'approved',

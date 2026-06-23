@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { PageReviewStatus, AlbumReviewData, AlbumReviewEntry } from '@/types/viewer';
 import { REVIEW_CONFIG } from '@/constants/review';
+import { saveReviewData, loadReviewData } from '@/services/supabase/reviewData';
 
 interface ReviewState {
   data: Record<string, AlbumReviewData>;
@@ -38,12 +39,14 @@ function loadFromStorage(albumId: string): AlbumReviewData | null {
   return null;
 }
 
-function saveToStorage(albumId: string, data: AlbumReviewData) {
-  try {
-    localStorage.setItem(`${REVIEW_CONFIG.storage.prefix}${albumId}`, JSON.stringify(data));
-  } catch {
-    // storage full or unavailable
-  }
+async function syncToServer(albumId: string, data: AlbumReviewData) {
+  await saveReviewData(albumId, { review: data });
+}
+
+async function loadFromServer(albumId: string): Promise<AlbumReviewData | null> {
+  const serverData = await loadReviewData<{ review?: AlbumReviewData }>(albumId);
+  if (serverData?.review) return serverData.review;
+  return null;
 }
 
 function emptyAlbumData(albumId: string, totalPages: number): AlbumReviewData {
@@ -67,8 +70,23 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       set((state) => ({
         data: { ...state.data, [albumId]: stored },
       }));
+      loadFromServer(albumId).then((serverData) => {
+        if (serverData) {
+          set((state) => ({
+            data: { ...state.data, [albumId]: serverData },
+          }));
+        }
+      });
       return stored;
     }
+
+    loadFromServer(albumId).then((serverData) => {
+      if (serverData) {
+        set((state) => ({
+          data: { ...state.data, [albumId]: serverData },
+        }));
+      }
+    });
 
     const fresh = emptyAlbumData(albumId, totalPages);
     set((state) => ({
@@ -98,6 +116,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       data: { ...state.data, [albumId]: updated },
     }));
     saveToStorage(albumId, updated);
+    syncToServer(albumId, updated);
   },
 
   markPageReviewed: (albumId: string, pageNumber: number, totalPages: number) => {
@@ -121,6 +140,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       data: { ...state.data, [albumId]: updated },
     }));
     saveToStorage(albumId, updated);
+    syncToServer(albumId, updated);
   },
 
   undoReview: (albumId: string, pageNumber: number, totalPages: number) => {
@@ -144,6 +164,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       data: { ...state.data, [albumId]: updated },
     }));
     saveToStorage(albumId, updated);
+    syncToServer(albumId, updated);
   },
 
   getReviewedCount: (albumId: string) => {
@@ -203,6 +224,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       data: { ...state.data, [albumId]: updated },
     }));
     saveToStorage(albumId, updated);
+    syncToServer(albumId, updated);
   },
 
   getPageStatus: (albumId: string, pageNumber: number) => {

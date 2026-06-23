@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { VoiceRequest, VoiceDraft } from '@/types/viewer';
 import { REVIEW_CONFIG } from '@/constants/review';
+import { saveReviewData } from '@/services/supabase/reviewData';
 
 interface VoiceState {
   recordings: Record<string, VoiceRequest[]>;
@@ -48,6 +49,10 @@ function generateId(): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function syncVoiceToServer(albumId: string, recordings: VoiceRequest[]) {
+  saveReviewData(albumId, { voice: recordings });
+}
+
 export const useVoiceStore = create<VoiceState>((set, get) => ({
   recordings: {},
   drafts: {},
@@ -75,6 +80,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     const updated = [...recordings, newRecording];
     set((state) => ({ recordings: { ...state.recordings, [albumId]: updated } }));
     saveRecordings(albumId, updated, (msg) => set({ error: msg }));
+    syncVoiceToServer(albumId, updated);
   },
 
   deleteRecording: (albumId: string, recordingId: string) => {
@@ -82,6 +88,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     const updated = recordings.filter((r) => r.id !== recordingId);
     set((state) => ({ recordings: { ...state.recordings, [albumId]: updated } }));
     saveRecordings(albumId, updated, (msg) => set({ error: msg }));
+    syncVoiceToServer(albumId, updated);
   },
 
   getRecordingsByPage: (albumId: string, pageNumber: number) => {

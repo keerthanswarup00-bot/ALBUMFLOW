@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ViewerRequestChange, RequestChangeCategory, PinPlacement, RequestDraft } from '@/types/viewer';
 import { REVIEW_CONFIG } from '@/constants/review';
+import { saveReviewData } from '@/services/supabase/reviewData';
 
 interface RequestState {
   requests: Record<string, ViewerRequestChange[]>;
@@ -53,6 +54,10 @@ function generateId(): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function syncRequestsToServer(albumId: string, requests: ViewerRequestChange[]) {
+  saveReviewData(albumId, { requests });
+}
+
 export const useRequestStore = create<RequestState>((set, get) => ({
   requests: {},
   drafts: {},
@@ -83,6 +88,7 @@ export const useRequestStore = create<RequestState>((set, get) => ({
     const updated = [...requests, newRequest];
     set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
     saveRequests(albumId, updated, (msg) => set({ error: msg }));
+    syncRequestsToServer(albumId, updated);
   },
 
   updateRequest: (albumId: string, requestId: string, updates: Partial<ViewerRequestChange>) => {
@@ -92,6 +98,7 @@ export const useRequestStore = create<RequestState>((set, get) => ({
     );
     set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
     saveRequests(albumId, updated, (msg) => set({ error: msg }));
+    syncRequestsToServer(albumId, updated);
   },
 
   deleteRequest: (albumId: string, requestId: string) => {
@@ -99,6 +106,7 @@ export const useRequestStore = create<RequestState>((set, get) => ({
     const updated = requests.filter((r) => r.id !== requestId);
     set((state) => ({ requests: { ...state.requests, [albumId]: updated } }));
     saveRequests(albumId, updated, (msg) => set({ error: msg }));
+    syncRequestsToServer(albumId, updated);
   },
 
   getRequestsByPage: (albumId: string, pageNumber: number) => {
