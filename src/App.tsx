@@ -26,7 +26,6 @@ import { TermsPage } from '@/pages/TermsPage';
 import { CookiePolicyPage } from '@/pages/CookiePolicyPage';
 import { useAuth } from '@/hooks/useAuth';
 import { EnvBanner } from '@/components/EnvBanner';
-import { Toast } from '@/components/ui/Toast';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 export default function App() {
@@ -90,7 +89,6 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
-    <Toast />
     </ErrorBoundary>
   );
 }

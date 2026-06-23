@@ -1,6 +1,7 @@
 import { supabase } from './client';
 import { ApiError } from '@/utils/errors';
 import type { Album, AlbumFormData } from '@/types';
+import { deleteImages } from './storage';
 
 function slugify(text: string): string {
   return text
@@ -136,7 +137,38 @@ export async function updateAlbum(
   return mapRowToAlbum(data);
 }
 
+function extractStoragePath(url: string | null): string | null {
+  if (!url) return null;
+  const match = url.match(/\/storage\/v1\/object\/public\/albums\/(.+)/);
+  return match ? match[1] : null;
+}
+
 export async function deleteAlbum(id: string): Promise<void> {
+  const { data: versions } = await supabase
+    .from('album_versions')
+    .select('id')
+    .eq('album_id', id);
+
+  if (versions && versions.length > 0) {
+    const versionIds = versions.map(v => v.id);
+    const { data: pages } = await supabase
+      .from('album_pages')
+      .select('original_url, image_url, thumbnail_url')
+      .in('album_version_id', versionIds);
+
+    if (pages && pages.length > 0) {
+      const paths = pages.flatMap(p =>
+        [extractStoragePath(p.original_url), extractStoragePath(p.image_url), extractStoragePath(p.thumbnail_url)]
+          .filter(Boolean) as string[]
+      );
+      if (paths.length > 0) {
+        deleteImages(paths).catch((err) =>
+          console.error('[albums] Storage cleanup failed:', err)
+        );
+      }
+    }
+  }
+
   const { error } = await supabase
     .from('albums')
     .update({ status: 'archived' })

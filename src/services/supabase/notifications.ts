@@ -14,9 +14,13 @@ export interface Notification {
 }
 
 export async function getNotifications(): Promise<Notification[]> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return [];
+
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
+    .eq('user_id', userData.user.id)
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -25,9 +29,13 @@ export async function getNotifications(): Promise<Notification[]> {
 }
 
 export async function getUnreadCount(): Promise<number> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return 0;
+
   const { count, error } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
+    .eq('user_id', userData.user.id)
     .eq('is_read', false);
 
   if (error) throw new ApiError(`Failed to count notifications: ${error.message}`, 500, error);
@@ -44,9 +52,13 @@ export async function markAsRead(id: string): Promise<void> {
 }
 
 export async function markAllAsRead(): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return;
+
   const { error } = await supabase
     .from('notifications')
     .update({ is_read: true })
+    .eq('user_id', userData.user.id)
     .eq('is_read', false);
 
   if (error) throw new ApiError(`Failed to mark all as read: ${error.message}`, 500, error);

@@ -21,6 +21,28 @@ function mapSupabaseUserToAppUser(sbUser: {
   };
 }
 
+async function enrichUserWithProfile(user: User): Promise<User> {
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('studio_name, studio_logo_url, phone_number, owner_name')
+      .eq('user_id', user.id)
+      .single();
+    if (data) {
+      return {
+        ...user,
+        studio_name: data.studio_name || user.studio_name,
+        studio_logo_url: data.studio_logo_url || null,
+        phone: data.phone_number || null,
+        full_name: data.owner_name || user.full_name,
+      };
+    }
+  } catch {
+    // Profile fetch is non-critical; return original user
+  }
+  return user;
+}
+
 export async function signUp(email: string, password: string, metadata: {
   studio_name?: string;
   owner_name?: string;
@@ -48,10 +70,13 @@ export async function signUp(email: string, password: string, metadata: {
     throw new AuthError('No user returned from sign up');
   }
 
+  const user = mapSupabaseUserToAppUser(data.user);
+  const enrichedUser = await enrichUserWithProfile(user);
+
   return {
-    user: mapSupabaseUserToAppUser(data.user),
+    user: enrichedUser,
     session: data.session ? {
-      user: mapSupabaseUserToAppUser(data.user),
+      user: enrichedUser,
       access_token: data.session.access_token,
       expires_at: data.session.expires_at ?? 0,
     } : null,
@@ -72,10 +97,13 @@ export async function signInWithEmail(email: string, password: string) {
     throw new AuthError('No user returned from sign in');
   }
 
+  const user = mapSupabaseUserToAppUser(data.user);
+  const enrichedUser = await enrichUserWithProfile(user);
+
   return {
-    user: mapSupabaseUserToAppUser(data.user),
+    user: enrichedUser,
     session: {
-      user: mapSupabaseUserToAppUser(data.user),
+      user: enrichedUser,
       access_token: data.session?.access_token ?? '',
       expires_at: data.session?.expires_at ?? 0,
     },
@@ -100,10 +128,13 @@ export async function getCurrentSession() {
     return null;
   }
 
+  const user = mapSupabaseUserToAppUser(data.session.user);
+  const enrichedUser = await enrichUserWithProfile(user);
+
   return {
-    user: mapSupabaseUserToAppUser(data.session.user),
+    user: enrichedUser,
     session: {
-      user: mapSupabaseUserToAppUser(data.session.user),
+      user: enrichedUser,
       access_token: data.session.access_token,
       expires_at: data.session.expires_at ?? 0,
     },

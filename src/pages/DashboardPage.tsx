@@ -22,26 +22,30 @@ export function DashboardPage() {
     if (albums.length === 0) return;
     let cancelled = false;
     async function loadPageCounts() {
+      const results = await Promise.allSettled(
+        albums.map(async (album) => {
+          const [versions, link] = await Promise.all([
+            versionsService.getVersions(album.id),
+            shareLinkService.getActiveShareLink(album.id).catch(() => null),
+          ]);
+          return {
+            id: album.id,
+            pageCount: versions.length > 0 ? versions[0].page_count : 0,
+            token: link?.token ?? null,
+          };
+        })
+      );
+      if (cancelled) return;
       const counts: Record<string, number> = {};
       const tokens: Record<string, string> = {};
-      for (const album of albums) {
-        try {
-          const versions: AlbumVersion[] = await versionsService.getVersions(album.id);
-          if (cancelled) return;
-          if (versions.length > 0) {
-            counts[album.id] = versions[0].page_count;
-          }
-          const link = await shareLinkService.getActiveShareLink(album.id);
-          if (cancelled) return;
-          if (link) tokens[album.id] = link.token;
-        } catch {
-          // skip albums that fail
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          counts[result.value.id] = result.value.pageCount;
+          if (result.value.token) tokens[result.value.id] = result.value.token;
         }
       }
-      if (!cancelled) {
-        setAlbumPageCounts(counts);
-        setShareTokens(tokens);
-      }
+      setAlbumPageCounts(counts);
+      setShareTokens(tokens);
     }
     loadPageCounts();
     return () => { cancelled = true; };

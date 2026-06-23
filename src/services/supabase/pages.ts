@@ -63,6 +63,16 @@ export async function getPagesByVersion(versionId: string): Promise<AlbumPage[]>
 }
 
 export async function deletePage(id: string): Promise<void> {
+  const { data: page, error: fetchError } = await supabase
+    .from('album_pages')
+    .select('original_url, image_url, thumbnail_url')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) {
+    throw new ApiError(`Failed to fetch page: ${fetchError.message}`, 500, fetchError);
+  }
+
   const { error } = await supabase
     .from('album_pages')
     .delete()
@@ -70,6 +80,25 @@ export async function deletePage(id: string): Promise<void> {
 
   if (error) {
     throw new ApiError(`Failed to delete page: ${error.message}`, 500, error);
+  }
+
+  const pathsToDelete = [
+    page.original_url,
+    page.image_url,
+    page.thumbnail_url,
+  ].filter(Boolean).map((url) => {
+    const match = url?.match(/\/storage\/v1\/object\/public\/albums\/(.+)/);
+    return match ? match[1] : null;
+  }).filter(Boolean) as string[];
+
+  if (pathsToDelete.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from('albums')
+      .remove(pathsToDelete);
+
+    if (storageError) {
+      console.error('[pages] Failed to clean up storage:', storageError);
+    }
   }
 }
 

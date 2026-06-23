@@ -71,6 +71,8 @@ export function AlbumDetailPage() {
   const copiedTimerRef = useRef<number | null>(null);
   useEffect(() => () => { if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current); }, []);
 
+  const coverSetRef = useRef(false);
+
   const [activeLink, setActiveLink] = useState<ShareLink | null>(null);
   const [linksLoading, setLinksLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -94,11 +96,15 @@ export function AlbumDetailPage() {
   }, [albumId]);
 
   useEffect(() => {
+    if (coverSetRef.current) return;
     if (pages.length > 0 && currentAlbum && !currentAlbum.cover_image_url) {
       const firstPage = pages[0];
       const coverUrl = firstPage.thumbnail_url ?? firstPage.image_url;
       if (coverUrl) {
-        updateAlbum(currentAlbum.id, { cover_image_url: coverUrl } as Record<string, unknown> as Parameters<typeof updateAlbum>[1]).catch(() => {});
+        coverSetRef.current = true;
+        updateAlbum(currentAlbum.id, { cover_image_url: coverUrl } as Record<string, unknown> as Parameters<typeof updateAlbum>[1]).catch(() => {
+          coverSetRef.current = false;
+        });
       }
     }
   }, [pages, currentAlbum, updateAlbum]);
