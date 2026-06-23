@@ -27,6 +27,7 @@ import { CookiePolicyPage } from '@/pages/CookiePolicyPage';
 import { useAuth } from '@/hooks/useAuth';
 import { EnvBanner } from '@/components/EnvBanner';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import LandingPage from '@/pages/LandingPage';
 
 export default function App() {
   useAuth();
@@ -35,6 +36,8 @@ export default function App() {
       <EnvBanner />
       <BrowserRouter>
         <Routes>
+        <Route index element={<LandingPage />} />
+
         <Route
           path={ROUTES.LOGIN}
           element={

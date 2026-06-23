@@ -82,4 +82,15 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  [data-animate] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  }
+
+  [data-animate].animate-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
