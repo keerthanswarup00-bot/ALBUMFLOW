@@ -17,16 +17,24 @@ export interface UploadVariantResult {
 
 export type UploadVariant = 'original' | 'medium' | 'thumbnail';
 
+function getVariantDir(variant: UploadVariant): string {
+  switch (variant) {
+    case 'original': return APP_CONFIG.storage.originals;
+    case 'medium': return APP_CONFIG.storage.medium;
+    case 'thumbnail': return APP_CONFIG.storage.thumbnails;
+  }
+}
+
 function getStoragePath(
   albumId: string,
   versionNumber: number,
   variant: UploadVariant,
   fileName: string
 ): string {
-  const timestamp = Date.now();
+  const uniqueId = crypto.randomUUID();
   const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const variantDir = variant === 'original' ? APP_CONFIG.storage.originals : APP_CONFIG.storage.thumbnails;
-  return `${APP_CONFIG.storage.albums}/${albumId}/v${versionNumber}/${variantDir}/${timestamp}_${safeFileName}`;
+  const variantDir = getVariantDir(variant);
+  return `${APP_CONFIG.storage.albums}/${albumId}/v${versionNumber}/${variantDir}/${uniqueId}_${safeFileName}`;
 }
 
 function validateFile(file: File): void {
@@ -43,6 +51,42 @@ function validateFile(file: File): void {
   }
 }
 
+async function uploadWithRetry(
+  bucket: string,
+  path: string,
+  body: Blob | File,
+  options: { cacheControl?: string; upsert?: boolean; contentType?: string },
+  retries = 3,
+): Promise<{ data: { path: string }; error: null } | { data: null; error: Error }> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const usedPath = attempt > 1 ? regenerateUniquePath(path) : path;
+    const result = await supabase.storage
+      .from(bucket)
+      .upload(usedPath, body, options);
+
+    if (result.error) {
+      const msg = result.error.message?.toLowerCase() ?? '';
+      if (msg.includes('already exists') && attempt < retries) {
+        continue;
+      }
+      return { data: null, error: result.error };
+    }
+
+    return { data: { path: usedPath }, error: null };
+  }
+
+  return { data: null, error: new Error('Upload failed after retries') };
+}
+
+function regenerateUniquePath(existingPath: string): string {
+  const lastSlash = existingPath.lastIndexOf('/');
+  const dir = existingPath.slice(0, lastSlash + 1);
+  const oldName = existingPath.slice(lastSlash + 1);
+  const underscoreIdx = oldName.indexOf('_');
+  const rest = underscoreIdx >= 0 ? oldName.slice(underscoreIdx) : oldName;
+  return `${dir}${crypto.randomUUID()}${rest}`;
+}
+
 export async function uploadImage(
   albumId: string,
   versionNumber: number,
@@ -53,26 +97,24 @@ export async function uploadImage(
 
   const filePath = getStoragePath(albumId, versionNumber, 'original', file.name);
 
-  const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
+  const result = await uploadWithRetry(BUCKET_NAME, filePath, file, {
+    cacheControl: '3600',
+    upsert: false,
+  });
 
-  if (error) {
-    throw new StorageError(`Upload failed: ${error.message}`, error);
+  if (result.error) {
+    throw new StorageError(`Upload failed: ${result.error.message}`, result.error);
   }
 
   const { data: urlData } = supabase.storage
     .from(BUCKET_NAME)
-    .getPublicUrl(data.path);
+    .getPublicUrl(result.data.path);
 
   if (onProgress) onProgress(100);
 
   return {
     url: urlData.publicUrl,
-    path: data.path,
+    path: result.data.path,
   };
 }
 
@@ -86,27 +128,25 @@ export async function uploadImageVariant(
 ): Promise<UploadResult> {
   const filePath = getStoragePath(albumId, versionNumber, variant, originalFileName);
 
-  const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(filePath, blob, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: blob.type || 'image/jpeg',
-    });
+  const result = await uploadWithRetry(BUCKET_NAME, filePath, blob, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: blob.type || 'image/jpeg',
+  });
 
-  if (error) {
-    throw new StorageError(`Upload failed (${variant}): ${error.message}`, error);
+  if (result.error) {
+    throw new StorageError(`Upload failed (${variant}): ${result.error.message}`, result.error);
   }
 
   const { data: urlData } = supabase.storage
     .from(BUCKET_NAME)
-    .getPublicUrl(data.path);
+    .getPublicUrl(result.data.path);
 
   if (onProgress) onProgress(100);
 
   return {
     url: urlData.publicUrl,
-    path: data.path,
+    path: result.data.path,
   };
 }
 
