@@ -81,3 +81,18 @@ export async function getVersions(albumId: string): Promise<AlbumVersion[]> {
 
   return (data ?? []).map(mapRowToVersion);
 }
+
+export async function getLatestVersionPageCount(albumId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('album_versions')
+    .select('page_count')
+    .eq('album_id', albumId)
+    .order('version_number', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw new ApiError(`Failed to fetch page count: ${error.message}`, 500, error);
+  }
+
+  return data?.[0]?.page_count ?? 0;
+}

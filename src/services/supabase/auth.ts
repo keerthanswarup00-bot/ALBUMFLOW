@@ -1,6 +1,6 @@
 import { supabase } from './client';
 import { AuthError } from '@/utils/errors';
-import type { User } from '@/types';
+import type { User, Profile } from '@/types';
 
 function mapSupabaseUserToAppUser(sbUser: {
   id: string;
@@ -21,26 +21,50 @@ function mapSupabaseUserToAppUser(sbUser: {
   };
 }
 
-async function enrichUserWithProfile(user: User): Promise<User> {
+function enrichUserFromProfile(user: User, profile: Profile): User {
+  return {
+    ...user,
+    studio_name: profile.studio_name || user.studio_name,
+    studio_logo_url: profile.studio_logo_url || null,
+    phone: profile.phone_number || null,
+    full_name: profile.owner_name || user.full_name,
+  };
+}
+
+async function enrichUserWithProfile(user: User): Promise<{ user: User; profile: Profile | null }> {
   try {
-    const { data } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('studio_name, studio_logo_url, phone_number, owner_name')
+      .select('*')
       .eq('user_id', user.id)
       .single();
-    if (data) {
-      return {
-        ...user,
-        studio_name: data.studio_name || user.studio_name,
-        studio_logo_url: data.studio_logo_url || null,
-        phone: data.phone_number || null,
-        full_name: data.owner_name || user.full_name,
-      };
+
+    if (profileData) {
+      return { user: enrichUserFromProfile(user, profileData), profile: profileData };
+    }
+
+    if (profileError?.code === 'PGRST116') {
+      const defaultName = user.email?.split('@')[0] || 'User';
+      const { data: created, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          studio_name: '',
+          owner_name: defaultName,
+          phone_number: '',
+        })
+        .select()
+        .single();
+      if (created) {
+        return { user: enrichUserFromProfile(user, created), profile: created };
+      } else if (insertError) {
+        console.error('[auth] Failed to create profile:', insertError);
+      }
     }
   } catch {
-    // Profile fetch is non-critical; return original user
+    // Profile fetch is non-critical
   }
-  return user;
+  return { user, profile: null };
 }
 
 export async function signUp(email: string, password: string, metadata: {
@@ -71,10 +95,11 @@ export async function signUp(email: string, password: string, metadata: {
   }
 
   const user = mapSupabaseUserToAppUser(data.user);
-  const enrichedUser = await enrichUserWithProfile(user);
+  const { user: enrichedUser, profile } = await enrichUserWithProfile(user);
 
   return {
     user: enrichedUser,
+    profile,
     session: data.session ? {
       user: enrichedUser,
       access_token: data.session.access_token,
@@ -98,10 +123,11 @@ export async function signInWithEmail(email: string, password: string) {
   }
 
   const user = mapSupabaseUserToAppUser(data.user);
-  const enrichedUser = await enrichUserWithProfile(user);
+  const { user: enrichedUser, profile } = await enrichUserWithProfile(user);
 
   return {
     user: enrichedUser,
+    profile,
     session: {
       user: enrichedUser,
       access_token: data.session?.access_token ?? '',
@@ -128,11 +154,48 @@ export async function getCurrentSession() {
     return null;
   }
 
-  const user = mapSupabaseUserToAppUser(data.session.user);
-  const enrichedUser = await enrichUserWithProfile(user);
+  const sbUser = data.session.user;
+  const user = mapSupabaseUserToAppUser(sbUser);
+
+  let profile: Profile | null = null;
+  try {
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileData) {
+      profile = profileData;
+    } else if (profileError?.code === 'PGRST116') {
+      const defaultName = sbUser.email?.split('@')[0] || 'User';
+      const { data: created, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          studio_name: '',
+          owner_name: defaultName,
+          phone_number: '',
+        })
+        .select()
+        .single();
+      if (created) {
+        profile = created;
+      } else if (insertError) {
+        console.error('[auth] Failed to create profile during init:', insertError);
+      }
+    } else if (profileError) {
+      console.error('[auth] Failed to fetch profile during init:', profileError);
+    }
+  } catch {
+    // Profile fetch is non-critical; continue with un-enriched user
+  }
+
+  const enrichedUser = profile ? enrichUserFromProfile(user, profile) : user;
 
   return {
     user: enrichedUser,
+    profile,
     session: {
       user: enrichedUser,
       access_token: data.session.access_token,

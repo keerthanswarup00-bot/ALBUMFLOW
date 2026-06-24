@@ -13,8 +13,9 @@ const themeLabels: Record<ThemeMode, string> = {
 };
 
 export function Header() {
-  const { user, logout } = useAuthStore();
-  const { toggleSidebar } = useUIStore();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const { mode, setMode } = useThemeStore();
   const [showConfirm, setShowConfirm] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);

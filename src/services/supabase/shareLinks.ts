@@ -34,6 +34,22 @@ export async function getActiveShareLink(albumId: string): Promise<ShareLink | n
   return (data && data.length > 0) ? mapRowToShareLink(data[0]) : null;
 }
 
+export async function getActiveShareToken(albumId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('share_links')
+    .select('token')
+    .eq('album_id', albumId)
+    .is('revoked_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw new ApiError(`Failed to fetch share link: ${error.message}`, 500, error);
+  }
+
+  return (data && data.length > 0) ? data[0].token : null;
+}
+
 export async function getShareLinks(albumId: string): Promise<ShareLink[]> {
   const { data, error } = await supabase
     .from('share_links')

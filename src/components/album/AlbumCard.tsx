@@ -25,7 +25,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 
 export function AlbumCard({ album, pageCount = 0, shareToken, onDelete }: AlbumCardProps) {
   const navigate = useNavigate();
-  const { showToast } = useUIStore();
+  const showToast = useUIStore((s) => s.showToast);
   const hasDelete = typeof onDelete === 'function';
   const status = statusConfig[album.status] ?? statusConfig.draft;
   const reviewedCount = useReviewStore((s) => s.getReviewedCount(album.id));

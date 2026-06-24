@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { AuthLayout } from '@/layouts/AuthLayout';
@@ -6,28 +7,30 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { PublicRoute } from '@/components/auth/PublicRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { CreateStudioPage } from '@/pages/CreateStudioPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { AlbumsPage } from '@/pages/AlbumsPage';
-import { CreateAlbumPage } from '@/pages/CreateAlbumPage';
-import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
-import { EditAlbumPage } from '@/pages/EditAlbumPage';
-import { ViewAlbumPage } from '@/pages/ViewAlbumPage';
-import { ReviewManagementPage } from '@/pages/ReviewManagementPage';
-import { ClientViewPage } from '@/pages/ClientViewPage';
-import { ReviewFeedbackPage } from '@/pages/ReviewFeedbackPage';
-import { AlbumUpdatePage } from '@/pages/AlbumUpdatePage';
-import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { ProfilePage } from '@/pages/ProfilePage';
-import { AlbumUnavailablePage } from '@/pages/AlbumUnavailablePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
-import { TermsPage } from '@/pages/TermsPage';
-import { CookiePolicyPage } from '@/pages/CookiePolicyPage';
+import { PageSpinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { EnvBanner } from '@/components/EnvBanner';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import LandingPage from '@/pages/LandingPage';
+
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const AlbumsPage = lazy(() => import('@/pages/AlbumsPage').then(m => ({ default: m.AlbumsPage })));
+const CreateAlbumPage = lazy(() => import('@/pages/CreateAlbumPage').then(m => ({ default: m.CreateAlbumPage })));
+const AlbumDetailPage = lazy(() => import('@/pages/AlbumDetailPage').then(m => ({ default: m.AlbumDetailPage })));
+const EditAlbumPage = lazy(() => import('@/pages/EditAlbumPage').then(m => ({ default: m.EditAlbumPage })));
+const ViewAlbumPage = lazy(() => import('@/pages/ViewAlbumPage').then(m => ({ default: m.ViewAlbumPage })));
+const ReviewManagementPage = lazy(() => import('@/pages/ReviewManagementPage').then(m => ({ default: m.ReviewManagementPage })));
+const ClientViewPage = lazy(() => import('@/pages/ClientViewPage').then(m => ({ default: m.ClientViewPage })));
+const ReviewFeedbackPage = lazy(() => import('@/pages/ReviewFeedbackPage').then(m => ({ default: m.ReviewFeedbackPage })));
+const AlbumUpdatePage = lazy(() => import('@/pages/AlbumUpdatePage').then(m => ({ default: m.AlbumUpdatePage })));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AlbumUnavailablePage = lazy(() => import('@/pages/AlbumUnavailablePage').then(m => ({ default: m.AlbumUnavailablePage })));
+const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
+const TermsPage = lazy(() => import('@/pages/TermsPage').then(m => ({ default: m.TermsPage })));
+const CookiePolicyPage = lazy(() => import('@/pages/CookiePolicyPage').then(m => ({ default: m.CookiePolicyPage })));
 
 export default function App() {
   useAuth();
@@ -35,6 +38,7 @@ export default function App() {
     <ErrorBoundary>
       <EnvBanner />
       <BrowserRouter>
+        <Suspense fallback={<PageSpinner />}>
         <Routes>
         <Route index element={<LandingPage />} />
 
@@ -91,6 +95,7 @@ export default function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+        </Suspense>
     </BrowserRouter>
     </ErrorBoundary>
   );

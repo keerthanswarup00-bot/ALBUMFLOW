@@ -1,7 +1,8 @@
 import { useUIStore } from '@/store/uiStore';
 
 export function SidebarOverlay() {
-  const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
 
   if (!sidebarOpen) return null;
 

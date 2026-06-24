@@ -9,4 +9,18 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'vendor', test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/ },
+            { name: 'supabase', test: /[\\/]node_modules[\\/]@supabase[\\/]/ },
+            { name: 'state', test: /[\\/]node_modules[\\/]zustand[\\/]/ },
+            { name: 'icons', test: /[\\/]node_modules[\\/]lucide-react[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
 });

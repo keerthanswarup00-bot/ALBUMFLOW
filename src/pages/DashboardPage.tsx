@@ -9,7 +9,9 @@ import { ROUTES } from '@/constants/routes';
 import { Plus, ImageIcon, LayoutDashboard } from 'lucide-react';
 
 export function DashboardPage() {
-  const { albums, isLoading, fetchAlbums } = useAlbumStore();
+  const albums = useAlbumStore((s) => s.albums);
+  const isLoading = useAlbumStore((s) => s.isLoading);
+  const fetchAlbums = useAlbumStore((s) => s.fetchAlbums);
   const [albumPageCounts, setAlbumPageCounts] = useState<Record<string, number>>({});
   const [shareTokens, setShareTokens] = useState<Record<string, string>>({});
 
@@ -23,15 +25,11 @@ export function DashboardPage() {
     async function loadPageCounts() {
       const results = await Promise.allSettled(
         albums.map(async (album) => {
-          const [versions, link] = await Promise.all([
-            versionsService.getVersions(album.id),
-            shareLinkService.getActiveShareLink(album.id).catch(() => null),
+          const [pageCount, token] = await Promise.all([
+            versionsService.getLatestVersionPageCount(album.id),
+            shareLinkService.getActiveShareToken(album.id).catch(() => null),
           ]);
-          return {
-            id: album.id,
-            pageCount: versions.length > 0 ? versions[0].page_count : 0,
-            token: link?.token ?? null,
-          };
+          return { id: album.id, pageCount, token };
         })
       );
       if (cancelled) return;

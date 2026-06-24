@@ -25,7 +25,7 @@ interface AuthState {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
   isLoading: true,
@@ -36,14 +36,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const result = await authService.getCurrentSession();
       const user = result?.user ?? null;
+      const profile = result?.profile ?? null;
       set({
         user,
+        profile,
         isAuthenticated: !!user,
         isLoading: false,
       });
-      if (user) {
-        get().loadProfile();
-      }
     } catch {
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
@@ -55,11 +54,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const result = await authService.signInWithEmail(email, password);
       set({
         user: result.user,
+        profile: result.profile ?? null,
         isAuthenticated: true,
         isLoading: false,
         error: null,
       });
-      await get().loadProfile();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
       set({ isLoading: false, error: message });
@@ -74,11 +73,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (result.session) {
         set({
           user: result.user,
+          profile: result.profile ?? null,
           isAuthenticated: true,
           isLoading: false,
           error: null,
         });
-        await get().loadProfile();
       } else {
         set({
           user: result.user,

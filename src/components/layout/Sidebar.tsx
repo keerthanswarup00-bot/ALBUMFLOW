@@ -13,8 +13,9 @@ const navItems = [
 ];
 
 export function Sidebar() {
-  const { sidebarOpen } = useUIStore();
-  const { mode, setMode } = useThemeStore();
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const mode = useThemeStore((s) => s.mode);
+  const setMode = useThemeStore((s) => s.setMode);
 
   function cycleTheme() {
     const modes: ThemeMode[] = ['light', 'dark', 'system'];

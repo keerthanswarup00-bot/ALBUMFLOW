@@ -16,7 +16,9 @@ const icons = {
 };
 
 export function Toast() {
-  const { toastMessage, toastType, clearToast } = useUIStore();
+  const toastMessage = useUIStore((s) => s.toastMessage);
+  const toastType = useUIStore((s) => s.toastType);
+  const clearToast = useUIStore((s) => s.clearToast);
 
   useEffect(() => {
     if (toastMessage) {
