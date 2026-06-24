@@ -6,7 +6,6 @@ import { PageSpinner } from '@/components/ui/Spinner';
 import * as versionsService from '@/services/supabase/versions';
 import * as shareLinkService from '@/services/supabase/shareLinks';
 import { ROUTES } from '@/constants/routes';
-import type { AlbumVersion } from '@/types';
 import { Plus, ImageIcon, LayoutDashboard } from 'lucide-react';
 
 export function DashboardPage() {

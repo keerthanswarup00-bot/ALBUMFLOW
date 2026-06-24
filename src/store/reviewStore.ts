@@ -115,7 +115,6 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set((state) => ({
       data: { ...state.data, [albumId]: updated },
     }));
-    saveToStorage(albumId, updated);
     syncToServer(albumId, updated);
   },
 
@@ -139,7 +138,6 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set((state) => ({
       data: { ...state.data, [albumId]: updated },
     }));
-    saveToStorage(albumId, updated);
     syncToServer(albumId, updated);
   },
 
@@ -163,7 +161,6 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set((state) => ({
       data: { ...state.data, [albumId]: updated },
     }));
-    saveToStorage(albumId, updated);
     syncToServer(albumId, updated);
   },
 
@@ -223,7 +220,6 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set((state) => ({
       data: { ...state.data, [albumId]: updated },
     }));
-    saveToStorage(albumId, updated);
     syncToServer(albumId, updated);
   },
 
