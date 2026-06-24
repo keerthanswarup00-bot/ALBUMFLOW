@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import WeddingAlbumViewer from '@/components/review/WeddingAlbumViewer';
 import { Spinner } from '@/components/ui/Spinner';
 import * as albumService from '@/services/supabase/albums';
@@ -12,6 +12,9 @@ import type { ReviewAlbum, ReviewPage } from '@/types/viewer';
 export function ClientViewPage() {
   const { albumId } = useParams<{ albumId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetPage = searchParams.get('targetPage') ? Number(searchParams.get('targetPage')) : undefined;
+  const targetRequestId = searchParams.get('targetRequestId') || undefined;
   const { profile } = useAuthStore();
   const [album, setAlbum] = useState<ReviewAlbum | null>(null);
   const [pages, setPages] = useState<ReviewPage[]>([]);
@@ -106,6 +109,8 @@ export function ClientViewPage() {
       studioName={profile?.studio_name || 'Studio'}
       phoneNumber={profile?.phone_number || ''}
       studioLogoUrl={profile?.studio_logo_url || ''}
+      targetPage={targetPage}
+      targetRequestId={targetRequestId}
     />
   );
 }

@@ -7,9 +7,11 @@ interface AlbumViewerProps {
   studioName?: string;
   phoneNumber?: string;
   studioLogoUrl?: string;
+  targetPage?: number;
+  targetRequestId?: string;
 }
 
-export function AlbumViewer({ album, pages, studioName, phoneNumber, studioLogoUrl }: AlbumViewerProps) {
+export function AlbumViewer({ album, pages, studioName, phoneNumber, studioLogoUrl, targetPage, targetRequestId }: AlbumViewerProps) {
   return (
     <WeddingAlbumViewer
       ref={null}
@@ -18,6 +20,8 @@ export function AlbumViewer({ album, pages, studioName, phoneNumber, studioLogoU
       studioName={studioName ?? 'Studio'}
       phoneNumber={phoneNumber ?? ''}
       studioLogoUrl={studioLogoUrl ?? ''}
+      targetPage={targetPage}
+      targetRequestId={targetRequestId}
     />
   );
 }

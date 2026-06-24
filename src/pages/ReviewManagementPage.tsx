@@ -259,7 +259,7 @@ export function ReviewManagementPage() {
                         <h3 className="text-sm font-semibold text-text-secondary dark:text-text-primary">Page {pageNumber}</h3>
                         <button
                           onClick={() => {
-                            navigate(ROUTES.ALBUM_DETAIL.replace(':albumId', selectedAlbumId));
+                            navigate(`${ROUTES.CLIENT_VIEW.replace(':albumId', selectedAlbumId)}?targetPage=${pageNumber}`);
                           }}
                           className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
                         >
@@ -271,7 +271,10 @@ export function ReviewManagementPage() {
                         {items.text.map((request) => (
                           <div
                             key={request.id}
-                            className="flex items-start gap-3 rounded-lg bg-bg-secondary dark:bg-bg-secondary p-3"
+                            onClick={() => {
+                              navigate(`${ROUTES.CLIENT_VIEW.replace(':albumId', selectedAlbumId)}?targetPage=${pageNumber}&targetRequestId=${request.id}`);
+                            }}
+                            className="flex items-start gap-3 rounded-lg bg-bg-secondary dark:bg-bg-secondary p-3 hover:bg-bg-elevated dark:hover:bg-bg-elevated cursor-pointer transition-colors"
                           >
                             <div className={cn(
                               'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
@@ -310,7 +313,10 @@ export function ReviewManagementPage() {
                         {items.voice.map((voice) => (
                           <div
                             key={voice.id}
-                            className="flex items-start gap-3 rounded-lg bg-bg-secondary dark:bg-bg-secondary p-3"
+                            onClick={() => {
+                              navigate(`${ROUTES.CLIENT_VIEW.replace(':albumId', selectedAlbumId)}?targetPage=${pageNumber}&targetRequestId=${voice.id}`);
+                            }}
+                            className="flex items-start gap-3 rounded-lg bg-bg-secondary dark:bg-bg-secondary p-3 hover:bg-bg-elevated dark:hover:bg-bg-elevated cursor-pointer transition-colors"
                           >
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-900/30">
                               <Mic className="h-4 w-4 text-purple-600" />

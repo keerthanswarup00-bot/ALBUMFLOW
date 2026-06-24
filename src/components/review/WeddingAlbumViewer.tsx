@@ -35,10 +35,12 @@ interface WeddingAlbumViewerProps {
   studioName?: string;
   phoneNumber?: string;
   studioLogoUrl?: string;
+  targetPage?: number;
+  targetRequestId?: string;
 }
 
 const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((props, ref) => {
-  const { album, pages, studioName = 'Studio', phoneNumber = '', studioLogoUrl = '' } = props;
+  const { album, pages, studioName = 'Studio', phoneNumber = '', studioLogoUrl = '', targetPage, targetRequestId } = props;
   const [currentSpread, setCurrentSpread] = useState(0);
   const [showCompletion, setShowCompletion] = useState(false);
   const [isPinMode, setIsPinMode] = useState(false);
@@ -305,6 +307,41 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const isPinModeRef = useRef(isPinMode);
   isPinModeRef.current = isPinMode;
 
+  const hasFlippedToTargetRef = useRef(false);
+
+  useEffect(() => {
+    if (!targetPage || hasFlippedToTargetRef.current || !flipBookRef.current?.pageFlip) return;
+    if (pages.length === 0) return;
+
+    const clampedPage = Math.max(1, Math.min(targetPage, totalSpreads));
+    const pageIndex = (clampedPage - 1) * 2;
+
+    requestAnimationFrame(() => {
+      try {
+        flipBookRef.current?.pageFlip()?.flip(pageIndex);
+        hasFlippedToTargetRef.current = true;
+      } catch {
+        // Flipbook may not be ready yet
+      }
+    });
+  }, [targetPage, pages, totalSpreads]);
+
+  useEffect(() => {
+    if (!targetRequestId || !targetPage || !hasFlippedToTargetRef.current) return;
+    if (currentSpread !== targetPage - 1) return;
+
+    const allRequests = getRequestsByPage(album.id, targetPage);
+    const targetRequest = allRequests.find((r) => r.id === targetRequestId);
+
+    if (targetRequest) {
+      setSelectedRequest(targetRequest);
+      if (targetRequest.pin) {
+        setSelectedPinPos({ xPercent: targetRequest.pin.xPercent, yPercent: targetRequest.pin.yPercent });
+      }
+      setFocusedPinId(targetRequest.id);
+    }
+  }, [currentSpread, targetPage, targetRequestId, album.id, getRequestsByPage]);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (isHelpOpenRef.current) {
@@ -449,6 +486,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                 xPercent={pin.pin!.xPercent}
                 yPercent={pin.pin!.yPercent}
                 isActive={focusedPinId === pin.id}
+                isTargeted={!!targetRequestId && pin.id === targetRequestId}
                 onClick={() => {
                   setFocusedPinId(pin.id);
                   handleViewRequest(pin);
