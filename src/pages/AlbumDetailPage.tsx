@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/services/supabase/client';
 import { useAlbumStore } from '@/store/albumStore';
 import { useReviewStore } from '@/store/reviewStore';
 import { Card } from '@/components/ui/Card';
@@ -26,7 +25,6 @@ import {
   CheckCircle,
   Share2,
   ExternalLink,
-  SendHorizonal,
   Building2,
   MessageCircle,
   EyeOff,
@@ -62,11 +60,9 @@ export function AlbumDetailPage() {
   const showToast = useUIStore((s) => s.showToast);
 
   const cycleStatus = useReviewCycleStore((s) => s.getStatus(albumId ?? ''));
-  const cycleSetStatus = useReviewCycleStore((s) => s.setStatus);
   const cycleMarkChangesInProgress = useReviewCycleStore((s) => s.markChangesInProgress);
   const cycleMarkReadyForApproval = useReviewCycleStore((s) => s.markReadyForApproval);
   const cycleMarkClosed = useReviewCycleStore((s) => s.markClosed);
-  const cycleAddTimeline = useReviewCycleStore((s) => s.addTimelineEntry);
 
   const copiedTimerRef = useRef<number | null>(null);
   useEffect(() => () => { if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current); }, []);
@@ -151,30 +147,6 @@ export function AlbumDetailPage() {
 
   function handleUploadComplete() {
     if (albumId) fetchAlbumPages(albumId);
-  }
-
-  const [submittingReview, setSubmittingReview] = useState(false);
-
-  async function handleSendForReview() {
-    if (!albumId) return;
-    setSubmittingReview(true);
-    try {
-      const { data, error } = await supabase.rpc('submit_album_for_review', { p_album_id: albumId });
-      if (error) {
-        console.error('RPC Error', 'submit_album_for_review', { p_album_id: albumId }, error);
-        throw error;
-      }
-      const result = data as { error?: string };
-      if (result?.error) throw new Error(result.error);
-      cycleSetStatus(albumId, 'awaiting_review');
-      cycleAddTimeline(albumId, { type: 'review_started', description: 'Album sent for client review', timestamp: Date.now() });
-      showToast('Album sent for review!', 'success');
-      fetchAlbumById(albumId);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to submit', 'error');
-    } finally {
-      setSubmittingReview(false);
-    }
   }
 
   async function handleStartChanges() {
@@ -465,28 +437,6 @@ export function AlbumDetailPage() {
           </div>
         </Card>
       </div>
-
-      {pages.length > 0 && album.status === 'draft' && (
-        <div className="mt-6">
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-text-primary dark:text-text-primary">
-                  <SendHorizonal className="h-4 w-4 text-amber-500" />
-                  Ready for Review?
-                </h2>
-                <p className="mt-1 text-xs text-text-secondary dark:text-text-secondary">
-                  Send this album to your client for feedback and approval.
-                </p>
-              </div>
-              <Button onClick={handleSendForReview} isLoading={submittingReview}>
-                <SendHorizonal className="h-4 w-4" />
-                Send for Review
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
 
       {cycleStatus === 'review_submitted' && (
         <div className="mt-6">
