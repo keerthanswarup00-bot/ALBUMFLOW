@@ -419,26 +419,25 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // Mobile: auto-request fullscreen, hide browser chrome
+  // Mobile: hide browser chrome
+  const fullscreenRequestedRef = useRef(false);
+
   useEffect(() => {
     if (!isMobile) return;
-
-    document.documentElement.requestFullscreen().catch(() => {
-      // Safari doesn't support requestFullscreen from user gesture.
-      // Apply pseudo-fullscreen via viewport techniques instead.
-    });
 
     const scrollHideChrome = () => {
       window.scrollTo(0, 1);
     };
     scrollHideChrome();
-    window.addEventListener('scroll', scrollHideChrome);
+
+    const onScroll = () => scrollHideChrome();
+    window.addEventListener('scroll', onScroll);
     window.addEventListener('orientationchange', () => {
       setTimeout(scrollHideChrome, 300);
     });
 
     return () => {
-      window.removeEventListener('scroll', scrollHideChrome);
+      window.removeEventListener('scroll', onScroll);
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
@@ -448,6 +447,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   function handleInteraction() {
     handleUserInteraction();
     resetHideTimer();
+    // Request fullscreen on first user gesture (browsers require gesture)
+    if (isMobile && !fullscreenRequestedRef.current) {
+      fullscreenRequestedRef.current = true;
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
   }
 
   return (
