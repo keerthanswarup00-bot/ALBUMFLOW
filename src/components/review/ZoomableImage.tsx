@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { cn } from '@/utils/cn';
 
 interface ZoomableImageProps {
@@ -9,7 +9,6 @@ interface ZoomableImageProps {
 }
 
 export function ZoomableImage({ children, isZoomed, onZoomChange, disabled }: ZoomableImageProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const lastDist = useRef(0);
@@ -88,22 +87,6 @@ export function ZoomableImage({ children, isZoomed, onZoomChange, disabled }: Zo
     }
   }
 
-  // Mouse wheel zoom
-  function handleWheel(e: React.WheelEvent) {
-    if (disabled) return;
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale((prev) => {
-      const next = Math.max(1, Math.min(prev * delta, 5));
-      if (next > 1) onZoomChange(true);
-      else {
-        setTranslate({ x: 0, y: 0 });
-        onZoomChange(false);
-      }
-      return next;
-    });
-  }
-
   // Mouse drag pan
   function handleMouseDown(e: React.MouseEvent) {
     if (disabled || !isZoomed) return;
@@ -129,18 +112,41 @@ export function ZoomableImage({ children, isZoomed, onZoomChange, disabled }: Zo
   // Zoom state is intentionally not reset in an effect.
   // Parent component remounts this via `key` prop on page change.
 
+  const wheelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = wheelRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (disabled) return;
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setScale((prev) => {
+        const next = Math.max(1, Math.min(prev * delta, 5));
+        if (next > 1) onZoomChange(true);
+        else {
+          setTranslate({ x: 0, y: 0 });
+          onZoomChange(false);
+        }
+        return next;
+      });
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [disabled, onZoomChange]);
+
   return (
     <div
-      ref={containerRef}
+      ref={wheelRef}
       className={cn(
         'relative flex items-center justify-center overflow-hidden',
         isZoomed ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
       )}
+      style={{ touchAction: 'none' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

@@ -33,15 +33,16 @@ export function FloatingBottomToolbar({
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-4 safe-area-bottom transition-all duration-300 ease-out',
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        'fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center transition-all duration-500 ease-out',
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6 pointer-events-none'
       )}
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
     >
       <div className="flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-lg px-2 py-1.5 shadow-xl border border-white/10">
         <button
           onClick={onAddComment}
           disabled={isPinMode}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-30 transition-colors cursor-pointer"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-30 transition-colors cursor-pointer"
           aria-label="Add comment"
         >
           <MessageSquare className="h-4 w-4" />
@@ -50,7 +51,7 @@ export function FloatingBottomToolbar({
         <button
           onClick={onAddVoice}
           disabled={isPinMode}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 disabled:opacity-30 transition-colors cursor-pointer"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 disabled:opacity-30 transition-colors cursor-pointer"
           aria-label="Add voice note"
         >
           <Mic className="h-4 w-4" />
@@ -59,7 +60,7 @@ export function FloatingBottomToolbar({
         {hasFeedback && (
           <button
             onClick={onUndo}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors cursor-pointer"
             aria-label="Undo"
           >
             <Undo2 className="h-4 w-4" />
@@ -71,7 +72,7 @@ export function FloatingBottomToolbar({
         <button
           onClick={onPrev}
           disabled={!canGoPrev}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
           aria-label="Previous"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -84,7 +85,7 @@ export function FloatingBottomToolbar({
         <button
           onClick={onNext}
           disabled={!canGoNext}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
           aria-label="Next"
         >
           <ChevronRight className="h-5 w-5" />

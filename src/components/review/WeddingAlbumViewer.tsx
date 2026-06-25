@@ -5,7 +5,7 @@ import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useUIStore } from '@/store/uiStore';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useAutoPreview, useIsCompact } from '@/hooks/useIsMobile';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
 import { ReviewCompletionModal } from './ReviewCompletionModal';
 import { HelpBottomSheet } from './HelpBottomSheet';
@@ -58,7 +58,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const flipBookRef = useRef<FlipBookHandle | null>(null);
   const albumContainerRef = useRef<HTMLDivElement>(null);
   const [showDebug, setShowDebug] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [, setIsZoomed] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [focusedPinId, setFocusedPinId] = useState<string | null>(null);
   const [albumContainerSize, setAlbumContainerSize] = useState({ width: 0, height: 0 });
@@ -66,22 +66,35 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const isMobile = useIsMobile();
+  const isCompact = useIsCompact();
+  const autoPreview = useAutoPreview();
+
   const [uiVisible, setUiVisible] = useState(true);
   const hideTimerRef = useRef<number | undefined>(undefined);
 
   const resetHideTimer = useCallback(() => {
     setUiVisible(true);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    if (isMobile) {
+    if (isCompact) {
       hideTimerRef.current = window.setTimeout(() => setUiVisible(false), 3000);
     }
-  }, [isMobile]);
+  }, [isCompact]);
 
   useEffect(() => {
-    if (isMobile) resetHideTimer();
+    if (isCompact) resetHideTimer();
     return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
-  }, [isMobile, resetHideTimer, currentSpread]);
+  }, [isCompact, resetHideTimer, currentSpread]);
+
+  useEffect(() => {
+    if (!isCompact) return;
+    const show = () => resetHideTimer();
+    document.addEventListener('touchstart', show, { passive: true });
+    document.addEventListener('click', show, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', show);
+      document.removeEventListener('click', show);
+    };
+  }, [isCompact, resetHideTimer]);
 
   const pageAspectRatio = useMemo(() => {
     if (pages.length === 0) return 0.75;
@@ -92,15 +105,15 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     if (albumContainerSize.width === 0 || albumContainerSize.height === 0) return 400;
     const spreadAspect = 2 * pageAspectRatio;
     const containerAspect = albumContainerSize.width / albumContainerSize.height;
-    const heightFactor = isMobile ? 0.98 : 0.88;
-    const widthFactor = isMobile ? 0.99 : 0.96;
+    const heightFactor = isCompact ? 0.98 : 0.88;
+    const widthFactor = isCompact ? 0.99 : 0.96;
     const targetHeight = albumContainerSize.height * heightFactor;
     const targetWidth = albumContainerSize.width * widthFactor;
     if (containerAspect > spreadAspect) {
       return Math.round(Math.min(targetHeight * pageAspectRatio * 2, targetWidth) / 2);
     }
     return Math.round(targetWidth / 2);
-  }, [albumContainerSize, pageAspectRatio, isMobile]);
+  }, [albumContainerSize, pageAspectRatio, isCompact]);
 
   const pageHeight = useMemo(() => {
     if (pageWidth === 0) return 600;
@@ -180,12 +193,16 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   const handleNext = useCallback(() => {
     if (flipBookRef.current?.pageFlip()) {
+      setIsZoomed(false);
+      setZoomScale(1);
       flipBookRef.current.pageFlip().flipNext();
     }
   }, []);
 
   const handlePrev = useCallback(() => {
     if (flipBookRef.current?.pageFlip()) {
+      setIsZoomed(false);
+      setZoomScale(1);
       flipBookRef.current.pageFlip().flipPrev();
     }
   }, []);
@@ -227,12 +244,30 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     }
   }
 
+  const fullscreenRequestedRef = useRef(false);
+
   const enterPreview = useCallback(() => {
     setIsPreviewMode(true);
-    if (!document.fullscreenElement) {
+    if (!document.fullscreenElement && !fullscreenRequestedRef.current) {
+      fullscreenRequestedRef.current = true;
       document.documentElement.requestFullscreen().catch(() => {});
     }
   }, []);
+
+  const exitPreview = useCallback(() => {
+    setIsPreviewMode(false);
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  const togglePreview = useCallback(() => {
+    if (isPreviewMode) {
+      exitPreview();
+    } else {
+      enterPreview();
+    }
+  }, [isPreviewMode, enterPreview, exitPreview]);
 
   function toggleHelp() {
     setIsHelpOpen((prev) => !prev);
@@ -246,12 +281,12 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     setShowVoiceRecorder(true);
   }
 
-  function handlePinPlace(xPercent: number, yPercent: number) {
+  const handlePinPlace = useCallback((xPercent: number, yPercent: number) => {
     setIsPinMode(false);
     const nextNum = currentPageRequests.filter((r) => r.category === 'pin').length + 1;
     setPendingPin({ xPercent, yPercent, label: String(nextNum) });
     setShowNewPinEditor(true);
-  }
+  }, [currentPageRequests]);
 
   function handleNewPinSave(message: string) {
     if (pendingPin) {
@@ -309,9 +344,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     });
   }, [zoomScale, pages]);
 
-  function handleUserInteraction() {
-  }
-
   const isHelpOpenRef = useRef(isHelpOpen);
   isHelpOpenRef.current = isHelpOpen;
   const showVoiceRecorderRef = useRef(showVoiceRecorder);
@@ -330,6 +362,22 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   isPinModeRef.current = isPinMode;
 
   const hasFlippedToTargetRef = useRef(false);
+  const pinOverlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = pinOverlayRef.current;
+    if (!el) return;
+    const onTouchStart = (e: TouchEvent) => {
+      const rect = el.getBoundingClientRect();
+      const touch = e.touches[0];
+      const xPercent = ((touch.clientX - rect.left) / rect.width) * 100;
+      const yPercent = ((touch.clientY - rect.top) / rect.height) * 100;
+      handlePinPlace(xPercent, yPercent);
+      e.preventDefault();
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    return () => el.removeEventListener('touchstart', onTouchStart);
+  }, [isPinMode, handlePinPlace]);
 
   useEffect(() => {
     if (!targetPage || hasFlippedToTargetRef.current || !flipBookRef.current?.pageFlip) return;
@@ -384,9 +432,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           break;
         case 'Escape':
           if (isPreviewModeRef.current) {
-            setIsPreviewMode(false);
+            exitPreview();
           }
-          if (isFullscreenRef.current) document.exitFullscreen().catch(() => {});
           break;
         case 'd':
         case 'D':
@@ -394,7 +441,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           break;
         case 'f':
         case 'F':
-          enterPreview();
+          togglePreview();
           break;
         case '?':
           toggleHelp();
@@ -404,7 +451,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [enterPreview, handleNext, handlePrev]);
+  }, [handleNext, handlePrev, exitPreview, togglePreview]);
 
   useEffect(() => {
     function handleChange() {
@@ -419,69 +466,104 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // Mobile: hide browser chrome
-  const fullscreenRequestedRef = useRef(false);
-
+  // Auto preview mode on landscape for compact viewports
   useEffect(() => {
-    if (!isMobile) return;
+    if (autoPreview && !isPreviewMode) {
+      setIsPreviewMode(true);
+    }
+  }, [autoPreview, isPreviewMode]);
 
-    const scrollHideChrome = () => {
-      window.scrollTo(0, 1);
-    };
-    scrollHideChrome();
+  // Exit preview mode when not in landscape/compact
+  useEffect(() => {
+    if (!autoPreview && isPreviewMode) {
+      setIsPreviewMode(false);
+    }
+  }, [autoPreview, isPreviewMode]);
 
-    const onScroll = () => scrollHideChrome();
-    window.addEventListener('scroll', onScroll);
-    window.addEventListener('orientationchange', () => {
-      setTimeout(scrollHideChrome, 300);
-    });
+  // Update fullscreen request ref on unmount
+  useEffect(() => {
+    return () => { fullscreenRequestedRef.current = false; };
+  }, []);
 
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      }
-    };
-  }, [isMobile]);
-
-  function handleInteraction() {
-    handleUserInteraction();
-    resetHideTimer();
-    // Request fullscreen on first user gesture (browsers require gesture)
-    if (isMobile && !fullscreenRequestedRef.current) {
+  // Fullscreen on preview mode entry
+  useEffect(() => {
+    if (isPreviewMode && isCompact && !document.fullscreenElement && !fullscreenRequestedRef.current) {
       fullscreenRequestedRef.current = true;
       document.documentElement.requestFullscreen().catch(() => {});
     }
-  }
+    if (!isPreviewMode && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, [isPreviewMode, isCompact]);
+
+  const showMobileUI = isCompact && !isPinMode;
+  const showMinimalTopBar = isCompact && isPreviewMode;
 
   return (
     <div
       ref={ref}
       className="fixed inset-0 flex flex-col bg-[#2c1810]"
-      onTouchStart={handleInteraction}
-      onMouseMove={handleInteraction}
+      style={{ touchAction: 'none' }}
     >
-      {/* Mobile: minimal header overlay */}
-      {isMobile && (
-        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 pt-1 safe-area-top">
+      {/* Minimal top bar for compact + preview mode */}
+      {showMinimalTopBar && (
+        <div
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between transition-opacity duration-500 ease-out"
+          style={{
+            opacity: uiVisible ? 1 : 0,
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+            paddingBottom: 0,
+            pointerEvents: uiVisible ? 'auto' : 'none',
+          }}
+        >
           <button
             onClick={() => window.history.back()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm hover:bg-black/60 transition-colors cursor-pointer"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm hover:bg-black/60 transition-colors cursor-pointer"
             aria-label="Back"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
+
           <button
             onClick={() => setShowCompletion(true)}
-            className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            className="rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            style={{ zIndex: 40 }}
           >
             Finish Review
           </button>
         </div>
       )}
 
+      {/* Mobile header for compact + not preview */}
+      {isCompact && !isPreviewMode && (
+        <div
+          className="flex items-center justify-between px-3 py-2"
+          style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)',
+            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+          }}
+        >
+          <button
+            onClick={() => window.history.back()}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white/80 hover:bg-black/50 transition-colors cursor-pointer"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setIsPreviewMode(true)}
+            className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            Preview
+          </button>
+        </div>
+      )}
+
       {/* Desktop: full header */}
-      {!isMobile && (
+      {!isCompact && (
         <ReviewProgressTracker
           currentSpread={currentSpread}
           reviewedCount={reviewedSpreads}
@@ -519,11 +601,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                   drawShadow={true}
                   maxShadowOpacity={0.7}
                   showPageCorners={true}
-                  useMouseEvents={isMobile ? false : !isZoomed && !isPinMode}
-                  swipeDistance={isMobile ? 9999 : (isZoomed || isPinMode ? 9999 : 80)}
-                  mobileScrollSupport={isMobile ? false : !isZoomed && !isPinMode}
+                  useMouseEvents={false}
+                  swipeDistance={9999}
+                  mobileScrollSupport={false}
                   clickEventForward={false}
-                  disableFlipByClick={isMobile ? true : (isZoomed || isPinMode)}
+                  disableFlipByClick={true}
                   autoSize={false}
                   startZIndex={0}
                   className="w-full h-full"
@@ -643,6 +725,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       {isPinMode && (
         <div className="fixed inset-0 z-20" onClick={(e) => e.stopPropagation()}>
           <div
+            ref={pinOverlayRef}
             className="absolute inset-0 cursor-crosshair"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -650,26 +733,18 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
               const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
               handlePinPlace(xPercent, yPercent);
             }}
-            onTouchStart={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const touch = e.touches[0];
-              const xPercent = ((touch.clientX - rect.left) / rect.width) * 100;
-              const yPercent = ((touch.clientY - rect.top) / rect.height) * 100;
-              handlePinPlace(xPercent, yPercent);
-              e.preventDefault();
-            }}
           />
         </div>
       )}
 
       {/* Mobile: floating toolbar */}
-      {isMobile && (
+      {showMobileUI && (
         <FloatingBottomToolbar
           currentSpread={currentSpread}
           totalSpreads={totalSpreads}
           hasFeedback={hasFeedback}
           isPinMode={isPinMode}
-          visible={uiVisible && !isPinMode}
+          visible={uiVisible}
           onAddComment={handleAddComment}
           onAddVoice={handleAddVoice}
           onUndo={handleUndoFeedback}
@@ -681,7 +756,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       )}
 
       {/* Desktop: sticky bottom bar */}
-      {!isMobile && !isPreviewMode && (
+      {!isCompact && !isPreviewMode && (
         <StickyBottomBar
           currentSpread={currentSpread}
           totalSpreads={totalSpreads}
