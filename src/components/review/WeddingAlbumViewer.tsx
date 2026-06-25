@@ -360,6 +360,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   isFullscreenRef.current = isFullscreen;
   const isPinModeRef = useRef(isPinMode);
   isPinModeRef.current = isPinMode;
+  const autoPreviewRef = useRef(autoPreview);
+  autoPreviewRef.current = autoPreview;
 
   const hasFlippedToTargetRef = useRef(false);
   const pinOverlayRef = useRef<HTMLDivElement>(null);
@@ -431,9 +433,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           handleNext();
           break;
         case 'Escape':
-          if (isPreviewModeRef.current) {
+          if (isPreviewModeRef.current && !autoPreviewRef.current) {
             exitPreview();
           }
+          if (isFullscreenRef.current) document.exitFullscreen().catch(() => {});
           break;
         case 'd':
         case 'D':
@@ -497,7 +500,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }, [isPreviewMode, isCompact]);
 
   const showMobileUI = isCompact && !isPinMode;
-  const showMinimalTopBar = isCompact && isPreviewMode;
 
   return (
     <div
@@ -505,17 +507,17 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       className="fixed inset-0 flex flex-col bg-[#2c1810]"
       style={{ touchAction: 'none' }}
     >
-      {/* Minimal top bar for compact + preview mode */}
-      {showMinimalTopBar && (
+      {/* Mobile header — always absolute overlay so album container never resizes */}
+      {isCompact && (
         <div
           className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between transition-opacity duration-500 ease-out"
           style={{
-            opacity: uiVisible ? 1 : 0,
+            opacity: uiVisible || !isPreviewMode ? 1 : 0,
             paddingTop: 'env(safe-area-inset-top, 0px)',
-            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+            paddingLeft: 'env(safe-area-inset-left, 12px)',
+            paddingRight: 'env(safe-area-inset-right, 12px)',
             paddingBottom: 0,
-            pointerEvents: uiVisible ? 'auto' : 'none',
+            pointerEvents: uiVisible || !isPreviewMode ? 'auto' : 'none',
           }}
         >
           <button
@@ -526,39 +528,21 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
             <ArrowLeft className="h-5 w-5" />
           </button>
 
-          <button
-            onClick={() => setShowCompletion(true)}
-            className="rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
-            style={{ zIndex: 40 }}
-          >
-            Finish Review
-          </button>
-        </div>
-      )}
-
-      {/* Mobile header for compact + not preview */}
-      {isCompact && !isPreviewMode && (
-        <div
-          className="flex items-center justify-between px-3 py-2"
-          style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)',
-            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
-          }}
-        >
-          <button
-            onClick={() => window.history.back()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white/80 hover:bg-black/50 transition-colors cursor-pointer"
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => setIsPreviewMode(true)}
-            className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
-          >
-            Preview
-          </button>
+          {isPreviewMode ? (
+            <button
+              onClick={() => setShowCompletion(true)}
+              className="rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            >
+              Finish Review
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsPreviewMode(true)}
+              className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            >
+              Preview
+            </button>
+          )}
         </div>
       )}
 
