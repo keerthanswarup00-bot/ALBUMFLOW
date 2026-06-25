@@ -92,8 +92,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     if (albumContainerSize.width === 0 || albumContainerSize.height === 0) return 400;
     const spreadAspect = 2 * pageAspectRatio;
     const containerAspect = albumContainerSize.width / albumContainerSize.height;
-    const heightFactor = isMobile ? 0.96 : 0.88;
-    const widthFactor = isMobile ? 0.98 : 0.96;
+    const heightFactor = isMobile ? 0.98 : 0.88;
+    const widthFactor = isMobile ? 0.99 : 0.96;
     const targetHeight = albumContainerSize.height * heightFactor;
     const targetWidth = albumContainerSize.width * widthFactor;
     if (containerAspect > spreadAspect) {
@@ -419,6 +419,32 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  // Mobile: auto-request fullscreen, hide browser chrome
+  useEffect(() => {
+    if (!isMobile) return;
+
+    document.documentElement.requestFullscreen().catch(() => {
+      // Safari doesn't support requestFullscreen from user gesture.
+      // Apply pseudo-fullscreen via viewport techniques instead.
+    });
+
+    const scrollHideChrome = () => {
+      window.scrollTo(0, 1);
+    };
+    scrollHideChrome();
+    window.addEventListener('scroll', scrollHideChrome);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(scrollHideChrome, 300);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', scrollHideChrome);
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, [isMobile]);
+
   function handleInteraction() {
     handleUserInteraction();
     resetHideTimer();
@@ -489,11 +515,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                   drawShadow={true}
                   maxShadowOpacity={0.7}
                   showPageCorners={true}
-                  useMouseEvents={!isZoomed && !isPinMode}
-                  swipeDistance={isZoomed || isPinMode ? 9999 : 80}
-                  mobileScrollSupport={!isZoomed && !isPinMode}
+                  useMouseEvents={isMobile ? false : !isZoomed && !isPinMode}
+                  swipeDistance={isMobile ? 9999 : (isZoomed || isPinMode ? 9999 : 80)}
+                  mobileScrollSupport={isMobile ? false : !isZoomed && !isPinMode}
                   clickEventForward={false}
-                  disableFlipByClick={isZoomed || isPinMode}
+                  disableFlipByClick={isMobile ? true : (isZoomed || isPinMode)}
                   autoSize={false}
                   startZIndex={0}
                   className="w-full h-full"
