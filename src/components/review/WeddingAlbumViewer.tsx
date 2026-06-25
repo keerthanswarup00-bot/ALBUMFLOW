@@ -81,7 +81,11 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }, [isCompact]);
 
   useEffect(() => {
-    if (isCompact) resetHideTimer();
+    if (!isCompact) {
+      setUiVisible(true);
+      return;
+    }
+    resetHideTimer();
     return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
   }, [isCompact, resetHideTimer, currentSpread]);
 
@@ -109,10 +113,13 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     const widthFactor = isCompact ? 0.99 : 0.96;
     const targetHeight = albumContainerSize.height * heightFactor;
     const targetWidth = albumContainerSize.width * widthFactor;
+    let w: number;
     if (containerAspect > spreadAspect) {
-      return Math.round(Math.min(targetHeight * pageAspectRatio * 2, targetWidth) / 2);
+      w = Math.min(targetHeight * pageAspectRatio * 2, targetWidth) / 2;
+    } else {
+      w = targetWidth / 2;
     }
-    return Math.round(targetWidth / 2);
+    return Math.max(50, Math.min(Math.round(w), 2000));
   }, [albumContainerSize, pageAspectRatio, isCompact]);
 
   const pageHeight = useMemo(() => {
@@ -244,14 +251,13 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     }
   }
 
-  const fullscreenRequestedRef = useRef(false);
-
   const enterPreview = useCallback(() => {
     setIsPreviewMode(true);
-    if (!document.fullscreenElement && !fullscreenRequestedRef.current) {
-      fullscreenRequestedRef.current = true;
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
+    setTimeout(() => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }, 200);
   }, []);
 
   const exitPreview = useCallback(() => {
@@ -465,8 +471,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.overscrollBehavior = 'none';
+    return () => { document.body.style.overscrollBehavior = ''; };
   }, []);
 
   // Auto preview mode on landscape for compact viewports
@@ -483,16 +489,13 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     }
   }, [autoPreview, isPreviewMode]);
 
-  // Update fullscreen request ref on unmount
-  useEffect(() => {
-    return () => { fullscreenRequestedRef.current = false; };
-  }, []);
-
   // Fullscreen on preview mode entry
   useEffect(() => {
-    if (isPreviewMode && isCompact && !document.fullscreenElement && !fullscreenRequestedRef.current) {
-      fullscreenRequestedRef.current = true;
-      document.documentElement.requestFullscreen().catch(() => {});
+    if (isPreviewMode && isCompact && !document.fullscreenElement) {
+      const timer = setTimeout(() => {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }, 200);
+      return () => clearTimeout(timer);
     }
     if (!isPreviewMode && document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
