@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, forwardRef, useRef, useMemo } from 'react';
 import HTMLFlipBook from 'react-pageflip';
+import { ArrowLeft } from 'lucide-react';
 import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useUIStore } from '@/store/uiStore';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
 import { ReviewCompletionModal } from './ReviewCompletionModal';
 import { HelpBottomSheet } from './HelpBottomSheet';
@@ -11,6 +13,7 @@ import { PinMarker } from './PinMarker';
 import { PinPopup } from './PinPopup';
 import { NewPinEditor } from './NewPinEditor';
 import { StickyBottomBar } from './StickyBottomBar';
+import { FloatingBottomToolbar } from './FloatingBottomToolbar';
 import { PinchZoomWrapper } from './PinchZoomWrapper';
 import { VoiceMessageRecorder } from './VoiceMessageRecorder';
 import { uploadVoiceNote } from '@/services/supabase/storage';
@@ -63,6 +66,23 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  const isMobile = useIsMobile();
+  const [uiVisible, setUiVisible] = useState(true);
+  const hideTimerRef = useRef<number | undefined>(undefined);
+
+  const resetHideTimer = useCallback(() => {
+    setUiVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (isMobile) {
+      hideTimerRef.current = window.setTimeout(() => setUiVisible(false), 3000);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (isMobile) resetHideTimer();
+    return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
+  }, [isMobile, resetHideTimer, currentSpread]);
+
   const pageAspectRatio = useMemo(() => {
     if (pages.length === 0) return 0.75;
     return pages[0].width / pages[0].height;
@@ -72,13 +92,15 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     if (albumContainerSize.width === 0 || albumContainerSize.height === 0) return 400;
     const spreadAspect = 2 * pageAspectRatio;
     const containerAspect = albumContainerSize.width / albumContainerSize.height;
-    const targetHeight = albumContainerSize.height * 0.88;
-    const targetWidth = albumContainerSize.width * 0.96;
+    const heightFactor = isMobile ? 0.96 : 0.88;
+    const widthFactor = isMobile ? 0.98 : 0.96;
+    const targetHeight = albumContainerSize.height * heightFactor;
+    const targetWidth = albumContainerSize.width * widthFactor;
     if (containerAspect > spreadAspect) {
       return Math.round(Math.min(targetHeight * pageAspectRatio * 2, targetWidth) / 2);
     }
     return Math.round(targetWidth / 2);
-  }, [albumContainerSize, pageAspectRatio]);
+  }, [albumContainerSize, pageAspectRatio, isMobile]);
 
   const pageHeight = useMemo(() => {
     if (pageWidth === 0) return 600;
@@ -397,32 +419,59 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  function handleInteraction() {
+    handleUserInteraction();
+    resetHideTimer();
+  }
+
   return (
     <div
       ref={ref}
-      className="fixed inset-0 flex flex-col bg-[#2c1810] safe-area-inset"
-      onTouchStart={handleUserInteraction}
-      onMouseMove={handleUserInteraction}
+      className="fixed inset-0 flex flex-col bg-[#2c1810]"
+      onTouchStart={handleInteraction}
+      onMouseMove={handleInteraction}
     >
-      <ReviewProgressTracker
-        currentSpread={currentSpread}
-        reviewedCount={reviewedSpreads}
-        totalPages={totalSpreads}
-        completionPercent={completionPercent}
-        isFullscreen={isFullscreen}
-        studioLogoUrl={studioLogoUrl}
-        studioName={studioName}
-        onBack={() => window.history.back()}
-        onToggleFullscreen={toggleFullscreen}
-        onToggleHelp={toggleHelp}
-        onToggleSummary={() => setShowCompletion(true)}
-        onTogglePreview={enterPreview}
-        hasFeedback={hasFeedback}
-      />
+      {/* Mobile: minimal header overlay */}
+      {isMobile && (
+        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 pt-1 safe-area-top">
+          <button
+            onClick={() => window.history.back()}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm hover:bg-black/60 transition-colors cursor-pointer"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setShowCompletion(true)}
+            className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            Finish Review
+          </button>
+        </div>
+      )}
+
+      {/* Desktop: full header */}
+      {!isMobile && (
+        <ReviewProgressTracker
+          currentSpread={currentSpread}
+          reviewedCount={reviewedSpreads}
+          totalPages={totalSpreads}
+          completionPercent={completionPercent}
+          isFullscreen={isFullscreen}
+          studioLogoUrl={studioLogoUrl}
+          studioName={studioName}
+          onBack={() => window.history.back()}
+          onToggleFullscreen={toggleFullscreen}
+          onToggleHelp={toggleHelp}
+          onToggleSummary={() => setShowCompletion(true)}
+          onTogglePreview={enterPreview}
+          hasFeedback={hasFeedback}
+        />
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <div ref={albumContainerRef} className="relative flex-1 overflow-hidden bg-[#2c1810]">
-          <PinchZoomWrapper isActive={true} onZoomChange={setIsZoomed} onScaleChange={setZoomScale}>
+          <PinchZoomWrapper isActive={true} isPinMode={isPinMode} onZoomChange={setIsZoomed} onScaleChange={setZoomScale}>
             {pages.length > 0 && (
               <HTMLFlipBook
                 ref={flipBookRef}
@@ -571,11 +620,38 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
               const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
               handlePinPlace(xPercent, yPercent);
             }}
+            onTouchStart={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const touch = e.touches[0];
+              const xPercent = ((touch.clientX - rect.left) / rect.width) * 100;
+              const yPercent = ((touch.clientY - rect.top) / rect.height) * 100;
+              handlePinPlace(xPercent, yPercent);
+              e.preventDefault();
+            }}
           />
         </div>
       )}
 
-      {!isPreviewMode && (
+      {/* Mobile: floating toolbar */}
+      {isMobile && (
+        <FloatingBottomToolbar
+          currentSpread={currentSpread}
+          totalSpreads={totalSpreads}
+          hasFeedback={hasFeedback}
+          isPinMode={isPinMode}
+          visible={uiVisible && !isPinMode}
+          onAddComment={handleAddComment}
+          onAddVoice={handleAddVoice}
+          onUndo={handleUndoFeedback}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          canGoPrev={canGoPrev}
+          canGoNext={canGoNext}
+        />
+      )}
+
+      {/* Desktop: sticky bottom bar */}
+      {!isMobile && !isPreviewMode && (
         <StickyBottomBar
           currentSpread={currentSpread}
           totalSpreads={totalSpreads}

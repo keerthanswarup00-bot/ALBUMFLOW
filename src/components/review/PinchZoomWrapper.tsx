@@ -3,6 +3,7 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 interface PinchZoomWrapperProps {
   children: React.ReactNode;
   isActive: boolean;
+  isPinMode?: boolean;
   onZoomChange?: (zoomed: boolean) => void;
   onScaleChange?: (scale: number) => void;
 }
@@ -17,7 +18,7 @@ function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val));
 }
 
-export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChange }: PinchZoomWrapperProps) {
+export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoomChange, onScaleChange }: PinchZoomWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -32,6 +33,8 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
   const rafRef = useRef<number>(0);
   const lastMoveTime = useRef(0);
   const lastMovePos = useRef({ x: 0, y: 0 });
+  const isPinModeRef = useRef(isPinMode);
+  isPinModeRef.current = isPinMode;
 
   const isZoomed = scale > 1;
 
@@ -74,18 +77,20 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
       setPosition({ x: 0, y: 0 });
       return;
     }
-    setScale(s);
-    setPosition((prev) => {
-      let x = prev.x;
-      let y = prev.y;
-      if (centerX !== undefined && centerY !== undefined && cw > 0 && ch > 0) {
-        const ratio = s / scale;
-        x = centerX - ratio * (centerX - prev.x);
-        y = centerY - ratio * (centerY - prev.y);
-      }
-      return constrainPosition({ x, y }, s);
+    setScale((prevScale) => {
+      setPosition((prev) => {
+        let x = prev.x;
+        let y = prev.y;
+        if (centerX !== undefined && centerY !== undefined && cw > 0 && ch > 0) {
+          const ratio = s / prevScale;
+          x = centerX - ratio * (centerX - prev.x);
+          y = centerY - ratio * (centerY - prev.y);
+        }
+        return constrainPosition({ x, y }, s);
+      });
+      return s;
     });
-  }, [scale]);
+  }, []);
 
   const resetZoom = useCallback(() => {
     setScale(1);
@@ -103,7 +108,9 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
     if (momentumRef.current) return;
     if (Math.abs(vx) < MOMENTUM_MIN_VELOCITY && Math.abs(vy) < MOMENTUM_MIN_VELOCITY) return;
 
-    function tick(scaleSnapshot: number) {
+    const snapshot = scale;
+
+    function tick() {
       const m = momentumRef.current;
       if (!m) return;
       m.vx *= MOMENTUM_FRICTION;
@@ -112,16 +119,13 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
         momentumRef.current = null;
         return;
       }
-      setPosition((prev) => {
-        const next = constrainPosition(
-          { x: prev.x + m.vx, y: prev.y + m.vy },
-          scaleSnapshot
-        );
-        return next;
-      });
-      rafRef.current = requestAnimationFrame(() => tick(scaleSnapshot));
+      setPosition((prev) => constrainPosition(
+        { x: prev.x + m.vx, y: prev.y + m.vy },
+        snapshot
+      ));
+      rafRef.current = requestAnimationFrame(tick);
     }
-    rafRef.current = requestAnimationFrame(() => tick(scale));
+    rafRef.current = requestAnimationFrame(tick);
   }, [scale]);
 
   function stopMomentum() {
@@ -130,7 +134,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
   }
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!isActive) return;
+    if (!isActive || isPinModeRef.current) return;
     stopMomentum();
 
     if (e.touches.length === 2) {
@@ -157,7 +161,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
     if (e.touches.length === 1 && !isZoomed) {
       const now = Date.now();
       if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-        const nextScale = scale === 1 ? 2 : scale === 2 ? 4 : 1;
+        const nextScale = scale === 1 ? 2 : 1;
         updateScale(nextScale, e.touches[0].clientX, e.touches[0].clientY);
         lastTapRef.current = 0;
         e.preventDefault();
@@ -168,7 +172,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
   }, [isActive, isZoomed, scale, position, updateScale]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isActive) return;
+    if (!isActive || isPinModeRef.current) return;
 
     if (e.touches.length === 2 && isPinching.current) {
       const dist = getPinchDistance(e.touches);
@@ -198,14 +202,14 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
   }, [isActive, isZoomed, scale, updateScale]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!isActive) return;
+    if (!isActive || isPinModeRef.current) return;
 
     if (e.touches.length === 0) {
       if (isPanning.current && isZoomed) {
         const dt = Date.now() - lastMoveTime.current;
-        if (dt > 0 && dt < 150) {
-          const vx = (lastMovePos.current.x - pinchStart.current!.x) / dt * 16;
-          const vy = (lastMovePos.current.y - pinchStart.current!.y) / dt * 16;
+        if (dt > 0 && dt < 150 && pinchStart.current) {
+          const vx = (lastMovePos.current.x - pinchStart.current.x) / dt * 16;
+          const vy = (lastMovePos.current.y - pinchStart.current.y) / dt * 16;
           startMomentum(vx, vy);
         }
       }
@@ -222,13 +226,13 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
   }, [isActive, isZoomed, position, startMomentum]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (!isActive) return;
+    if (!isActive || isPinModeRef.current) return;
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
     const cx = e.clientX - rect.left;
     const cy = e.clientY - rect.top;
-    const delta = e.deltaY > 0 ? 0.9 : Math.min(MAX_SCALE, 1.1);
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const nextScale = clamp(scale * delta, 1, MAX_SCALE);
     if (nextScale === 1) {
       resetZoom();
@@ -260,7 +264,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
         {children}
       </div>
 
-      {isZoomed && (
+      {isZoomed && !isPinMode && (
         <div
           className="absolute inset-0 z-10"
           style={{ touchAction: 'none' }}
@@ -312,7 +316,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
             if (!rect) return;
             const cx = e.clientX - rect.left;
             const cy = e.clientY - rect.top;
-            const nextScale = scale === 1 ? 2 : scale === 2 ? 4 : 1;
+            const nextScale = scale === 1 ? 2 : 1;
             if (nextScale === 1) {
               resetZoom();
             } else {
@@ -322,7 +326,7 @@ export function PinchZoomWrapper({ children, isActive, onZoomChange, onScaleChan
         />
       )}
 
-      {isZoomed && (
+      {isZoomed && !isPinMode && (
         <button
           onClick={(e) => { e.stopPropagation(); resetZoom(); }}
           className="absolute top-3 right-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white text-base shadow-lg backdrop-blur-sm hover:bg-black/70 transition-colors cursor-pointer"
