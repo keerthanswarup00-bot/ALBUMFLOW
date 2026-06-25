@@ -324,7 +324,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                 startPage={0} flippingTime={800} usePortrait={false} showCover={false}
                 drawShadow={true} maxShadowOpacity={0.7} showPageCorners={true}
                 useMouseEvents={false} swipeDistance={9999} mobileScrollSupport={false}
-                clickEventForward={false} disableFlipByClick={true} autoSize={true}
+                clickEventForward={false} disableFlipByClick={false} autoSize={true}
                 startZIndex={0} className="w-full h-full" style={{ backgroundColor: 'transparent' }}
                 onFlip={handleFlip} onInit={handleInit}
               >

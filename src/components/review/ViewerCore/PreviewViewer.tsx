@@ -79,23 +79,25 @@ export function PreviewViewer({
   }, []);
 
   const getFlipApi = useCallback(() => {
-    const api = flipBookRef.current?.pageFlip();
-    if (!api) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[PreviewViewer] PageFlip API not available yet');
-      }
-    }
+    const ref = flipBookRef.current;
+    if (!ref) { console.warn('[PreviewViewer] flipBookRef is null'); return undefined; }
+    const api = ref.pageFlip();
+    if (!api) { console.warn('[PreviewViewer] pageFlip() returned null/undefined'); return undefined; }
     return api;
   }, []);
 
   const goNext = useCallback(() => {
     const api = getFlipApi();
-    if (api) api.flipNext();
+    if (!api) return;
+    console.log('[PreviewViewer] goNext: calling flipNext()');
+    api.flipNext();
   }, [getFlipApi]);
 
   const goPrev = useCallback(() => {
     const api = getFlipApi();
-    if (api) api.flipPrev();
+    if (!api) return;
+    console.log('[PreviewViewer] goPrev: calling flipPrev()');
+    api.flipPrev();
   }, [getFlipApi]);
 
   const canGoPrev = currentSpread > 0 && !isPinMode;
@@ -180,7 +182,7 @@ export function PreviewViewer({
               swipeDistance={9999}
               mobileScrollSupport={false}
               clickEventForward={false}
-              disableFlipByClick={true}
+              disableFlipByClick={false}
               autoSize={true}
               startZIndex={0}
               className="w-full h-full"
