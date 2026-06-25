@@ -81,13 +81,25 @@ export function PreviewViewer({
     setCurrentSpread(Math.floor(d.page / 2));
   }, []);
 
-  const goNext = useCallback(() => {
-    flipBookRef.current?.pageFlip()?.flipNext();
+  const getFlipApi = useCallback(() => {
+    const api = flipBookRef.current?.pageFlip();
+    if (!api) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[PreviewViewer] PageFlip API not available yet');
+      }
+    }
+    return api;
   }, []);
 
+  const goNext = useCallback(() => {
+    const api = getFlipApi();
+    if (api) api.flipNext();
+  }, [getFlipApi]);
+
   const goPrev = useCallback(() => {
-    flipBookRef.current?.pageFlip()?.flipPrev();
-  }, []);
+    const api = getFlipApi();
+    if (api) api.flipPrev();
+  }, [getFlipApi]);
 
   const canGoPrev = currentSpread > 0 && !isPinMode;
   const canGoNext = currentSpread < totalSpreads - 1 && !isPinMode;

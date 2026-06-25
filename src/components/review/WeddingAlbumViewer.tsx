@@ -131,6 +131,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   /* Auto preview mode — enter on mount if autoPreview is active */
   useEffect(() => {
     if (!autoPreviewRef.current) return;
+    setIsPinMode(false);
     setIsPreviewMode(true);
   }, []);
 
@@ -192,9 +193,13 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const handleNext = useCallback(() => { flipBookRef.current?.pageFlip()?.flipNext(); }, []);
   const handlePrev = useCallback(() => { flipBookRef.current?.pageFlip()?.flipPrev(); }, []);
 
-  const enterPreview = useCallback(() => setIsPreviewMode(true), []);
+  const enterPreview = useCallback(() => {
+    setIsPinMode(false);
+    setIsPreviewMode(true);
+  }, []);
   const exitPreview = useCallback(() => {
     setIsPreviewMode(false);
+    setIsPinMode(false);
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }, []);
 
