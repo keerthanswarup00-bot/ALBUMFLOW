@@ -184,7 +184,7 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
         const rel = getContainerRelPos(e.touches[0].clientX, e.touches[0].clientY);
         pinchCenter.current = rel;
         lastMoveTime.current = Date.now();
-        lastMovePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        lastMovePos.current = { ...rel };
         e.preventDefault();
         return;
       }
@@ -217,13 +217,14 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
       if (e.touches.length === 1 && isPanning.current && scaleRef.current > 1 && pinchCenter.current) {
         const now = Date.now();
         const dt = now - lastMoveTime.current;
+        const rel = getContainerRelPos(e.touches[0].clientX, e.touches[0].clientY);
         if (dt > 0) {
-          lastMovePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          lastMovePos.current = { ...rel };
           lastMoveTime.current = now;
         }
         setPosition(() =>
           constrainPosition(
-            { x: initialPos.current.x + e.touches[0].clientX - pinchCenter.current!.x, y: initialPos.current.y + e.touches[0].clientY - pinchCenter.current!.y },
+            { x: initialPos.current.x + rel.x - pinchCenter.current!.x, y: initialPos.current.y + rel.y - pinchCenter.current!.y },
             scaleRef.current,
             containerSize.current.width,
             containerSize.current.height,
