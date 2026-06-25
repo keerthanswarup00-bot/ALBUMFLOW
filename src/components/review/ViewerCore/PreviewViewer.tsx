@@ -163,6 +163,7 @@ export function PreviewViewer({
               ref={flipBookRef}
               width={pageWidth}
               height={pageHeight}
+              renderOnlyPageLengthChange={true}
               size="stretch"
               minWidth={100}
               maxWidth={2000}

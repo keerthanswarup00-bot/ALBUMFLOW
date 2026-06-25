@@ -319,6 +319,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
               <HTMLFlipBook
                 ref={flipBookRef}
                 width={pageWidth} height={pageHeight}
+                renderOnlyPageLengthChange={true}
                 size="stretch" minWidth={100} maxWidth={2000} minHeight={150} maxHeight={3000}
                 startPage={0} flippingTime={800} usePortrait={false} showCover={false}
                 drawShadow={true} maxShadowOpacity={0.7} showPageCorners={true}
