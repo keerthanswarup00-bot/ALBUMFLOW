@@ -630,6 +630,8 @@ $$;
 create or replace function public.album_has_valid_share_link(p_album_id uuid)
 returns boolean
 language sql
+security definer
+set search_path = public
 stable
 as $$
   select exists (
@@ -664,7 +666,7 @@ create policy "Designers can manage their own albums"
   on public.albums using (designer_id = auth.uid());
 create policy "Public can view albums via valid share token"
   on public.albums for select
-  using (designer_id = auth.uid() or public.album_has_valid_share_link(id));
+  using (designer_id = auth.uid());
 
 -- ALBUM VERSIONS
 alter table public.album_versions enable row level security;
@@ -675,7 +677,7 @@ create policy "Designers can manage versions of their albums"
   using (exists (select 1 from public.albums a where a.id = album_versions.album_id and a.designer_id = auth.uid()));
 create policy "Public can view versions via valid share token"
   on public.album_versions for select
-  using (exists (select 1 from public.albums a where a.id = album_versions.album_id and (a.designer_id = auth.uid() or public.album_has_valid_share_link(a.id))));
+  using (exists (select 1 from public.albums a where a.id = album_versions.album_id and a.designer_id = auth.uid()));
 
 -- ALBUM PAGES
 alter table public.album_pages enable row level security;
@@ -694,7 +696,7 @@ create policy "Public can view pages via valid share token"
     select 1 from public.album_versions av
     join public.albums a on a.id = av.album_id
     where av.id = album_pages.album_version_id
-    and (a.designer_id = auth.uid() or public.album_has_valid_share_link(a.id))
+    and a.designer_id = auth.uid()
   ));
 
 -- REQUESTS
@@ -725,9 +727,10 @@ drop policy if exists "Anyone can read valid share links for token check" on pub
 create policy "Designers can manage share links on their albums"
   on public.share_links
   using (exists (select 1 from public.albums a where a.id = share_links.album_id and a.designer_id = auth.uid()));
-create policy "Anyone can read valid share links for token check"
-  on public.share_links for select
-  using (revoked_at is null and (expires_at is null or expires_at > now()));
+-- NOTE: validate_share_token and album_has_valid_share_link are SECURITY DEFINER
+-- and bypass RLS on share_links. No SELECT-only policy is needed here;
+-- designers manage links through the policy above, and token validation
+-- happens inside SECURITY DEFINER functions.
 
 -- COMMENTS
 alter table public.comments enable row level security;

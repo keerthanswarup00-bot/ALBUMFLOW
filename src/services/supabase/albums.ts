@@ -180,9 +180,15 @@ export async function deleteAlbum(id: string): Promise<void> {
 }
 
 export async function getActiveAlbums(): Promise<Album[]> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    throw new ApiError('Not authenticated', 401);
+  }
+
   const { data, error } = await supabase
     .from('albums')
     .select('*')
+    .eq('designer_id', userData.user.id)
     .not('status', 'eq', 'archived')
     .order('created_at', { ascending: false });
 
