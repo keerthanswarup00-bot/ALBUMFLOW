@@ -1,0 +1,19 @@
+{
+  "name": "Albumflow",
+  "short_name": "Albumflow",
+  "description": "Album review and feedback platform",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "orientation": "any",
+  "theme_color": "#2c1810",
+  "background_color": "#2c1810",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

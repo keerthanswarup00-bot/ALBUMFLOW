@@ -23,8 +23,6 @@ interface PreviewViewerProps {
   targetRequestId?: string;
   focusedPinId: string | null;
   pendingPin: { xPercent: number; yPercent: number; label: string } | null;
-  selectedRequest: ViewerRequestChange | null;
-  selectedPinPos: { xPercent: number; yPercent: number } | null;
   onExit: () => void;
   onFinishReview: () => void;
   onPinPlace: (xPercent: number, yPercent: number) => void;
@@ -33,14 +31,13 @@ interface PreviewViewerProps {
 
 export function PreviewViewer({
   album, pages, initialSpread, totalSpreads, isPinMode, targetRequestId,
-  focusedPinId, pendingPin, selectedRequest, selectedPinPos,
+  focusedPinId, pendingPin,
   onExit, onFinishReview, onPinPlace, onViewRequest,
 }: PreviewViewerProps) {
   const vp = useVisualViewport();
   const { mode } = useFullscreenManager(true);
   const [currentSpread, setCurrentSpread] = useState(initialSpread);
   const [uiVisible, setUiVisible] = useState(true);
-  const [isZoomed, setIsZoomed] = useState(false);
   const hideTimerRef = useRef<number | undefined>(undefined);
   const flipBookRef = useRef<FlipBookHandle | null>(null);
 
@@ -111,9 +108,12 @@ export function PreviewViewer({
   }, []);
 
   useEffect(() => {
-    resetHideTimer();
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: show UI after navigation */
+    setUiVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = window.setTimeout(() => setUiVisible(false), 3000);
     return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
-  }, [currentSpread, resetHideTimer]);
+  }, [currentSpread]);
 
   useEffect(() => {
     const show = () => resetHideTimer();
@@ -157,7 +157,6 @@ export function PreviewViewer({
         <PinchZoomWrapper
           isActive={true}
           isPinMode={isPinMode}
-          onZoomChange={setIsZoomed}
         >
           {pages.length > 0 && (
             <HTMLFlipBook

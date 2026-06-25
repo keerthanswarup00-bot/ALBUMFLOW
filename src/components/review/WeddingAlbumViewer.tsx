@@ -282,15 +282,10 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         targetRequestId={targetRequestId}
         focusedPinId={focusedPinId}
         pendingPin={pendingPin}
-        selectedRequest={selectedRequest}
-        selectedPinPos={selectedPinPos}
         onExit={exitPreview}
         onFinishReview={() => setShowCompletion(true)}
         onPinPlace={handlePinPlace}
         onViewRequest={(req) => { setSelectedRequest(req); if (req.pin) setSelectedPinPos({ xPercent: req.pin.xPercent, yPercent: req.pin.yPercent }); }}
-        onDeleteRequest={(id) => deleteRequest(album.id, id)}
-        onUpdateRequest={(id, message) => updateRequest(album.id, id, { message })}
-        onClosePinPopup={() => { setSelectedRequest(null); setSelectedPinPos(null); }}
       />
     );
   }
