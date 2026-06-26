@@ -5,7 +5,7 @@ import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useUIStore } from '@/store/uiStore';
-import { useAutoPreview, useIsCompact } from '@/hooks/useIsMobile';
+import { useIsCompact } from '@/hooks/useIsMobile';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
 import { ReviewCompletionModal } from './ReviewCompletionModal';
 import { HelpBottomSheet } from './HelpBottomSheet';
@@ -16,7 +16,6 @@ import { StickyBottomBar } from './StickyBottomBar';
 import { FloatingBottomToolbar } from './FloatingBottomToolbar';
 import { PinchZoomWrapper } from './PinchZoomWrapper';
 import { VoiceMessageRecorder } from './VoiceMessageRecorder';
-import { PreviewViewer } from './ViewerCore/PreviewViewer';
 import { uploadVoiceNote } from '@/services/supabase/storage';
 import type { ReviewAlbum, ReviewPage, ViewerRequestChange } from '@/types/viewer';
 
@@ -47,7 +46,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [selectedPinPos, setSelectedPinPos] = useState<{ xPercent: number; yPercent: number } | null>(null);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [focusedPinId, setFocusedPinId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
@@ -55,8 +53,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const flipBookRef = useRef<FlipBookHandle | null>(null);
   const albumContainerRef = useRef<HTMLDivElement>(null);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const isPreviewModeRef = useRef(false);
-  const autoPreviewRef = useRef(false);
   const isHelpOpenRef = useRef(false);
   const showVoiceRecorderRef = useRef(false);
   const showNewPinEditorRef = useRef(false);
@@ -67,7 +63,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const pinOverlayRef = useRef<HTMLDivElement>(null);
 
   const isCompact = useIsCompact();
-  const autoPreview = useAutoPreview();
 
   const { markPageViewed, getReviewedCount, ensureAlbum } = useReviewStore();
   const { addRequest, getRequestsByPage, deleteRequest, updateRequest, clearDraft } = useRequestStore();
@@ -133,13 +128,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     }
   }, [currentSpread, album.id, pages.length, markPageViewed, currentPageLeft, currentPageRight]);
 
-  /* Auto preview mode — enter on mount if autoPreview is active */
-  useEffect(() => {
-    if (!autoPreviewRef.current) return;
-    setIsPinMode(false);
-    setIsPreviewMode(true);
-  }, []);
-
   /* Overscroll prevention */
   useEffect(() => {
     document.body.style.overscrollBehavior = 'none';
@@ -198,16 +186,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const handleNext = useCallback(() => { flipBookRef.current?.pageFlip()?.flipNext(); }, []);
   const handlePrev = useCallback(() => { flipBookRef.current?.pageFlip()?.flipPrev(); }, []);
 
-  const enterPreview = useCallback(() => {
-    setIsPinMode(false);
-    setIsPreviewMode(true);
-  }, []);
-  const exitPreview = useCallback(() => {
-    setIsPreviewMode(false);
-    setIsPinMode(false);
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  }, []);
-
   const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); } else { await document.exitFullscreen(); }
@@ -236,20 +214,18 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   /* Keyboard handling */
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (isPreviewModeRef.current) return;
       if (isHelpOpenRef.current || showVoiceRecorderRef.current || showNewPinEditorRef.current || selectedRequestRef.current || showCompletionRef.current) return;
       if (isPinModeRef.current) return;
       switch (e.key) {
         case 'ArrowLeft': e.preventDefault(); handlePrev(); break;
         case 'ArrowRight': e.preventDefault(); handleNext(); break;
         case 'Escape': if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); break;
-        case 'f': case 'F': exitPreview(); break;
         case '?': setIsHelpOpen((p) => !p); break;
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleNext, handlePrev, exitPreview]);
+  }, [handleNext, handlePrev]);
 
   /* Pin overlay touch handling */
   useEffect(() => {
@@ -266,34 +242,12 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }, [isPinMode, handlePinPlace]);
 
   /* Sync refs for keyboard handler (stale closure guard) */
-  isPreviewModeRef.current = isPreviewMode;
-  autoPreviewRef.current = autoPreview;
   isHelpOpenRef.current = isHelpOpen;
   showVoiceRecorderRef.current = showVoiceRecorder;
   showNewPinEditorRef.current = showNewPinEditor;
   selectedRequestRef.current = selectedRequest;
   showCompletionRef.current = showCompletion;
   isPinModeRef.current = isPinMode;
-
-  /* Preview mode rendering */
-  if (isPreviewMode) {
-    return (
-      <PreviewViewer
-        album={album}
-        pages={pages}
-        initialSpread={currentSpread}
-        totalSpreads={totalSpreads}
-        isPinMode={isPinMode}
-        targetRequestId={targetRequestId}
-        focusedPinId={focusedPinId}
-        pendingPin={pendingPin}
-        onExit={exitPreview}
-        onFinishReview={() => setShowCompletion(true)}
-        onPinPlace={handlePinPlace}
-        onViewRequest={(req) => { setSelectedRequest(req); if (req.pin) setSelectedPinPos({ xPercent: req.pin.xPercent, yPercent: req.pin.yPercent }); }}
-      />
-    );
-  }
 
   /* Normal mode */
   return (
@@ -303,7 +257,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingLeft: 'env(safe-area-inset-left, 12px)', paddingRight: 'env(safe-area-inset-right, 12px)' }}
         >
           <button onClick={() => window.history.back()} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm hover:bg-black/60 transition-colors cursor-pointer" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
-          <button onClick={enterPreview} className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors cursor-pointer">Preview</button>
         </div>
       )}
 
@@ -313,7 +266,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
           completionPercent={completionPercent} studioLogoUrl={studioLogoUrl} studioName={studioName}
           onBack={() => window.history.back()} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen}
           onToggleHelp={() => setIsHelpOpen((p) => !p)} onToggleSummary={() => setShowCompletion(true)}
-          onTogglePreview={enterPreview} hasFeedback={hasFeedback}
+          hasFeedback={hasFeedback}
         />
       )}
 
