@@ -40,7 +40,7 @@ export function PreviewViewer({
   const flipBookRef = useRef<FlipBookHandle | null>(null);
   const albumContainerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [debug, setDebug] = useState({ clicks: 0, flips: 0, apiOk: false, flipOk: false, refNull: false, pageFlipNull: false, lastAction: '' });
+  const [debug, setDebug] = useState({ clicks: 0, flips: 0, apiOk: false, flipOk: false, refNull: false, pageFlipNull: false, lastAction: '', refType: '', pfType: '' });
 
   useEffect(() => {
     const el = albumContainerRef.current;
@@ -94,9 +94,10 @@ export function PreviewViewer({
 
   const handleInit = useCallback((e: FlipEvent) => {
     const d = e.data as { page: number; mode: string };
-    const api = flipBookRef.current?.pageFlip();
+    const r = flipBookRef.current;
+    const api = r?.pageFlip();
     setCurrentSpread(Math.floor(d.page / 2));
-    setDebug(prev => ({ ...prev, apiOk: !!api, refNull: !flipBookRef.current, pageFlipNull: !api }));
+    setDebug(prev => ({ ...prev, apiOk: !!api, refNull: !r, pageFlipNull: !api, refType: r ? typeof r + ' K:' + Object.keys(r).join(',') : 'null', pfType: r ? typeof r.pageFlip() + ' ' + String(r.pageFlip()) : 'null' }));
   }, []);
 
   const getFlipApi = useCallback(() => {
@@ -110,7 +111,7 @@ export function PreviewViewer({
   const goNext = useCallback(() => {
     setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, lastAction: 'goNext' }));
     const api = getFlipApi();
-    if (!api) { setDebug(prev => ({ ...prev, flipOk: false, refNull: !flipBookRef.current, pageFlipNull: true })); return; }
+    if (!api) { setDebug(prev => ({ ...prev, flipOk: false, refNull: !flipBookRef.current, pageFlipNull: true, refType: flipBookRef.current ? typeof flipBookRef.current + ' K:' + Object.keys(flipBookRef.current).join(',') : 'null', pfType: flipBookRef.current ? typeof flipBookRef.current.pageFlip() + ' ' + String(flipBookRef.current.pageFlip()) : 'null' })); return; }
     setDebug(prev => ({ ...prev, apiOk: true }));
     api.flipNext();
     setDebug(prev => ({ ...prev, flipOk: true }));
@@ -119,7 +120,7 @@ export function PreviewViewer({
   const goPrev = useCallback(() => {
     setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, lastAction: 'goPrev' }));
     const api = getFlipApi();
-    if (!api) { setDebug(prev => ({ ...prev, flipOk: false, refNull: !flipBookRef.current, pageFlipNull: true })); return; }
+    if (!api) { setDebug(prev => ({ ...prev, flipOk: false, refNull: !flipBookRef.current, pageFlipNull: true, refType: flipBookRef.current ? typeof flipBookRef.current + ' K:' + Object.keys(flipBookRef.current).join(',') : 'null', pfType: flipBookRef.current ? typeof flipBookRef.current.pageFlip() + ' ' + String(flipBookRef.current.pageFlip()) : 'null' })); return; }
     setDebug(prev => ({ ...prev, apiOk: true }));
     api.flipPrev();
     setDebug(prev => ({ ...prev, flipOk: true }));
@@ -175,9 +176,10 @@ export function PreviewViewer({
         className="absolute top-14 left-2 z-50 rounded bg-black/70 px-2 py-1 text-[10px] leading-tight text-white font-mono select-none pointer-events-none"
         style={{ opacity: 0.8 }}
       >
-        [DN3] S:{currentSpread+1}/{totalSpreads} C:{debug.clicks} F:{debug.flips}<br />
+        [DN4] S:{currentSpread+1}/{totalSpreads} C:{debug.clicks} F:{debug.flips}<br />
         api:{debug.apiOk?'Y':'N'} flipOk:{debug.flipOk?'Y':'N'} ref:{debug.refNull?'N':'Y'}<br />
         nxt:{canGoNext?'Y':'N'} prv:{canGoPrev?'Y':'N'} act:{debug.lastAction||'-'}<br />
+        r:{debug.refType||'-'} p:{debug.pfType||'-'}<br />
         pg:{pages.length} pw:{pageWidth} ph:{pageHeight} cw:{containerSize.width} ch:{containerSize.height}
       </div>
 
