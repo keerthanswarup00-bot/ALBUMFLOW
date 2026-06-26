@@ -20,6 +20,10 @@ import { PreviewViewer } from './ViewerCore/PreviewViewer';
 import { uploadVoiceNote } from '@/services/supabase/storage';
 import type { ReviewAlbum, ReviewPage, ViewerRequestChange } from '@/types/viewer';
 
+interface FlipBookHandle {
+  pageFlip: () => { flipNext: () => void; flipPrev: () => void; flip: (page: number) => void };
+}
+
 interface FlipEvent { data: unknown; object: unknown }
 
 interface WeddingAlbumViewerProps {
@@ -48,7 +52,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
 
-  const flipBookRef = useRef<any>(null);
+  const flipBookRef = useRef<FlipBookHandle | null>(null);
   const albumContainerRef = useRef<HTMLDivElement>(null);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isPreviewModeRef = useRef(false);
@@ -325,7 +329,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                 startPage={0} flippingTime={800} usePortrait={false} showCover={false}
                 drawShadow={true} maxShadowOpacity={0.7} showPageCorners={true}
                 useMouseEvents={false} swipeDistance={9999} mobileScrollSupport={false}
-                clickEventForward={false} disableFlipByClick={false} autoSize={true}
+                clickEventForward={false} disableFlipByClick={true} autoSize={true}
                 startZIndex={0} className="w-full h-full" style={{ backgroundColor: 'transparent' }}
                 onFlip={handleFlip} onInit={handleInit}
               >

@@ -182,8 +182,8 @@ export function PreviewViewer({
               swipeDistance={9999}
               mobileScrollSupport={false}
               clickEventForward={false}
-              disableFlipByClick={false}
-              autoSize={true}
+              disableFlipByClick={true}
+              autoSize={false}
               startZIndex={0}
               className="w-full h-full"
               style={{ backgroundColor: 'transparent' }}
