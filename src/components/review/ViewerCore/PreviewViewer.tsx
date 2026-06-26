@@ -40,6 +40,7 @@ export function PreviewViewer({
   const flipBookRef = useRef<FlipBookHandle | null>(null);
   const albumContainerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [debug, setDebug] = useState({ clicks: 0, flips: 0, apiOk: false, flipOk: false });
 
   useEffect(() => {
     const el = albumContainerRef.current;
@@ -88,11 +89,13 @@ export function PreviewViewer({
 
   const handleFlip = useCallback((e: FlipEvent) => {
     setCurrentSpread(Math.floor((e.data as number) / 2));
+    setDebug(prev => ({ ...prev, flips: prev.flips + 1 }));
   }, []);
 
   const handleInit = useCallback((e: FlipEvent) => {
     const d = e.data as { page: number; mode: string };
     setCurrentSpread(Math.floor(d.page / 2));
+    setDebug(prev => ({ ...prev, apiOk: !!flipBookRef.current?.pageFlip() }));
   }, []);
 
   const getFlipApi = useCallback(() => {
@@ -105,16 +108,18 @@ export function PreviewViewer({
 
   const goNext = useCallback(() => {
     const api = getFlipApi();
-    if (!api) return;
-    console.log('[PreviewViewer] goNext: calling flipNext()');
+    if (!api) { setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, flipOk: false })); return; }
+    setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, apiOk: true }));
     api.flipNext();
+    setDebug(prev => ({ ...prev, flipOk: true }));
   }, [getFlipApi]);
 
   const goPrev = useCallback(() => {
     const api = getFlipApi();
-    if (!api) return;
-    console.log('[PreviewViewer] goPrev: calling flipPrev()');
+    if (!api) { setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, flipOk: false })); return; }
+    setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, apiOk: true }));
     api.flipPrev();
+    setDebug(prev => ({ ...prev, flipOk: true }));
   }, [getFlipApi]);
 
   const canGoPrev = currentSpread > 0 && !isPinMode;
@@ -162,6 +167,16 @@ export function PreviewViewer({
       className="fixed inset-0 z-40 flex flex-col bg-[#2c1810]"
       style={{ touchAction: 'none' }}
     >
+      {/* Debug overlay */}
+      <div
+        className="absolute top-14 left-2 z-50 rounded bg-black/70 px-2 py-1 text-[10px] leading-tight text-white font-mono select-none pointer-events-none"
+        style={{ opacity: 0.8 }}
+      >
+        S:{currentSpread+1}/{totalSpreads} C:{debug.clicks} F:{debug.flips}<br />
+        api:{debug.apiOk?'Y':'N'} flipOk:{debug.flipOk?'Y':'N'}
+        nxt:{canGoNext?'Y':'N'} prv:{canGoPrev?'Y':'N'}
+      </div>
+
       {/* Auto-hide overlay for tap-to-reveal */}
       {!uiVisible && (
         <div
