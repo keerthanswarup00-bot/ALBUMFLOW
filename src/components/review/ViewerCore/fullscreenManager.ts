@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
 export type DisplayMode = 'standalone-pwa' | 'browser-tab' | 'browser-fullscreen';
 export type Platform = 'ios' | 'android' | 'other';
@@ -13,7 +13,7 @@ export function detectPlatform(): Platform {
 
 export function detectDisplayMode(): DisplayMode {
   if (typeof window === 'undefined') return 'browser-tab';
-  if (window.navigator.standalone) return 'standalone-pwa';
+  if ((window.navigator as Navigator & { standalone?: boolean }).standalone) return 'standalone-pwa';
   if (window.matchMedia('(display-mode: standalone)').matches) return 'standalone-pwa';
   if (document.fullscreenElement) return 'browser-fullscreen';
   return 'browser-tab';
@@ -29,6 +29,7 @@ export function useFullscreenManager(previewMode: boolean): {
   const platform = detectPlatform();
 
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: sync display mode on mount */
     setMode(detectDisplayMode());
     setIsFullscreen(!!document.fullscreenElement);
   }, []);

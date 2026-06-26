@@ -45,6 +45,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [focusedPinId, setFocusedPinId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
 
   const flipBookRef = useRef<any>(null);
@@ -143,7 +144,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   /* Fullscreen change tracking */
   useEffect(() => {
-    const handler = () => {};
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
@@ -306,7 +307,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         <ReviewProgressTracker
           currentSpread={currentSpread} reviewedCount={Math.floor(reviewedHalves / 2)} totalPages={totalSpreads}
           completionPercent={completionPercent} studioLogoUrl={studioLogoUrl} studioName={studioName}
-          onBack={() => window.history.back()} onToggleFullscreen={toggleFullscreen}
+          onBack={() => window.history.back()} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen}
           onToggleHelp={() => setIsHelpOpen((p) => !p)} onToggleSummary={() => setShowCompletion(true)}
           onTogglePreview={enterPreview} hasFeedback={hasFeedback}
         />
