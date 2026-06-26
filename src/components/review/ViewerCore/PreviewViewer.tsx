@@ -199,7 +199,7 @@ export function PreviewViewer({
               swipeDistance={9999}
               mobileScrollSupport={false}
               clickEventForward={false}
-              disableFlipByClick={true}
+              disableFlipByClick={false}
               autoSize={true}
               startZIndex={0}
               className="w-full h-full"
