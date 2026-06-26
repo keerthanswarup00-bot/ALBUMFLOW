@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import HTMLFlipBook from 'react-pageflip';
 import { useFullscreenManager } from './fullscreenManager';
-import { useVisualViewport } from './viewportManager';
 import { ViewerToolbar } from './ViewerToolbar';
 import { PinchZoomWrapper } from '@/components/review/PinchZoomWrapper';
 import { PinMarker } from '@/components/review/PinMarker';
@@ -34,12 +33,29 @@ export function PreviewViewer({
   focusedPinId, pendingPin,
   onExit, onFinishReview, onPinPlace, onViewRequest,
 }: PreviewViewerProps) {
-  const vp = useVisualViewport();
   const { mode } = useFullscreenManager(true);
   const [currentSpread, setCurrentSpread] = useState(initialSpread);
   const [uiVisible, setUiVisible] = useState(true);
   const hideTimerRef = useRef<number | undefined>(undefined);
   const flipBookRef = useRef<FlipBookHandle | null>(null);
+  const albumContainerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = albumContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setContainerSize((prev) => {
+          if (prev.width === width && prev.height === height) return prev;
+          return { width, height };
+        });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const getRequestsByPage = useRequestStore((s) => s.getRequestsByPage);
   const currentPinRequests = useMemo(
@@ -54,19 +70,20 @@ export function PreviewViewer({
   }, [pages]);
 
   const pageWidth = useMemo(() => {
+    if (containerSize.width === 0) return 500;
     const spreadAspect = 2 * pageAspect;
-    const containerAspect = vp.width / vp.height;
-    const targetH = vp.height * 0.98;
-    const targetW = vp.width * 0.99;
+    const containerAspect = containerSize.width / containerSize.height;
+    const targetW = containerSize.width;
+    const targetH = containerSize.height;
     if (containerAspect > spreadAspect) {
-      return Math.max(50, Math.min(Math.round(Math.min(targetH * pageAspect * 2, targetW) / 2), 2000));
+      return Math.max(50, Math.min(Math.round(targetH * pageAspect), 2000));
     }
     return Math.max(50, Math.min(Math.round(targetW / 2), 2000));
-  }, [pageAspect, vp]);
+  }, [pageAspect, containerSize]);
 
   const pageHeight = useMemo(
-    () => (pageWidth === 0 ? Math.round(vp.height * 0.98) : Math.round(pageWidth / pageAspect)),
-    [pageWidth, pageAspect, vp],
+    () => (pageWidth === 0 ? 500 : Math.round(pageWidth / pageAspect)),
+    [pageWidth, pageAspect],
   );
 
   const handleFlip = useCallback((e: FlipEvent) => {
@@ -155,7 +172,7 @@ export function PreviewViewer({
       )}
 
       {/* Album area */}
-      <div className="relative flex-1 overflow-hidden">
+      <div ref={albumContainerRef} className="relative flex-1 overflow-hidden">
         <PinchZoomWrapper
           isActive={true}
           isPinMode={isPinMode}
@@ -183,7 +200,7 @@ export function PreviewViewer({
               mobileScrollSupport={false}
               clickEventForward={false}
               disableFlipByClick={true}
-              autoSize={false}
+              autoSize={true}
               startZIndex={0}
               className="w-full h-full"
               style={{ backgroundColor: 'transparent' }}
