@@ -175,9 +175,10 @@ export function PreviewViewer({
         className="absolute top-14 left-2 z-50 rounded bg-black/70 px-2 py-1 text-[10px] leading-tight text-white font-mono select-none pointer-events-none"
         style={{ opacity: 0.8 }}
       >
-        [DN2] S:{currentSpread+1}/{totalSpreads} C:{debug.clicks} F:{debug.flips}<br />
+        [DN3] S:{currentSpread+1}/{totalSpreads} C:{debug.clicks} F:{debug.flips}<br />
         api:{debug.apiOk?'Y':'N'} flipOk:{debug.flipOk?'Y':'N'} ref:{debug.refNull?'N':'Y'}<br />
-        nxt:{canGoNext?'Y':'N'} prv:{canGoPrev?'Y':'N'} act:{debug.lastAction||'-'}
+        nxt:{canGoNext?'Y':'N'} prv:{canGoPrev?'Y':'N'} act:{debug.lastAction||'-'}<br />
+        pg:{pages.length} pw:{pageWidth} ph:{pageHeight} cw:{containerSize.width} ch:{containerSize.height}
       </div>
 
       {/* Auto-hide overlay for tap-to-reveal */}
