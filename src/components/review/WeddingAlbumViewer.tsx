@@ -289,7 +289,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                 {pages.map((page) => (
                   <div key={page.id} className="page" style={{ width: '100%', height: '100%' }}>
                     <div ref={(el) => { imageRefs.current[pages.indexOf(page)] = el; }}
-                      className="page-image" style={{ position: 'absolute', inset: 0, backgroundImage: `url(${page.medium_url ?? page.image_url})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+                      className="page-image" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundImage: `url(${page.medium_url ?? page.image_url})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
                   </div>
                 ))}
               </HTMLFlipBook>
