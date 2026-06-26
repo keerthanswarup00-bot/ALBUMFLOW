@@ -40,7 +40,7 @@ export function PreviewViewer({
   const flipBookRef = useRef<FlipBookHandle | null>(null);
   const albumContainerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [debug, setDebug] = useState({ clicks: 0, flips: 0, apiOk: false, flipOk: false });
+  const [debug, setDebug] = useState({ clicks: 0, flips: 0, apiOk: false, flipOk: false, refNull: false, pageFlipNull: false, lastAction: '' });
 
   useEffect(() => {
     const el = albumContainerRef.current;
@@ -94,30 +94,33 @@ export function PreviewViewer({
 
   const handleInit = useCallback((e: FlipEvent) => {
     const d = e.data as { page: number; mode: string };
+    const api = flipBookRef.current?.pageFlip();
     setCurrentSpread(Math.floor(d.page / 2));
-    setDebug(prev => ({ ...prev, apiOk: !!flipBookRef.current?.pageFlip() }));
+    setDebug(prev => ({ ...prev, apiOk: !!api, refNull: !flipBookRef.current, pageFlipNull: !api }));
   }, []);
 
   const getFlipApi = useCallback(() => {
     const ref = flipBookRef.current;
-    if (!ref) { console.warn('[PreviewViewer] flipBookRef is null'); return undefined; }
+    if (!ref) { console.warn('[DN] flipBookRef is null'); return undefined; }
     const api = ref.pageFlip();
-    if (!api) { console.warn('[PreviewViewer] pageFlip() returned null/undefined'); return undefined; }
+    if (!api) { console.warn('[DN] pageFlip() returned null/undefined'); return undefined; }
     return api;
   }, []);
 
   const goNext = useCallback(() => {
+    setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, lastAction: 'goNext' }));
     const api = getFlipApi();
-    if (!api) { setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, flipOk: false })); return; }
-    setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, apiOk: true }));
+    if (!api) { setDebug(prev => ({ ...prev, flipOk: false, refNull: !flipBookRef.current, pageFlipNull: true })); return; }
+    setDebug(prev => ({ ...prev, apiOk: true }));
     api.flipNext();
     setDebug(prev => ({ ...prev, flipOk: true }));
   }, [getFlipApi]);
 
   const goPrev = useCallback(() => {
+    setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, lastAction: 'goPrev' }));
     const api = getFlipApi();
-    if (!api) { setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, flipOk: false })); return; }
-    setDebug(prev => ({ ...prev, clicks: prev.clicks + 1, apiOk: true }));
+    if (!api) { setDebug(prev => ({ ...prev, flipOk: false, refNull: !flipBookRef.current, pageFlipNull: true })); return; }
+    setDebug(prev => ({ ...prev, apiOk: true }));
     api.flipPrev();
     setDebug(prev => ({ ...prev, flipOk: true }));
   }, [getFlipApi]);
@@ -172,9 +175,9 @@ export function PreviewViewer({
         className="absolute top-14 left-2 z-50 rounded bg-black/70 px-2 py-1 text-[10px] leading-tight text-white font-mono select-none pointer-events-none"
         style={{ opacity: 0.8 }}
       >
-        S:{currentSpread+1}/{totalSpreads} C:{debug.clicks} F:{debug.flips}<br />
-        api:{debug.apiOk?'Y':'N'} flipOk:{debug.flipOk?'Y':'N'}
-        nxt:{canGoNext?'Y':'N'} prv:{canGoPrev?'Y':'N'}
+        [DN2] S:{currentSpread+1}/{totalSpreads} C:{debug.clicks} F:{debug.flips}<br />
+        api:{debug.apiOk?'Y':'N'} flipOk:{debug.flipOk?'Y':'N'} ref:{debug.refNull?'N':'Y'}<br />
+        nxt:{canGoNext?'Y':'N'} prv:{canGoPrev?'Y':'N'} act:{debug.lastAction||'-'}
       </div>
 
       {/* Auto-hide overlay for tap-to-reveal */}
