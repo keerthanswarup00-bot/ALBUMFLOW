@@ -99,7 +99,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect;
-      if (width > 0 && height > 0) setAlbumContainerSize({ width, height });
+      if (width > 0 && height > 0) setAlbumContainerSize((prev) => prev.width === width && prev.height === height ? prev : { width, height });
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -304,7 +304,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
               <HTMLFlipBook
                 ref={flipBookRef}
                 width={pageWidth} height={pageHeight}
-                renderOnlyPageLengthChange={true}
                 size="stretch" minWidth={100} maxWidth={2000} minHeight={150} maxHeight={3000}
                 startPage={0} flippingTime={800} usePortrait={false} showCover={false}
                 drawShadow={true} maxShadowOpacity={0.7} showPageCorners={true}
