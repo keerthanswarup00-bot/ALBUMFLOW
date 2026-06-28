@@ -226,9 +226,10 @@ export async function deleteAccount(): Promise<void> {
 }
 
 export function onAuthStateChange(callback: (user: User | null) => void) {
-  return supabase.auth.onAuthStateChange((_event, session) => {
+  return supabase.auth.onAuthStateChange(async (_event, session) => {
     if (session?.user) {
-      callback(mapSupabaseUserToAppUser(session.user));
+      const { user: enriched } = await enrichUserWithProfile(mapSupabaseUserToAppUser(session.user));
+      callback(enriched);
     } else {
       callback(null);
     }

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { ViewerRequestChange, RequestChangeCategory, PinPlacement, RequestDraft } from '@/types/viewer';
 import { REVIEW_CONFIG } from '@/constants/review';
 import { saveReviewData } from '@/services/supabase/reviewData';
+import { enqueue } from '@/utils/syncQueue';
 
 interface RequestState {
   requests: Record<string, ViewerRequestChange[]>;
@@ -55,7 +56,7 @@ function generateId(): string {
 }
 
 function syncRequestsToServer(albumId: string, requests: ViewerRequestChange[]) {
-  saveReviewData(albumId, { requests });
+  enqueue(`requests:${albumId}`, () => saveReviewData(albumId, { requests }));
 }
 
 export const useRequestStore = create<RequestState>((set, get) => ({

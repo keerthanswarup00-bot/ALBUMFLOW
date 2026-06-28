@@ -20,8 +20,8 @@ async function getExistingData(albumId: string): Promise<Record<string, unknown>
       p_album_id: albumId,
     });
     if (!error && data && typeof data === 'object') return data as Record<string, unknown>;
-  } catch {
-    // ignore
+  } catch (e) {
+    console.warn('[reviewData] getExistingData error:', e);
   }
   return null;
 }

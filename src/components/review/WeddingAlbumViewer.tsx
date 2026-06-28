@@ -23,6 +23,7 @@ interface FlipBookHandle {
   pageFlip: () => { flipNext: () => void; flipPrev: () => void; flip: (page: number) => void };
 }
 
+const BOOK_STYLE = { backgroundColor: 'transparent' as const };
 interface FlipEvent { data: unknown; object: unknown }
 
 interface WeddingAlbumViewerProps {
@@ -64,10 +65,18 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
   const isCompact = useIsCompact();
 
-  const { markPageViewed, getReviewedCount, ensureAlbum } = useReviewStore();
-  const { addRequest, getRequestsByPage, deleteRequest, updateRequest, clearDraft } = useRequestStore();
-  const { addRecording, getRecordingsByPage, deleteRecording } = useVoiceStore();
-  const { showToast } = useUIStore();
+  const markPageViewed = useReviewStore((s) => s.markPageViewed);
+  const getReviewedCount = useReviewStore((s) => s.getReviewedCount);
+  const ensureAlbum = useReviewStore((s) => s.ensureAlbum);
+  const addRequest = useRequestStore((s) => s.addRequest);
+  const getRequestsByPage = useRequestStore((s) => s.getRequestsByPage);
+  const deleteRequest = useRequestStore((s) => s.deleteRequest);
+  const updateRequest = useRequestStore((s) => s.updateRequest);
+  const clearDraft = useRequestStore((s) => s.clearDraft);
+  const addRecording = useVoiceStore((s) => s.addRecording);
+  const getRecordingsByPage = useVoiceStore((s) => s.getRecordingsByPage);
+  const deleteRecording = useVoiceStore((s) => s.deleteRecording);
+  const showToast = useUIStore((s) => s.showToast);
 
   const totalSpreads = Math.floor(pages.length / 2);
   const currentPageLeft = currentSpread * 2;
@@ -126,7 +135,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
       markPageViewed(album.id, currentPageLeft + 1, pages.length);
       if (currentPageRight < pages.length) markPageViewed(album.id, currentPageRight + 1, pages.length);
     }
-  }, [currentSpread, album.id, pages.length, markPageViewed, currentPageLeft, currentPageRight]);
+  }, [currentSpread, album.id, pages.length, markPageViewed]);
 
   /* Overscroll prevention */
   useEffect(() => {
@@ -183,8 +192,25 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     setCurrentSpread(Math.floor(d.page / 2));
   }, []);
 
-  const handleNext = useCallback(() => { flipBookRef.current?.pageFlip()?.flipNext(); }, []);
-  const handlePrev = useCallback(() => { flipBookRef.current?.pageFlip()?.flipPrev(); }, []);
+  const isFlippingRef = useRef(false);
+
+  const handleNext = useCallback(() => {
+    if (isFlippingRef.current) return;
+    const book = flipBookRef.current?.pageFlip();
+    if (!book) return;
+    isFlippingRef.current = true;
+    book.flipNext();
+    setTimeout(() => { isFlippingRef.current = false; }, 900);
+  }, []);
+
+  const handlePrev = useCallback(() => {
+    if (isFlippingRef.current) return;
+    const book = flipBookRef.current?.pageFlip();
+    if (!book) return;
+    isFlippingRef.current = true;
+    book.flipPrev();
+    setTimeout(() => { isFlippingRef.current = false; }, 900);
+  }, []);
 
   const toggleFullscreen = useCallback(async () => {
     try {
@@ -283,12 +309,12 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                 drawShadow={true} maxShadowOpacity={0.7} showPageCorners={true}
                 useMouseEvents={false} swipeDistance={9999} mobileScrollSupport={false}
                 clickEventForward={false} disableFlipByClick={false} autoSize={true}
-                startZIndex={0} className="w-full h-full" style={{ backgroundColor: 'transparent' }}
+                startZIndex={0} className="w-full h-full" style={BOOK_STYLE}
                 onFlip={handleFlip} onInit={handleInit}
               >
-                {pages.map((page) => (
+                {pages.map((page, idx) => (
                   <div key={page.id} className="page" style={{ width: '100%', height: '100%' }}>
-                    <div ref={(el) => { imageRefs.current[pages.indexOf(page)] = el; }}
+                    <div ref={(el) => { imageRefs.current[idx] = el; }}
                       className="page-image" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundImage: `url(${renderImageUrl(page.medium_url ?? page.image_url)})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
                   </div>
                 ))}

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { PageReviewStatus, AlbumReviewData, AlbumReviewEntry } from '@/types/viewer';
 import { REVIEW_CONFIG } from '@/constants/review';
 import { saveReviewData, loadReviewData } from '@/services/supabase/reviewData';
+import { enqueue } from '@/utils/syncQueue';
 
 interface ReviewState {
   data: Record<string, AlbumReviewData>;
@@ -39,8 +40,8 @@ function loadFromStorage(albumId: string): AlbumReviewData | null {
   return null;
 }
 
-async function syncToServer(albumId: string, data: AlbumReviewData) {
-  await saveReviewData(albumId, { review: data });
+function syncToServer(albumId: string, data: AlbumReviewData) {
+  enqueue(`review:${albumId}`, () => saveReviewData(albumId, { review: data }));
 }
 
 async function loadFromServer(albumId: string): Promise<AlbumReviewData | null> {

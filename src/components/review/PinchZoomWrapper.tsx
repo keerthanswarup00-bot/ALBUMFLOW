@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, useLayoutEffect } from 'react';
 
 interface PinchZoomWrapperProps {
   children: React.ReactNode;
@@ -53,6 +53,7 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
   const rafRef = useRef<number>(0);
   const lastMoveTime = useRef(0);
   const lastMovePos = useRef({ x: 0, y: 0 });
+  const moveHistory = useRef<Array<{ x: number; y: number; t: number }>>([]);
   const isPinModeRef = useRef(isPinMode);
   const isActiveRef = useRef(isActive);
   const isZoomed = scale > 1;
@@ -61,10 +62,18 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
   const positionRef = useRef(position);
 
   useEffect(() => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      containerSize.current = { width: rect.width, height: rect.height };
-    }
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    containerSize.current = { width: rect.width, height: rect.height };
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) {
+        containerSize.current = { width, height };
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -146,7 +155,7 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
   const resetZoomRef = useRef(resetZoom);
   const startMomentumRef = useRef(startMomentum);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     isPinModeRef.current = isPinMode;
     isActiveRef.current = isActive;
     scaleRef.current = scale;
@@ -185,6 +194,7 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
         pinchCenter.current = rel;
         lastMoveTime.current = Date.now();
         lastMovePos.current = { ...rel };
+        moveHistory.current = [{ x: rel.x, y: rel.y, t: Date.now() }];
         e.preventDefault();
         return;
       }
@@ -221,6 +231,8 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
         if (dt > 0) {
           lastMovePos.current = { ...rel };
           lastMoveTime.current = now;
+          moveHistory.current.push({ x: rel.x, y: rel.y, t: now });
+          if (moveHistory.current.length > 3) moveHistory.current.shift();
         }
         setPosition(() =>
           constrainPosition(
@@ -239,10 +251,18 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
 
       if (e.touches.length === 0) {
         if (isPanning.current && scaleRef.current > 1) {
-          const dt = Date.now() - lastMoveTime.current;
-          if (dt > 0 && dt < 150 && pinchCenter.current) {
-            const vx = (lastMovePos.current.x - pinchCenter.current.x) / dt * 16;
-            const vy = (lastMovePos.current.y - pinchCenter.current.y) / dt * 16;
+          let vx = 0, vy = 0;
+          const h = moveHistory.current;
+          if (h.length >= 2) {
+            const last = h[h.length - 1];
+            const prev = h[h.length - 2];
+            const dt = last.t - prev.t;
+            if (dt > 0) {
+              vx = (last.x - prev.x) / dt * 16;
+              vy = (last.y - prev.y) / dt * 16;
+            }
+          }
+          if (Math.abs(vx) >= MOMENTUM_MIN_VELOCITY || Math.abs(vy) >= MOMENTUM_MIN_VELOCITY) {
             startMomentumRef.current(vx, vy);
           }
         }
@@ -319,6 +339,7 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
             isPanning.current = true;
             lastMoveTime.current = Date.now();
             lastMovePos.current = { x: e.clientX, y: e.clientY };
+            moveHistory.current = [{ x: e.clientX, y: e.clientY, t: Date.now() }];
             e.preventDefault();
           }}
           onMouseMove={(e) => {
@@ -330,6 +351,8 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
             if (dt > 0) {
               lastMovePos.current = { x: e.clientX, y: e.clientY };
               lastMoveTime.current = now;
+              moveHistory.current.push({ x: e.clientX, y: e.clientY, t: now });
+              if (moveHistory.current.length > 3) moveHistory.current.shift();
             }
             setPosition(() =>
               constrainPosition(
@@ -342,10 +365,18 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
           }}
           onMouseUp={() => {
             if (isPanning.current && isZoomed) {
-              const dt = Date.now() - lastMoveTime.current;
-              if (dt > 0 && dt < 150 && pinchCenter.current) {
-                const vx = (lastMovePos.current.x - pinchCenter.current.x) / dt * 16;
-                const vy = (lastMovePos.current.y - pinchCenter.current.y) / dt * 16;
+              let vx = 0, vy = 0;
+              const h = moveHistory.current;
+              if (h.length >= 2) {
+                const last = h[h.length - 1];
+                const prev = h[h.length - 2];
+                const dt = last.t - prev.t;
+                if (dt > 0) {
+                  vx = (last.x - prev.x) / dt * 16;
+                  vy = (last.y - prev.y) / dt * 16;
+                }
+              }
+              if (Math.abs(vx) >= MOMENTUM_MIN_VELOCITY || Math.abs(vy) >= MOMENTUM_MIN_VELOCITY) {
                 startMomentum(vx, vy);
               }
             }

@@ -80,7 +80,7 @@ function buildHtml(data: ReportData): string {
 </html>`;
 }
 
-export function downloadReviewReport(data: ReportData): void {
+export function downloadReviewReportHtml(data: ReportData): void {
   const html = buildHtml(data);
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ReviewCycleStatus, TimelineEntry, ApprovalRecord, ApprovalChecklistItem } from '@/types/viewer';
 import { saveReviewData } from '@/services/supabase/reviewData';
+import { enqueue } from '@/utils/syncQueue';
 
 const CYCLE_PREFIX = 'albumflow_cycle_';
 const TIMELINE_PREFIX = 'albumflow_timeline_';
@@ -25,7 +26,7 @@ function saveJSON(key: string, data: unknown, onError?: (error: string) => void)
 }
 
 function syncCycleData(albumId: string, data: { statuses?: Record<string, ReviewCycleStatus>; timelines?: Record<string, TimelineEntry[]>; approvals?: Record<string, ApprovalRecord> }) {
-  saveReviewData(albumId, { cycle: data });
+  enqueue(`cycle:${albumId}`, () => saveReviewData(albumId, { cycle: data }));
 }
 
 interface ReviewCycleState {

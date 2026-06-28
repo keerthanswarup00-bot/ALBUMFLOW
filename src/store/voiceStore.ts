@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { VoiceRequest, VoiceDraft } from '@/types/viewer';
 import { REVIEW_CONFIG } from '@/constants/review';
 import { saveReviewData } from '@/services/supabase/reviewData';
+import { enqueue } from '@/utils/syncQueue';
 
 interface VoiceState {
   recordings: Record<string, VoiceRequest[]>;
@@ -50,7 +51,7 @@ function generateId(): string {
 }
 
 function syncVoiceToServer(albumId: string, recordings: VoiceRequest[]) {
-  saveReviewData(albumId, { voice: recordings });
+  enqueue(`voice:${albumId}`, () => saveReviewData(albumId, { voice: recordings }));
 }
 
 export const useVoiceStore = create<VoiceState>((set, get) => ({
@@ -102,8 +103,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
   saveDraft: (albumId: string, draft: VoiceDraft) => {
     set((state) => ({ drafts: { ...state.drafts, [albumId]: draft } }));
     try {
-      const meta = { duration: draft.duration, saved_at: draft.saved_at };
-      localStorage.setItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`, JSON.stringify(meta));
+      localStorage.setItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`, JSON.stringify(draft));
     } catch (e) {
       set({ error: (e as Error).message });
     }
@@ -115,12 +115,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     try {
       const raw = localStorage.getItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`);
       if (raw) {
-        const meta = JSON.parse(raw) as { duration: number; saved_at: number };
-        const draft: VoiceDraft = {
-          duration: meta.duration,
-          audioData: '',
-          saved_at: meta.saved_at,
-        };
+        const draft = JSON.parse(raw) as VoiceDraft;
         set((state) => ({ drafts: { ...state.drafts, [albumId]: draft } }));
         return draft;
       }
