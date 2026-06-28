@@ -179,16 +179,20 @@ export function ViewAlbumPage() {
     );
   }
 
+  if (showWelcome) {
+    return (
+      <WelcomeScreen
+        albumTitle={data.album.title}
+        clientName={data.album.client_name}
+        studioName={studioInfo.name}
+        studioLogoUrl={studioInfo.logoUrl}
+        onStart={() => setShowWelcome(false)}
+      />
+    );
+  }
+
   return (
     <>
-      {showWelcome && (
-        <WelcomeScreen
-          albumTitle={data.album.title}
-          clientName={data.album.client_name}
-          onStart={() => setShowWelcome(false)}
-        />
-      )}
-
       <AlbumViewer
         key={identifier}
         album={data.album}

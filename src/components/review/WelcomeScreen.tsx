@@ -1,80 +1,47 @@
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Eye, Pin, ThumbsUp, MessageSquare } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 interface WelcomeScreenProps {
   albumTitle: string;
   clientName: string;
+  studioName: string;
+  studioLogoUrl: string;
   onStart: () => void;
 }
 
-const features = [
-  { icon: Pin, text: 'Tap to place a pin and leave feedback on specific photos' },
-  { icon: MessageSquare, text: 'Request changes with a comment or voice message' },
-  { icon: ThumbsUp, text: 'Mark spreads as "Looks Good" when you\'re happy' },
-];
-
-export function WelcomeScreen({ albumTitle, clientName, onStart }: WelcomeScreenProps) {
-  const [dontShowAgain, setDontShowAgain] = useLocalStorage<Record<string, boolean>>(
-    'albumflow_welcome_dismissed',
-    {}
-  );
-
-  const albumKey = albumTitle.replace(/\s+/g, '_').toLowerCase();
-  if (dontShowAgain[albumKey]) return null;
-
+export function WelcomeScreen({ albumTitle, clientName, studioName, studioLogoUrl, onStart }: WelcomeScreenProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-bg-primary shadow-2xl">
-        <div className="px-6 pt-8 pb-4 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
-            <Eye className="h-7 w-7 text-blue-600" />
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#2c1810] safe-area-inset">
+      <div className="flex flex-1 flex-col items-center justify-center px-6">
+        <div className="flex flex-col items-center text-center max-w-sm">
+          {studioLogoUrl ? (
+            <img src={studioLogoUrl} alt={studioName} className="mb-6 h-16 w-16 rounded-2xl object-cover shadow-lg" />
+          ) : (
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 shadow-lg">
+              <Eye className="h-8 w-8 text-white/60" />
+            </div>
+          )}
+
+          <p className="text-sm font-medium tracking-wide text-white/50 uppercase">{studioName}</p>
+
+          <h1 className="mt-3 text-2xl font-bold text-white">{albumTitle}</h1>
+
+          {clientName && (
+            <p className="mt-1 text-sm text-white/40">{clientName}</p>
+          )}
+
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-white/30">
+            <span>Album Preview</span>
           </div>
-          <h1 className="text-lg font-bold text-text-primary">{albumTitle}</h1>
-          <p className="mt-1 text-sm text-text-secondary">{clientName}</p>
         </div>
+      </div>
 
-        <div className="px-6 pb-4">
-          <ul className="flex flex-col gap-2.5">
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <li key={feature.text} className="flex items-start gap-2.5 text-xs text-text-secondary leading-relaxed">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 mt-0.5">
-                    <Icon className="h-3.5 w-3.5 text-blue-600" />
-                  </span>
-                  {feature.text}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <div className="px-6 pb-6">
-          <button
-            onClick={() => {
-              if (dontShowAgain[albumKey]) return;
-              onStart();
-            }}
-            className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 active:bg-blue-800 transition-colors cursor-pointer"
-          >
-            Start Viewing Album
-          </button>
-
-          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 text-xs text-text-muted">
-            <input
-              type="checkbox"
-              checked={!!dontShowAgain[albumKey]}
-              onChange={(e) =>
-                setDontShowAgain((prev) => ({
-                  ...prev,
-                  [albumKey]: e.target.checked,
-                }))
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            Don't show this again
-          </label>
-        </div>
+      <div className="px-6 pb-12">
+        <button
+          onClick={onStart}
+          className="w-full rounded-xl bg-white/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20 active:bg-white/25 transition-colors cursor-pointer"
+        >
+          View Album
+        </button>
       </div>
     </div>
   );
