@@ -284,7 +284,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         <ReviewProgressTracker
           currentSpread={currentSpread} reviewedCount={Math.floor(reviewedHalves / 2)} totalPages={totalSpreads}
           completionPercent={completionPercent} studioLogoUrl={studioLogoUrl} studioName={studioName}
-          onBack={() => window.history.back()} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen}
+          isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen}
           onToggleHelp={() => setIsHelpOpen((p) => !p)} onToggleSummary={() => setShowCompletion(true)}
           hasFeedback={hasFeedback}
         />
