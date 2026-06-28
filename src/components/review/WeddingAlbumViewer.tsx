@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, forwardRef, useRef, useMemo } from 'react';
 import HTMLFlipBook from 'react-pageflip';
-import { ArrowLeft } from 'lucide-react';
 import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
@@ -279,13 +278,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   /* Normal mode */
   return (
     <div ref={ref} className="fixed inset-0 flex flex-col bg-[#2c1810]" style={{ touchAction: 'none' }}>
-      {isCompact && (
-        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between transition-opacity duration-500"
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingLeft: 'env(safe-area-inset-left, 12px)', paddingRight: 'env(safe-area-inset-right, 12px)' }}
-        >
-          <button onClick={() => window.history.back()} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm hover:bg-black/60 transition-colors cursor-pointer" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
-        </div>
-      )}
+
 
       {!isCompact && (
         <ReviewProgressTracker
