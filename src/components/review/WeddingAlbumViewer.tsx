@@ -5,7 +5,7 @@ import { useReviewStore } from '@/store/reviewStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useUIStore } from '@/store/uiStore';
-import { useIsCompact, useAutoPreview } from '@/hooks/useIsMobile';
+import { useIsCompact } from '@/hooks/useIsMobile';
 import { ReviewProgressTracker } from './ReviewProgressTracker';
 import { ReviewCompletionModal } from './ReviewCompletionModal';
 import { HelpBottomSheet } from './HelpBottomSheet';
@@ -64,7 +64,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   const pinOverlayRef = useRef<HTMLDivElement>(null);
 
   const isCompact = useIsCompact();
-  const isPreview = useAutoPreview();
 
   const markPageViewed = useReviewStore((s) => s.markPageViewed);
   const getReviewedCount = useReviewStore((s) => s.getReviewedCount);
@@ -220,12 +219,6 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     } catch { /* empty */ }
   }, []);
 
-  useEffect(() => {
-    if (isPreview && !document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
-  }, [isPreview]);
-
   /* Pin/Comment handlers */
   const handlePinPlace = useCallback((xPercent: number, yPercent: number) => {
     setIsPinMode(false);
@@ -286,7 +279,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   /* Normal mode */
   return (
     <div ref={ref} className="fixed inset-0 flex flex-col bg-[#2c1810]" style={{ touchAction: 'none' }}>
-      {isCompact && !isPreview && (
+      {isCompact && (
         <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between transition-opacity duration-500"
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingLeft: 'env(safe-area-inset-left, 12px)', paddingRight: 'env(safe-area-inset-right, 12px)' }}
         >
@@ -306,10 +299,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
 
       <div className="flex flex-1 overflow-hidden">
         <div ref={albumContainerRef} className="relative flex-1 overflow-hidden bg-[#2c1810]">
-          <PinchZoomWrapper isActive={true} isPinMode={isPinMode} onScaleChange={setZoomScale}
-            onSwipeLeft={() => flipBookRef.current?.pageFlip()?.flipNext()}
-            onSwipeRight={() => flipBookRef.current?.pageFlip()?.flipPrev()}
-          >
+          <PinchZoomWrapper isActive={true} isPinMode={isPinMode} onScaleChange={setZoomScale}>
             {pages.length > 0 && (
               <HTMLFlipBook
                 ref={flipBookRef}
@@ -341,7 +331,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
         </div>
       </div>
 
-      {showMobileUI && !isPreview && (
+      {showMobileUI && (
         <FloatingBottomToolbar currentSpread={currentSpread} totalSpreads={totalSpreads}
           hasFeedback={hasFeedback} isPinMode={isPinMode} visible={true}
           onAddComment={() => setIsPinMode(true)} onAddVoice={() => setShowVoiceRecorder(true)}

@@ -6,8 +6,6 @@ interface PinchZoomWrapperProps {
   isPinMode?: boolean;
   onZoomChange?: (zoomed: boolean) => void;
   onScaleChange?: (scale: number) => void;
-  onSwipeLeft?: () => void;
-  onSwipeRight?: () => void;
 }
 
 const MIN_SCALE = 1;
@@ -15,8 +13,6 @@ const MAX_SCALE = 5;
 const DOUBLE_TAP_DELAY = 300;
 const MOMENTUM_FRICTION = 0.92;
 const MOMENTUM_MIN_VELOCITY = 0.5;
-const SWIPE_THRESHOLD = 50;
-const SWIPE_MAX_TIME = 300;
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val));
@@ -41,7 +37,7 @@ function getPinchDistance(touches: TouchList) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoomChange, onScaleChange, onSwipeLeft, onSwipeRight }: PinchZoomWrapperProps) {
+export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoomChange, onScaleChange }: PinchZoomWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -58,9 +54,6 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
   const lastMoveTime = useRef(0);
   const lastMovePos = useRef({ x: 0, y: 0 });
   const moveHistory = useRef<Array<{ x: number; y: number; t: number }>>([]);
-  const swipeStart = useRef({ x: 0, y: 0, t: 0, moved: false });
-  const onSwipeLeftRef = useRef(onSwipeLeft);
-  const onSwipeRightRef = useRef(onSwipeRight);
   const isPinModeRef = useRef(isPinMode);
   const isActiveRef = useRef(isActive);
   const isZoomed = scale > 1;
@@ -170,8 +163,6 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
     updateScaleRef.current = updateScale;
     resetZoomRef.current = resetZoom;
     startMomentumRef.current = startMomentum;
-    onSwipeLeftRef.current = onSwipeLeft;
-    onSwipeRightRef.current = onSwipeRight;
   });
 
   useEffect(() => {
@@ -209,11 +200,10 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
       }
 
       if (e.touches.length === 1 && scaleRef.current <= 1) {
-        const rel = getContainerRelPos(e.touches[0].clientX, e.touches[0].clientY);
-        swipeStart.current = { x: rel.x, y: rel.y, t: Date.now(), moved: false };
         const now = Date.now();
         if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
           const nextScale = scaleRef.current === 1 ? 2 : 1;
+          const rel = getContainerRelPos(e.touches[0].clientX, e.touches[0].clientY);
           updateScaleRef.current(nextScale, rel.x, rel.y);
           lastTapRef.current = 0;
           e.preventDefault();
@@ -253,8 +243,6 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
           )
         );
         e.preventDefault();
-      } else if (e.touches.length === 1 && scaleRef.current <= 1) {
-        swipeStart.current.moved = true;
       }
     }
 
@@ -277,18 +265,10 @@ export function PinchZoomWrapper({ children, isActive, isPinMode = false, onZoom
           if (Math.abs(vx) >= MOMENTUM_MIN_VELOCITY || Math.abs(vy) >= MOMENTUM_MIN_VELOCITY) {
             startMomentumRef.current(vx, vy);
           }
-        } else if (scaleRef.current <= 1 && swipeStart.current.moved) {
-          const dt = Date.now() - swipeStart.current.t;
-          const dx = lastMovePos.current.x - swipeStart.current.x;
-          if (dt > 0 && dt < SWIPE_MAX_TIME && Math.abs(dx) > SWIPE_THRESHOLD) {
-            if (dx > 0) onSwipeRightRef.current?.();
-            else onSwipeLeftRef.current?.();
-          }
         }
         isPinching.current = false;
         isPanning.current = false;
         pinchCenter.current = null;
-        swipeStart.current = { x: 0, y: 0, t: 0, moved: false };
       }
       if (e.touches.length === 1 && isPinching.current) {
         isPinching.current = false;
