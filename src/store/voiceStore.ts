@@ -105,7 +105,13 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     try {
       localStorage.setItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`, JSON.stringify(draft));
     } catch (e) {
-      set({ error: (e as Error).message });
+      console.warn('[voiceStore] saveDraft quota exceeded, storing metadata only', e);
+      try {
+        const meta = { duration: draft.duration, audioData: '', saved_at: draft.saved_at };
+        localStorage.setItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`, JSON.stringify(meta));
+      } catch {
+        set({ error: 'Failed to save voice draft' });
+      }
     }
   },
 
@@ -115,7 +121,12 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
     try {
       const raw = localStorage.getItem(`${REVIEW_CONFIG.storage.voiceDraftPrefix}${albumId}`);
       if (raw) {
-        const draft = JSON.parse(raw) as VoiceDraft;
+        const parsed = JSON.parse(raw);
+        const draft: VoiceDraft = {
+          duration: parsed.duration ?? 0,
+          audioData: parsed.audioData ?? '',
+          saved_at: parsed.saved_at ?? Date.now(),
+        };
         set((state) => ({ drafts: { ...state.drafts, [albumId]: draft } }));
         return draft;
       }

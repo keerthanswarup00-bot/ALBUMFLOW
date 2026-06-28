@@ -188,7 +188,8 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
   }, []);
 
   const handleInit = useCallback((e: FlipEvent) => {
-    const d = e.data as { page: number; mode: string };
+    const d = e.data as { page?: number; mode?: string } | null;
+    if (!d || typeof d.page !== 'number') return;
     setCurrentSpread(Math.floor(d.page / 2));
   }, []);
 
