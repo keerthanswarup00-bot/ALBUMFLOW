@@ -16,7 +16,7 @@ import { StickyBottomBar } from './StickyBottomBar';
 import { FloatingBottomToolbar } from './FloatingBottomToolbar';
 import { PinchZoomWrapper } from './PinchZoomWrapper';
 import { VoiceMessageRecorder } from './VoiceMessageRecorder';
-import { uploadVoiceNote } from '@/services/supabase/storage';
+import { uploadVoiceNote, renderImageUrl } from '@/services/supabase/storage';
 import type { ReviewAlbum, ReviewPage, ViewerRequestChange } from '@/types/viewer';
 
 interface FlipBookHandle {
@@ -147,7 +147,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
     pages.forEach((page, i) => {
       const el = imageRefs.current[i];
       if (el) {
-        el.style.backgroundImage = `url(${useFullRes ? page.image_url : (page.medium_url ?? page.image_url)})`;
+        el.style.backgroundImage = `url(${renderImageUrl(useFullRes ? page.image_url : (page.medium_url ?? page.image_url))})`;
       }
     });
   }, [zoomScale, pages]);
@@ -289,7 +289,7 @@ const WeddingAlbumViewer = forwardRef<HTMLDivElement, WeddingAlbumViewerProps>((
                 {pages.map((page) => (
                   <div key={page.id} className="page" style={{ width: '100%', height: '100%' }}>
                     <div ref={(el) => { imageRefs.current[pages.indexOf(page)] = el; }}
-                      className="page-image" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundImage: `url(${page.medium_url ?? page.image_url})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+                      className="page-image" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundImage: `url(${renderImageUrl(page.medium_url ?? page.image_url)})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
                   </div>
                 ))}
               </HTMLFlipBook>

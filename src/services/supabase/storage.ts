@@ -100,6 +100,7 @@ export async function uploadImage(
   const result = await uploadWithRetry(BUCKET_NAME, filePath, file, {
     cacheControl: '3600',
     upsert: false,
+    contentType: file.type || 'image/jpeg',
   });
 
   if (result.error) {
@@ -191,12 +192,12 @@ export async function deleteImages(paths: string[]): Promise<void> {
   }
 }
 
-export async function getPublicUrl(path: string): Promise<string> {
+export function getPublicUrl(path: string): Promise<string> {
   const { data } = supabase.storage
     .from(BUCKET_NAME)
     .getPublicUrl(path);
 
-  return data.publicUrl;
+  return Promise.resolve(data.publicUrl);
 }
 
 export function getImageUrl(path: string): string {
@@ -205,6 +206,12 @@ export function getImageUrl(path: string): string {
     .getPublicUrl(path);
 
   return data.publicUrl;
+}
+
+/** Transform a Supabase storage URL to use the /render/image/ endpoint,
+ *  which returns proper Content-Type headers and avoids ERR_BLOCKED_BY_ORB. */
+export function renderImageUrl(url: string): string {
+  return url.replace('/storage/v1/object/', '/storage/v1/render/image/');
 }
 
 export async function uploadStudioLogo(
